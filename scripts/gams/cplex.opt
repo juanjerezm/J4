@@ -1,0 +1,7 @@
+Threads -1
+optcr = 0.001
+startalg 6
+
+* numericalemphasis 1
+* mipemphasis 0
+* eprhs  1e-6

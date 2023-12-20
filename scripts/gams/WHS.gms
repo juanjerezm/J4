@@ -200,18 +200,18 @@ qc_f(T,F)                       = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   
 C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F));
 F_a(T,G)$(G_HR(G))              = 0 + 1$(pi_h(T) <= lambda_h(T));
 
+* ----- Investment decision parameters ----- *
 PARAMETER 
-AF(G)                           'Annuity factor (-)'
-C_capex(G)                      'Capital cost (EUR/MW)'   
-C_opex(G)
-C_capacity(G)
+AF_g(G)                           'Generator Annuity factor (-)'
+C_capex_g(G)                      'Generator Capital cost (EUR/MW)'   
+C_opex_g(G)                       'Generator Fixed operational costs (EUR/MW)'
+C_capacity_g(G)                   'Generator Capacity-related costs (EUR/MW)'
 ;
 
-* i=4%, n=25
-AF('HP_EHR')        = 0.064;
-C_capex('HP_EHR')   = 0.71245972106*1000000;
-C_opex('HP_EHR')    = 2126.745436;
-C_capacity(G)       = C_capex(G)*AF(G) + C_opex(G);
+AF_g('HP_EHR')        = (0.04*(1.04**25))/((1.04**25)-1);
+C_capex_g('HP_EHR')   = 0.71246*1e6;
+C_opex_g('HP_EHR')    = 2127;
+C_capacity_g(G)       = AF_g(G)*C_capex_g(G) + C_opex_g(G);
 
 * ======================================================================
 * VARIABLES

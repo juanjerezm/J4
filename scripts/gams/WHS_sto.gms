@@ -166,7 +166,7 @@ R_f(G)                  'Input ramping rate (-)'
 F_a(T,G)                'Availabity factor (-)'
 eta(T,G)                'Generator efficiency (-)'
 
-Y_s(S)                  'Storage capacity (MWh)'
+* Y_s(S)                  'Storage capacity (MWh)'
 F_s(S)                  'Storage throughput capacity factor (-)'  
 F_SOC_end(S)            'Final storage state-of-charge factor (-)'
 F_SOC_min(S)            'Minimum storage state-of-charge factor (-)'
@@ -232,7 +232,7 @@ pi_f(T,F)                       = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       
 qc_f(T,F)                       = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + qc_e(T)$(F_EL(F));
 
 C_s(S)                          = STRG_DATA(S,'OMV');
-Y_s(S)                          = STRG_DATA(S,'SOC capacity');
+* Y_s(S)                          = STRG_DATA(S,'SOC capacity');
 F_s(S)                          = STRG_DATA(S,'throughput ratio');
 eta_s(S)                        = STRG_DATA(S,'throughput efficiency');
 rho_s(S)                        = STRG_DATA(S,'self-discharge factor');
@@ -245,17 +245,26 @@ C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F));
 F_a(T,G)$(G_HR(G))              = 0 + 1$(pi_h(T) <= lambda_h(T));
 
 PARAMETER 
-AF(G)                           'Annuity factor (-)'
-C_capex(G)                      'Capital cost (EUR/MW)'   
-C_opex(G)
-C_capacity(G)
+AF_g(G)                           'Generator Annuity factor (-)'
+C_capex_g(G)                      'Generator Capital cost (EUR/MW)'   
+C_opex_g(G)                       'Generator Fixed operational costs (EUR/MW)'
+C_capacity_g(G)                   'Generator Capacity-related costs (EUR/MW)'
+
+AF_s(S)                           'Storage Annuity factor (-)'
+C_capex_s(S)                      'Storage Capital cost (EUR/MW)'   
+C_opex_s(S)                       'Storage Fixed operational costs (EUR/MW)'
+C_capacity_s(S)                   'Storage Capacity-related costs (EUR/MW)'
 ;
 
-* i=4%, n=25
-AF('HP_EHR')        = 0.064;
-C_capex('HP_EHR')   = 0.71245972106*1000000;
-C_opex('HP_EHR')    = 2126.745436;
-C_capacity(G)       = C_capex(G)*AF(G) + C_opex(G);
+AF_g('HP_EHR')        = (0.04*(1.04**25))/((1.04**25)-1);
+C_capex_g('HP_EHR')   = 0.71246*1e6;
+C_opex_g('HP_EHR')    = 2127;
+C_capacity_g(G)       = AF_g(G)*C_capex_g(G) + C_opex_g(G);
+
+AF_s('sto-wh')        = (0.04*(1.04**25))/((1.04**25)-1);
+C_capex_s('sto-wh')   = 0.115*1e6;
+C_opex_s('sto-wh')    = 0;
+C_capacity_s(S)       = AF_s(S)*C_capex_s(S) + C_opex_s(S);
 
 * ======================================================================
 * VARIABLES
@@ -270,6 +279,8 @@ Y_h(G)                  'Heat capacity (MWh)'
 x_f(T,G)                'Consumption of fuel (MWh)'
 x_h(T,G)                'Production of heat (MWh)'
 x_c(T,G)                'Production of cold (MWh)'
+
+Y_s(S)                  'Storage capacity (MWh)'
 SOC(T,S)                'State-of-charge of storage (MWh)'
 ;
 
@@ -306,7 +317,8 @@ eq_obj..                                    obj                     =e= + sum((T
                                                                         + sum((T,G_CO),  C_c(G_CO)  *x_c(T,G_CO))
                                                                         + sum((T,G_HR),  C_h(G_HR)  *x_h(T,G_HR))
                                                                         - sum((T,G_HR),  pi_h(T)    *x_h(T,G_HR))
-                                                                        + sum((G_HR),    C_capacity(G_HR)    *Y_h(G_HR))
+                                                                        + sum((G_HR),    C_capacity_g(G_HR) *Y_h(G_HR))
+                                                                        + sum((S),       C_capacity_s(S)    *Y_s(S))
 
 ;
 

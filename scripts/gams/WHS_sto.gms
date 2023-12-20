@@ -13,8 +13,8 @@ option optcr = 0.0001
 * ======================================================================
 $setglobal  WH_name         DC_S
 $setglobal  DH_name         CPH
-* $setglobal  solve_mode      ITERATIVE
-$setglobal  solve_mode      UNIQUE
+$setglobal  solve_mode      ITERATIVE
+* $setglobal  solve_mode      UNIQUE
 $setglobal  heat_price      25
 
 $setglobal  dir_out         ..\..\results\%DH_name%\%WH_name%
@@ -256,15 +256,19 @@ C_opex_s(S)                       'Storage Fixed operational costs (EUR/MW)'
 C_capacity_s(S)                   'Storage Capacity-related costs (EUR/MW)'
 ;
 
-AF_g('HP_EHR')        = (0.04*(1.04**25))/((1.04**25)-1);
-C_capex_g('HP_EHR')   = 0.71246*1e6;
-C_opex_g('HP_EHR')    = 2127;
-C_capacity_g(G)       = AF_g(G)*C_capex_g(G) + C_opex_g(G);
+AF_g('HP_EHR')          = (0.04*(1.04**25))/((1.04**25)-1);
+C_capex_g('HP_EHR')     = 0.71246*1e6;
+C_opex_g('HP_EHR')      = 2127;
+C_capacity_g(G)         = AF_g(G)*C_capex_g(G) + C_opex_g(G);
 
-AF_s('sto-wh')        = (0.04*(1.04**25))/((1.04**25)-1);
-C_capex_s('sto-wh')   = 0.115*1e6;
-C_opex_s('sto-wh')    = 0;
-C_capacity_s(S)       = AF_s(S)*C_capex_s(S) + C_opex_s(S);
+AF_s('PCM')             = (0.04*(1.04**25))/((1.04**25)-1);
+AF_s('WT')              = (0.04*(1.04**25))/((1.04**25)-1);
+C_capex_s('PCM')        = 0.1150*1e6;
+C_capex_s('WT')         = 0.0165*1e6;
+C_opex_s('PCM')         = 0;
+C_opex_s('WT')          = 0;
+
+C_capacity_s(S)         = AF_s(S)*C_capex_s(S) + C_opex_s(S);
 
 * ======================================================================
 * VARIABLES
@@ -272,6 +276,8 @@ C_capacity_s(S)       = AF_s(S)*C_capex_s(S) + C_opex_s(S);
 * ----- Variable declaration -----
 FREE VARIABLES
 obj                     'Cost of DH system (EUR)'
+OPEX                    'Cost of DH system - Operation (EUR)'
+CAPEX                   'Cost of DH system - Capacity (EUR)'
 ;
 
 POSITIVE VARIABLES
@@ -296,6 +302,10 @@ x_s(T,S,SS)             'Storage charge/discharge (MWh)'
 * ----- Equation declaration -----
 EQUATIONS
 eq_obj                      'Objective function - Cost of DH system'
+
+eq_opex           'Cost of DH system - Operation'
+eq_capex            'Cost of DH system - Capacity'
+
 eq_cold_balance(T)          'Cold balance'
 
 eq_cold_maximum(T,G)        'Maximum cold production'
@@ -319,8 +329,19 @@ eq_obj..                                    obj                     =e= + sum((T
                                                                         - sum((T,G_HR),  pi_h(T)    *x_h(T,G_HR))
                                                                         + sum((G_HR),    C_capacity_g(G_HR) *Y_h(G_HR))
                                                                         + sum((S),       C_capacity_s(S)    *Y_s(S))
-
 ;
+
+eq_opex..                                   OPEX                    =e= + sum((T,G),     C_f(T,G)   *x_f(T,G)) 
+                                                                        + sum((T,G_CO),  C_c(G_CO)  *x_c(T,G_CO))
+                                                                        + sum((T,G_HR),  C_h(G_HR)  *x_h(T,G_HR))
+                                                                        - sum((T,G_HR),  pi_h(T)    *x_h(T,G_HR))
+                                                                        
+                                                                        + sum((G_HR),    C_opex_g(G_HR) *Y_h(G_HR))
+                                                                        + sum((S),       C_opex_s(S)    *Y_s(S))
+                                                                        ;
+
+eq_capex..                                  CAPEX                   =e= + sum((G_HR),    AF_g(G_HR)*C_capex_g(G_HR) *Y_h(G_HR))
+                                                                        + sum((S),       AF_s(S)*C_capex_s(S)       *Y_s(S));
 
 eq_cold_balance(T)..                        sum(G, x_c(T,G)) + sum(S, x_s(T,S,'discharge') - x_s(T,S,'charge')) =e= D(t);
 

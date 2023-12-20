@@ -10,10 +10,10 @@ $onEmpty
 * ======================================================================
 * Control flags
 * ======================================================================
-$setglobal  WH_name         DC
+$setglobal  WH_name         MET
 $setglobal  DH_name         CPH
-* $setglobal  solve_mode      ITERATIVE
-$setglobal  solve_mode      UNIQUE
+$setglobal  solve_mode      ITERATIVE
+*$setglobal  solve_mode      UNIQUE
 $setglobal  heat_price      19
 
 $setglobal  dir_out         ..\..\results\%DH_name%\%WH_name%
@@ -219,6 +219,8 @@ C_capacity_g(G)       = AF_g(G)*C_capex_g(G) + C_opex_g(G);
 * ----- Variable declaration -----
 FREE VARIABLES
 obj                     'Cost of DH system (EUR)'
+OPEX                   'Operational expenditure (EUR)'
+CAPEX                   'Capital expenditure (EUR)'
 ;
 
 POSITIVE VARIABLES
@@ -236,6 +238,9 @@ x_c(T,G)                'Production of cold (MWh)'
 * ----- Equation declaration -----
 EQUATIONS
 eq_obj                      'Objective function - Cost of DH system'
+eq_capex                    'Capital expenditure'
+eq_opex                     'Operational expenditure'
+
 eq_cold_balance(T)          'Cold balance'
 
 eq_cold_maximum(T,G)        'Maximum cold production'
@@ -251,9 +256,20 @@ eq_obj..                                    obj                     =e= + sum((T
                                                                         + sum((T,G_CO),  C_c(G_CO)  *x_c(T,G_CO))
                                                                         + sum((T,G_HR),  C_h(G_HR)  *x_h(T,G_HR))
                                                                         - sum((T,G_HR),  pi_h(T)    *x_h(T,G_HR))
-                                                                        + sum((G_HR),    C_capacity(G_HR)    *Y_h(G_HR))
+                                                                        + sum((G_HR),    C_capacity_g(G_HR)    *Y_h(G_HR))
 
 ;
+
+eq_opex..                                   OPEX                    =e= + sum((T,G),     C_f(T,G)   *x_f(T,G)) 
+                                                                        + sum((T,G_CO),  C_c(G_CO)  *x_c(T,G_CO))
+                                                                        + sum((T,G_HR),  C_h(G_HR)  *x_h(T,G_HR))
+                                                                        - sum((T,G_HR),  pi_h(T)    *x_h(T,G_HR))
+                                                                        
+                                                                        + sum((G_HR),    C_opex_g(G_HR) *Y_h(G_HR))
+                                                                        ;
+
+eq_capex..                                  CAPEX                   =e= + sum((G_HR),    AF_g(G_HR)*C_capex_g(G_HR) *Y_h(G_HR));
+
 
 eq_cold_balance(T)..                        sum(G, x_c(T,G))        =e= D(t);
 

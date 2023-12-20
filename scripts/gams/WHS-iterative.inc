@@ -18,9 +18,9 @@ all_eqs.optfile = 1;
 ACRONYMS MC_HR      'Marginal cost of heat recovery';
 SETS
 KPI                 'Output indicator'
-/'pi_h', 'obj', 'Y_h', 'cold_share'/
+/'pi_h', 'obj', 'CAPEX', 'OPEX', 'Cap: HP', 'Cap: PCM', 'Cap: WT', 'cold_share', 'NPV', 'PBT'/
 IDX                 'Iteration number'
-/00*50/
+/00*30/
 ;
 
 PARAMETERS
@@ -39,8 +39,16 @@ loop(IDX,
     logResults(IDX, 'pi_h')$(ord(IDX)=1)    = MC_HR;
     logResults(IDX, 'pi_h')$(ord(IDX)<>1)   = EPS + ord(IDX)-1;
     logResults(IDX, 'obj')                  = EPS + obj.l;
-    logResults(IDX, 'Y_h')                  = EPS + Y_h.l('HP_EHR');
+    logResults(IDX, 'CAPEX')                = EPS + CAPEX.l;
+    logResults(IDX, 'OPEX')                 = EPS + OPEX.l;
+    logResults(IDX, 'Cap: HP')              = EPS + Y_h.l('HP_EHR');
+* put switch to storage hee, or include an all encompasing set to all techs
+*    logResults(IDX, 'Cap: PCM')             = EPS + Y_s.l('PCM');
+*    logResults(IDX, 'Cap: WT')              = EPS + Y_s.l('WT');
     logResults(IDX, 'cold_share')           = EPS + sum((G_HR(G),T), x_c.l(T, G_HR)) / sum((G,T), x_c.l(T, G));
+    logResults(IDX, 'NPV')                  = EPS - CAPEX.l + (logResults('00','OPEX') - OPEX.l)/AF_g('HP_EHR');
+    logResults(IDX, 'PBT')                  = EPS + CAPEX.l/((logResults('00','OPEX') - OPEX.l) + 0.000001)
+* fix this AF_g above!!
 );
 
 * ======================================================================

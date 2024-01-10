@@ -4,7 +4,7 @@
 
 
 * ----- NOTES -----
-* -
+* - x_f_dh and x_f_wh could be merged again into x_f.
 
 * ======================================================================
 *  SETUP:
@@ -12,8 +12,8 @@
 * ----- Options -----
 $onEmpty
 option optcr = 0.0001
-option limrow = 50
-option limcol = 50
+* option limrow = 50
+* option limcol = 50
 
 * ----- Control flags -----
 $SetGlobal DH_name      CPH
@@ -313,7 +313,9 @@ C_k(G)$(G_HR(G))                = GNRT_DATA(G,'annuity factor')*GNRT_DATA(G,'cap
 * ======================================================================
 * ----- Variable declaration -----
 FREE VARIABLES
-obj(A)                  'Total cost for agent (EUR)'
+* obj(A)                  'Total cost for agent (EUR)'
+tc_DH                   'Total cost for DH system (EUR)'
+tc_WH                   'Total cost for WH source (EUR)'
 ;
 
 POSITIVE VARIABLES
@@ -337,17 +339,21 @@ Y_h(G)                  'Heat capacity (MWh)'
 * ======================================================================
 * ----- Equation declaration -----
 EQUATIONS
-eq_obj_DH                   'Objective function - Total cost of DH system'
-eq_obj_WH                   'Objective function - Total cost of WH system'
+eq_tc_DH_ref                'Objective function - Total cost of DH system for reference case'
+eq_tc_DH_whr                'Objective function - Total cost of DH system for whr case'
+eq_tc_WH_ref                'Objective function - Total cost of WH source for reference case'
+eq_tc_WH_whr                'Objective function - Total cost of WH source for whr case'
 
-eq_heat_balance(T)          'Heat balance'
-eq_cold_balance(T)          'Cold balance'
+eq_heat_balance_ref(T)      'Heat balance for reference case'
+eq_heat_balance_whr(T)      'Heat balance for whr case'
+eq_cold_balance_ref(T)      'Cold balance for reference case'
+eq_cold_balance_whr(T)      'Cold balance for whr case'
 
 eq_conversion_BP(T,G)       'Energy conversion for backpressure generators'
 eq_conversion_EX(T,G)       'Energy conversion for extraction generators'
 eq_conversion_HO(T,G)       'Energy conversion for heat-only generators'
-eq_conversion_HR(T,G)       'Energy conversion for heat-recovery generators'
-*eq_conversion_HR(T,G)       'Energy conversion for heat-recovery generators'
+eq_conversion_HR_heat(T,G)  'Energy conversion for heat-recovery generators (heat)'
+eq_conversion_HR_cold(T,G)  'Energy conversion for heat-recovery generators (cold)'
 eq_conversion_CO(T,G)       'Energy conversion for cold-only generators'
 
 eq_ratio_BP(T,G)            'Electricity-to-heat ratio for backpressure generators'
@@ -371,29 +377,43 @@ eq_heat_maximum(T,G)        'Maximum heat production'
 * ----- Equation definition -----
 
 * check this below
-eq_obj_DH..                                    obj('DH')            =e= + sum((T,G_DH),  C_f(T,G_DH)    * x_f_dh(T,G_DH)) 
-                                                                        + sum((T,G_HO),  C_h(G_HO)      * x_h(T,G_HO))
-                                                                        + sum((T,G_CHP), C_e(G_CHP)     * x_e(T,G_CHP))
-                                                                        - sum((T,G_CHP), pi_e(T)        * x_e(T,G_CHP))
-                                                                        + sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
-                                                                        ;
 
-eq_obj_WH..                                    obj('WH')            =e= + sum((T,G_WH),  C_f(T,G_WH)    * x_f_wh(T,G_WH)) 
-                                                                        + sum((T,G_CO),  C_c(G_CO)      * x_c(T,G_CO))
-                                                                        + sum((T,G_HR),  C_h(G_HR)      * x_hr(T,G_HR))
-                                                                        - sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
-                                                                        + sum(G_HR,      C_k(G_HR)      * Y_h(G_HR))
-;   
+eq_tc_DH_ref..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G_DH)    * x_f_dh(T,G_DH)) 
+                                                        + sum((T,G_HO),  C_h(G_HO)      * x_h(T,G_HO))
+                                                        + sum((T,G_CHP), C_e(G_CHP)     * x_e(T,G_CHP))
+                                                        - sum((T,G_CHP), pi_e(T)        * x_e(T,G_CHP))
+                                                        ;
 
+eq_tc_DH_whr..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G_DH)    * x_f_dh(T,G_DH)) 
+                                                        + sum((T,G_HO),  C_h(G_HO)      * x_h(T,G_HO))
+                                                        + sum((T,G_CHP), C_e(G_CHP)     * x_e(T,G_CHP))
+                                                        - sum((T,G_CHP), pi_e(T)        * x_e(T,G_CHP))
+                                                        + sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
+                                                        ;
 
-eq_heat_balance(T)..                        sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_hr(T,G_HR))        =e= D_h(t);
-eq_cold_balance(T)..                        sum(G_WH, x_c(T,G_WH))                                  =e= D_c(t);
+eq_tc_WH_ref..                              tc_WH   =e= + sum((T,G_CO),  C_f(T,G_CO)    * x_f_wh(T,G_CO)) 
+                                                        + sum((T,G_CO),  C_c(G_CO)      * x_c(T,G_CO))
+                                                        ;   
+
+eq_tc_WH_whr..                              tc_WH   =e= + sum((T,G_WH),  C_f(T,G_WH)    * x_f_wh(T,G_WH)) 
+                                                        + sum((T,G_CO),  C_c(G_CO)      * x_c(T,G_CO))
+                                                        + sum((T,G_HR),  C_h(G_HR)      * x_hr(T,G_HR))
+                                                        - sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
+                                                        + sum(G_HR,      C_k(G_HR)      * Y_h(G_HR))
+                                                        ;   
+
+eq_heat_balance_ref(T)..                    sum(G_DH, x_h(T,G_DH))                                  =e= D_h(t);
+eq_heat_balance_whr(T)..                    sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_hr(T,G_HR))        =e= D_h(t);
+eq_cold_balance_ref(T)..                    sum(G_CO, x_c(T,G_CO))                                  =e= D_c(t);
+eq_cold_balance_whr(T)..                    sum(G_WH, x_c(T,G_WH))                                  =e= D_c(t);
+
 
 eq_conversion_BP(T,G)$(G_BP(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + x_h(T,G);
 eq_conversion_EX(T,G)$(G_EX(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + beta_v(G)*x_h(T,G);
 eq_conversion_HO(T,G)$(G_HO(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_h(T,G);
-eq_conversion_HR(T,G)$(G_HR(G))..           (eta(T,G)+1) * x_f_wh(T,G)      =e= x_hr(T,G);
-eq_conversion_CO(T,G)$(G_WH(G))..           eta(T,G)     * x_f_wh(T,G)      =e= x_c(T,G);
+eq_conversion_HR_heat(T,G)$(G_HR(G))..      (eta(T,G)+1) * x_f_wh(T,G)      =e= x_hr(T,G);
+eq_conversion_HR_cold(T,G)$(G_HR(G))..      eta(T,G)     * x_f_wh(T,G)      =e= x_c(T,G);
+eq_conversion_CO(T,G)$(G_CO(G))..           eta(T,G)     * x_f_wh(T,G)      =e= x_c(T,G);
 
 eq_ratio_BP(T,G)$G_BP(G)..                  x_e(T,G)                        =e= beta_b(G)*x_h(T,G);
 eq_ratio_EX(T,G)$G_EX(G)..                  x_e(T,G)                        =g= beta_b(G)*x_h(T,G);
@@ -420,21 +440,27 @@ all_eqs             'All equations'
 /all/
 ;
 
-* all_eqs.optfile = 1;
+model 
+mdl_DH_ref               'DH system reference case'
+/eq_tc_DH_ref, eq_heat_balance_ref, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_fuel_maximum/
 
-File empinfo /'%emp.info%'/; putclose empinfo
-    'equilibrium' /
-    'min', obj('DH'), 'x_f_dh', 'x_h', 'x_e',         eq_obj_DH, 'eq_heat_balance', 'eq_fuel_maximum', 'eq_conversion_HO', 'eq_conversion_EX', 'eq_conversion_BP', 'eq_ramping_up', 'eq_ramping_down', 'eq_ratio_EX', 'eq_ratio_BP'/
-    'min', obj('WH'), 'x_f_wh', 'x_c', 'x_hr', 'Y_h', eq_obj_WH, 'eq_cold_balance', 'eq_cold_maximum', 'eq_conversion_CO', 'eq_conversion_HR', 'eq_heat_maximum'/
+mdl_WH_ref               'WH source reference case'
+/eq_tc_WH_ref, eq_cold_balance_ref, eq_conversion_CO, eq_cold_maximum/
 ;
 
+mdl_DH_ref.optfile = 1;
+mdl_WH_ref.optfile = 1;
 
 
 * ======================================================================
 * SOLVE
 * ======================================================================
-solve all_eqs using EMP;
+* x_hr.fx(T,G_HR) = 0;
+solve mdl_DH_ref using LP minimizing tc_DH;
 
+solve mdl_WH_ref using LP minimizing tc_WH;
+
+execute_unload 'output.gdx'
 * * ======================================================================
 * * POST-PROCESSING
 * * ======================================================================

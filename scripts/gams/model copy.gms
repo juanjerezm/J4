@@ -47,8 +47,8 @@ SET A                   'Agents'
 
 SET T                   'Timesteps' 
 * TODO: Adjust for variable length of time steps!!
-/T0001*T0040/
-*/T0001*T8760/
+*/T0001*T0040/
+/T0001*T8760/
 ;
 
 SET U                   'Units'
@@ -311,8 +311,21 @@ beta_v(G)$G_EX(G)               = GNRT_DATA(G,'Cv');
 * ----- Parameter operations -----
 C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F));
 
-PARAMETER Y_h;
-Y_h('HP_EHR') = 100;
+* PARAMETER Y_h;
+* Y_h('HP_EHR') = 100;
+
+* ----- Investment decision parameters ----- *
+PARAMETER 
+AF_g(G)                           'Generator Annuity factor (-)'
+C_capex_g(G)                      'Generator Capital cost (EUR/MW)'   
+C_opex_g(G)                       'Generator Fixed operational costs (EUR/MW)'
+C_capacity_g(G)                   'Generator Capacity-related costs (EUR/MW)'
+;
+
+AF_g('HP_EHR')        = (0.04*(1.04**25))/((1.04**25)-1);
+C_capex_g('HP_EHR')   = 0.71246*1e6;
+C_opex_g('HP_EHR')    = 2127;
+C_capacity_g(G)       = AF_g(G)*C_capex_g(G) + C_opex_g(G);
 
 * ======================================================================
 * VARIABLES
@@ -330,7 +343,7 @@ x_hr(T,G)               'Production of recovered heat (MWh)'
 x_e(T,G)                'Production of electricity (MWh)'
 x_c(T,G)                'Production of cold (MWh)'
 * SOC(T,S)                'State-of-charge of storage (MWh)'
-* Y_h(G)                  'Heat capacity (MWh)'
+Y_h(G)                  'Heat capacity (MWh)'
 ;
 
 * SOS1 VARIABLES
@@ -388,6 +401,7 @@ eq_obj_WH..                                    obj('WH')            =e= + sum((T
                                                                         + sum((T,G_CO),  C_c(G_CO)      * x_c(T,G_CO))
                                                                         + sum((T,G_HR),  C_h(G_HR)      * x_hr(T,G_HR))
                                                                         - sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
+                                                                        + sum(G_HR,  C_capacity_g(G_HR)*40/8760        * Y_h(G_HR))
 ;   
 
 
@@ -429,8 +443,8 @@ all_eqs             'All equations'
 
 File empinfo /'%emp.info%'/; putclose empinfo
     'equilibrium' /
-    'min', obj('DH'), 'x_f_dh', 'x_h', 'x_e',  eq_obj_DH, 'eq_heat_balance', 'eq_fuel_maximum', 'eq_conversion_HO', 'eq_conversion_EX', 'eq_conversion_BP', 'eq_ramping_up', 'eq_ramping_down', 'eq_ratio_EX', 'eq_ratio_BP'/
-    'min', obj('WH'), 'x_f_wh', 'x_c', 'x_hr', eq_obj_WH, 'eq_cold_balance', 'eq_cold_maximum', 'eq_heat_maximum', 'eq_conversion_CO', 'eq_conversion_HR' /
+    'min', obj('DH'), 'x_f_dh', 'x_h', 'x_e',         eq_obj_DH, 'eq_heat_balance', 'eq_fuel_maximum', 'eq_conversion_HO', 'eq_conversion_EX', 'eq_conversion_BP', 'eq_ramping_up', 'eq_ramping_down', 'eq_ratio_EX', 'eq_ratio_BP'/
+    'min', obj('WH'), 'x_f_wh', 'x_c', 'x_hr', 'Y_h', eq_obj_WH, 'eq_cold_balance', 'eq_cold_maximum', 'eq_conversion_CO', 'eq_conversion_HR', 'eq_heat_maximum'/
 ;
 
 
@@ -471,6 +485,7 @@ solve all_eqs using EMP;
 * execute             'mkdir %dir_WH%'
 * execute_unload      '%dir_WH%\output.gdx'
 execute_unload 'output.gdx'
+DISPLAY Y_H.L, OBJ.L;
 
 * * --- Output MC of DH if EHR is disabled --- *
 * $ifi NOT %EHR% == YES

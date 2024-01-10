@@ -1,4 +1,0 @@
-,'type','cold capacity','ramping rate','VOM_c','VOM_h','aux'
-EC,CO,195.76,1,3,-,1
-FC,CO,195.76,1,0.01,-,1
-HP_EHR,HR,-,1,-,1.8,1

@@ -1,28 +1,31 @@
 * ======================================================================
 * DESCRIPTION:
-* ----------------------------------------------------------------------
+* ======================================================================
 
 
-* ======================================================================
-* NOTES:
-*.
+* ----- NOTES -----
+* -
 
 * ======================================================================
-*  Options
+*  SETUP:
 * ======================================================================
+* ----- Options -----
 $onEmpty
 option optcr = 0.0001
-* option limrow = 50
-* option limcol = 50
+option limrow = 50
+option limcol = 50
 
-* ======================================================================
-* Control flags
-* ======================================================================
+* ----- Control flags -----
+$SetGlobal DH_name      CPH
+
+* ----- Directories -----
 
 
-* ======================================================================
-*  Global scalars
-* ======================================================================
+* ----- Filenames -----
+
+
+* ----- Global scalars -----
+
 
 
 * ======================================================================
@@ -46,9 +49,7 @@ SET A                   'Agents'
 ;
 
 SET T                   'Timesteps' 
-* TODO: Adjust for variable length of time steps!!
-/T0001*T0040/
-* /T0001*T8760/
+/T0001*T8760/
 ;
 
 SET U                   'Units'
@@ -187,6 +188,7 @@ C_h(G)                  'Cost of heat production (EUR/MWh)'
 C_c(G)                  'Cost of cold production (EUR/MWh)'
 C_e(G)                  'Cost of electricity production (EUR/MWh)'
 C_f(T,G)                'Cost of fuel consumption (EUR/MWh)'
+C_k(G)                  'Cost per capacity (EUR/MW)'
 
 D_h(T)                  'Demand of heat (MW)'
 D_c(T)                  'Demand of cold (MW)'
@@ -256,17 +258,10 @@ $include    '../../data/common/ts-electricity-carbon.csv'
 $offDelim
 /
 
-* Y_c(G)
-* /
-* $onDelim
-* $include    '../../data/common/capacity-generator-wh.csv'
-* $offDelim
-* /
-
 Y_f(G)
 /
 $onDelim
-$include    '../../data/common/capacity-generator-dh.csv'
+$include    '../../data/portfolios/portfolio-capacity-%DH_name%.csv'
 $offDelim
 /
 ;
@@ -285,10 +280,10 @@ $offDelim
 ;
 
 * - Assigned parameters -
-C_e(G)$(G_CHP(G))               = GNRT_DATA(G,'VOM_e');
-C_h(G)$(G_HO(G))                = GNRT_DATA(G,'VOM_h');
-C_h(G)$(G_HR(G))                = GNRT_DATA(G,'VOM_h');
-C_c(G)$(G_CO(G))                = GNRT_DATA(G,'VOM_c');
+C_e(G)$(G_CHP(G))               = GNRT_DATA(G,'variable cost - electricity');
+C_h(G)$(G_HO(G))                = GNRT_DATA(G,'variable cost - heat');
+C_h(G)$(G_HR(G))                = GNRT_DATA(G,'variable cost - heat');
+C_c(G)$(G_CO(G))                = GNRT_DATA(G,'variable cost - cold');
 * Cost of heat for HO and HR can be merged.
 
 pi_f(T,F)                       = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
@@ -311,21 +306,7 @@ beta_v(G)$G_EX(G)               = GNRT_DATA(G,'Cv');
 * ----- Parameter operations -----
 Y_c(G_CO)                       = smax(T, D_c(T));
 C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F));
-
-
-
-* ----- Investment decision parameters ----- *
-PARAMETER 
-AF_g(G)                           'Generator Annuity factor (-)'
-C_capex_g(G)                      'Generator Capital cost (EUR/MW)'   
-C_opex_g(G)                       'Generator Fixed operational costs (EUR/MW)'
-C_capacity_g(G)                   'Generator Capacity-related costs (EUR/MW)'
-;
-
-AF_g('HP_EHR')        = (0.04*(1.04**25))/((1.04**25)-1);
-C_capex_g('HP_EHR')   = 712460;
-C_opex_g('HP_EHR')    = 2127;
-C_capacity_g(G)       = AF_g(G)*C_capex_g(G) + C_opex_g(G);
+C_k(G)$(G_HR(G))                = GNRT_DATA(G,'annuity factor')*GNRT_DATA(G,'capital cost') + GNRT_DATA(G,'fixed cost');
 
 * ======================================================================
 * VARIABLES
@@ -401,7 +382,7 @@ eq_obj_WH..                                    obj('WH')            =e= + sum((T
                                                                         + sum((T,G_CO),  C_c(G_CO)      * x_c(T,G_CO))
                                                                         + sum((T,G_HR),  C_h(G_HR)      * x_hr(T,G_HR))
                                                                         - sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
-                                                                        + sum(G_HR,      C_capacity_g(G_HR) * Y_h(G_HR))
+                                                                        + sum(G_HR,      C_k(G_HR)      * Y_h(G_HR))
 ;   
 
 
@@ -484,8 +465,6 @@ solve all_eqs using EMP;
 
 * execute             'mkdir %dir_WH%'
 * execute_unload      '%dir_WH%\output.gdx'
-execute_unload 'output.gdx'
-DISPLAY Y_H.L, OBJ.L;
 
 * * --- Output MC of DH if EHR is disabled --- *
 * $ifi NOT %EHR% == YES

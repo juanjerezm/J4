@@ -43,8 +43,8 @@ loop(IDX,
     logResults(IDX, 'OPEX')                 = EPS + OPEX.l;
     logResults(IDX, 'Cap: HP')              = EPS + Y_h.l('HP_EHR');
 * put switch to storage hee, or include an all encompasing set to all techs
-*    logResults(IDX, 'Cap: PCM')             = EPS + Y_s.l('PCM');
-*    logResults(IDX, 'Cap: WT')              = EPS + Y_s.l('WT');
+    logResults(IDX, 'Cap: PCM')             = EPS + Y_s.l('PCM');
+    logResults(IDX, 'Cap: WT')              = EPS + Y_s.l('WT');
     logResults(IDX, 'cold_share')           = EPS + sum((G_HR(G),T), x_c.l(T, G_HR)) / sum((G,T), x_c.l(T, G));
     logResults(IDX, 'NPV')                  = EPS - CAPEX.l + (logResults('00','OPEX') - OPEX.l)/AF_g('HP_EHR');
     logResults(IDX, 'PBT')                  = EPS + CAPEX.l/((logResults('00','OPEX') - OPEX.l) + 0.000001)

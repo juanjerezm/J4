@@ -11,21 +11,25 @@
 * ======================================================================
 * ----- Options -----
 $onEmpty
-option optcr = 0.0001
+* option optcr = 0.0001
 * option limrow = 50
 * option limcol = 50
 
 * ----- Control flags -----
-$SetGlobal DH_name      CPH
+$SetGlobal portfolio      'CPH'
+$SetGlobal scenario       'no-policy'
 
 * ----- Directories -----
-
+* this command works with windows specifically. Change \ to / for linux.
+$SetGlobal OutDir       '.\results\%portfolio%\%scenario%\'
+execute                 'mkdir %OutDir%';
 
 * ----- Filenames -----
 
 
 * ----- Global scalars -----
-
+SCALAR
+M3                      'Thousand multiplier'   /1E3/
 
 
 * ======================================================================
@@ -33,14 +37,13 @@ $SetGlobal DH_name      CPH
 * ======================================================================
 * ----- Set declaration -----
 SET
-A                       'Agents'
 T                       'Timesteps'
+*SS                      'Storage state (SOS1 set)'  
 U                       'Units'
 G(U)                    'Generators' 
 S(U)                    'Storages'
 F                       'Fuels'
 GF(G,F)                 'Generator-fuel mapping'
-*SS                      'Storage state (SOS1 set)'  
 ;
 
 * ----- Set definition -----
@@ -48,43 +51,44 @@ SET T                   'Timesteps'
 /T0001*T8760/
 ;
 
+* SET SS                  'Storage states (SOS1 set)'
+* /'charge', 'discharge'/
+* ;
+* 
+
 SET U                   'Units'
 /
 $onDelim
-$include    '../../data/common/name-unit.csv'
+$include    './data/common/name-unit.csv'
 $offDelim
 /;
-
 
 SET G(U)                'Generators'
 /
 $onDelim
-$include    '../../data/common/name-generator.csv'
+$include    './data/common/name-generator.csv'
 $offDelim
 /;
 
 SET S(U)                'Storages'
 /
 $onDelim
-$include    '../../data/common/name-storage.csv'
+$include    './data/common/name-storage.csv'
 $offDelim
 /;
 
 SET F                   'Fuels'
 /
 $onDelim
-$include    '../../data/common/name-fuel.csv'
+$include    './data/common/name-fuel.csv'
 $offDelim
 /;
 
-* SET SS                  'Storage states (SOS1 set)'
-* /'charge', 'discharge'/
-* ;
-* 
+
 SET GF(G,F)             'Generator-fuel mapping'
 /
 $onDelim
-$include    '../../data/common/map-generator-fuel.csv'
+$include    './data/common/map-generator-fuel.csv'
 $offDelim
 /;
 
@@ -100,28 +104,28 @@ ACRONYMS timeVar 'time-variable data';
 SET GnrtAttrs(*)        'Auxiliary set to load generator data'
 /
 $onDelim
-$include    '../../data/common/attribute-generator.csv'
+$include    './data/common/attribute-generator.csv'
 $offDelim
 /;
 
 SET StrgAttrs(*)        'Auxiliary set to load storage data'
 /
 $onDelim
-$include    '../../data/common/attribute-storage.csv'
+$include    './data/common/attribute-storage.csv'
 $offDelim
 /;
 
 SET FuelAttrs(*)        'Auxiliary set to load fuel data'
 /
 $onDelim
-$include    '../../data/common/attribute-fuel.csv'
+$include    './data/common/attribute-fuel.csv'
 $offDelim
 /;
 
 * --- Load data values --- *
 TABLE GNRT_DATA(G,GnrtAttrs)    'Generator data'
 $onDelim
-$include    '../../data/common/data-generator.csv'
+$include    './data/common/data-generator.csv'
 $offDelim
 ;
 
@@ -133,7 +137,7 @@ $offDelim
 
 TABLE FUEL_DATA(F,FuelAttrs)    'Fuel data'
 $onDelim
-$include    '../../data/common/data-fuel.csv'
+$include    './data/common/data-fuel.csv'
 $offDelim
 ;
 
@@ -219,46 +223,47 @@ beta_v(G)               'Cv coefficient of CHPs (-)'
 
 * ----- Parameter definition -----
 * - One-dimensional parameters -
+$offlisting
 PARAMETERS
 D_h(T)
 /
 $onDelim
-$include    '../../data/common/ts-demand-heat.csv'
+$include    './data/common/ts-demand-heat.csv'
 $offDelim
 /
 
 D_c(T)
 /
 $onDelim
-$include    '../../data/common/ts-demand-cold.csv'
+$include    './data/common/ts-demand-cold.csv'
 $offDelim
 /
 
 pi_e(T)
 /
 $onDelim
-$include    '../../data/common/ts-electricity-price.csv'
+$include    './data/common/ts-electricity-price.csv'
 $offDelim
 /
 
 pi_hr(T)
 /
 $onDelim
-$include    '../../data/common/ts-MC.csv'
+$include    './data/common/ts-heat-price.csv'
 $offDelim
 /
 
 qc_e(T)
 /
 $onDelim
-$include    '../../data/common/ts-electricity-carbon.csv'
+$include    './data/common/ts-electricity-carbon.csv'
 $offDelim
 /
 
 Y_f(G)
 /
 $onDelim
-$include    '../../data/portfolios/portfolio-capacity-%DH_name%.csv'
+$include    './data/portfolios/portfolio-capacity-%portfolio%.csv'
 $offDelim
 /
 ;
@@ -266,22 +271,22 @@ $offDelim
 * - Multi-dimensional parameters -
 TABLE F_a(T,G)
 $onDelim
-$include    '../../data/common/ts-generator-availability.csv'
+$include    './data/common/ts-generator-availability.csv'
 $offDelim
 ;
 
 TABLE eta(T,G)
 $onDelim
-$include    '../../data/common/ts-generator-efficiency.csv'
+$include    './data/common/ts-generator-efficiency.csv'
 $offDelim
 ;
+$onlisting
 
 * - Assigned parameters -
 C_e(G)$(G_CHP(G))               = GNRT_DATA(G,'variable cost - electricity');
 C_h(G)$(G_HO(G))                = GNRT_DATA(G,'variable cost - heat');
 C_h(G)$(G_HR(G))                = GNRT_DATA(G,'variable cost - heat');
 C_c(G)$(G_CO(G))                = GNRT_DATA(G,'variable cost - cold');
-* Cost of heat for HO and HR can be merged.
 
 pi_f(T,F)                       = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
 pi_q(F)                         = FUEL_DATA(F,'carbon price');
@@ -314,14 +319,17 @@ tc_WH                       'Total cost for WH source (EUR)'
 ;
 
 POSITIVE VARIABLES
-x_f_dh(T,G)                 'Consumption of fuel (MWh)'
-x_f_wh(T,G)                 'Consumption of fuel (MWh)'
+x_f_DH(T,G)                 'Consumption of fuel of DH generator (MWh)'
+x_f_WH(T,G)                 'Consumption of fuel of WH generator (MWh)'
 x_h(T,G)                    'Production of heat (MWh)'
 x_hr(T,G)                   'Production of recovered heat (MWh)'
 x_e(T,G)                    'Production of electricity (MWh)'
 x_c(T,G)                    'Production of cold (MWh)'
 * SOC(T,S)                    'State-of-charge of storage (MWh)'
 Y_h(G)                      'Heat capacity (MWh)'
+
+w_q_DH(T,G)                 'Carbon emissions of DH generator (ton/MWh)'
+w_q_WH(T,G)                 'Carbon emissions of WH generator (ton/MWh)'
 ;
 
 * SOS1 VARIABLES
@@ -335,14 +343,14 @@ Y_h(G)                      'Heat capacity (MWh)'
 * ----- Equation declaration -----
 EQUATIONS
 eq_tc_DH_ref                'Objective function - Total cost of DH system for reference case'
-eq_tc_DH_whr                'Objective function - Total cost of DH system for whr case'
+eq_tc_DH_int                'Objective function - Total cost of DH system for integrated case'
 eq_tc_WH_ref                'Objective function - Total cost of WH source for reference case'
-eq_tc_WH_whr                'Objective function - Total cost of WH source for whr case'
+eq_tc_WH_int                'Objective function - Total cost of WH source for whr case'
 
 eq_heat_balance_ref(T)      'Heat balance for reference case'
-eq_heat_balance_whr(T)      'Heat balance for whr case'
+eq_heat_balance_int(T)      'Heat balance for integrated case'
 eq_cold_balance_ref(T)      'Cold balance for reference case'
-eq_cold_balance_whr(T)      'Cold balance for whr case'
+eq_cold_balance_int(T)      'Cold balance for integrated case'
 
 eq_conversion_BP(T,G)       'Energy conversion for backpressure generators'
 eq_conversion_EX(T,G)       'Energy conversion for extraction generators'
@@ -366,6 +374,9 @@ eq_heat_maximum(T,G)        'Maximum heat production'
 * eq_storage_SOC_min(T,S)     'Storage minimum state of charge'
 * eq_storage_SOC_max(T,S)     'Storage maximum state of charge'
 * eq_storage_flow_max(T,S,SS) 'Storage throughput limit'
+
+eq_emissions_DH(T,G)        'Carbon emissions of DH generator'
+eq_emissions_WH(T,G)        'Carbon emissions of WH generator'
 ;
 
 * ----- Equation definition -----
@@ -375,7 +386,7 @@ eq_tc_DH_ref..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G
                                                         - sum((T,G_CHP), pi_e(T)        * x_e(T,G_CHP))
                                                         ;
 
-eq_tc_DH_whr..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G_DH)    * x_f_dh(T,G_DH)) 
+eq_tc_DH_int..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G_DH)    * x_f_dh(T,G_DH)) 
                                                         + sum((T,G_HO),  C_h(G_HO)      * x_h(T,G_HO))
                                                         + sum((T,G_CHP), C_e(G_CHP)     * x_e(T,G_CHP))
                                                         - sum((T,G_CHP), pi_e(T)        * x_e(T,G_CHP))
@@ -386,7 +397,7 @@ eq_tc_WH_ref..                              tc_WH   =e= + sum((T,G_CO),  C_f(T,G
                                                         + sum((T,G_CO),  C_c(G_CO)      * x_c(T,G_CO))
                                                         ;   
 
-eq_tc_WH_whr..                              tc_WH   =e= + sum((T,G_WH),  C_f(T,G_WH)    * x_f_wh(T,G_WH)) 
+eq_tc_WH_int..                              tc_WH   =e= + sum((T,G_WH),  C_f(T,G_WH)    * x_f_wh(T,G_WH)) 
                                                         + sum((T,G_CO),  C_c(G_CO)      * x_c(T,G_CO))
                                                         + sum((T,G_HR),  C_h(G_HR)      * x_hr(T,G_HR))
                                                         - sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
@@ -394,9 +405,9 @@ eq_tc_WH_whr..                              tc_WH   =e= + sum((T,G_WH),  C_f(T,G
                                                         ;   
 
 eq_heat_balance_ref(T)..                    sum(G_DH, x_h(T,G_DH))                                  =e= D_h(t);
-eq_heat_balance_whr(T)..                    sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_hr(T,G_HR))        =e= D_h(t);
+eq_heat_balance_int(T)..                    sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_hr(T,G_HR))        =e= D_h(t);
 eq_cold_balance_ref(T)..                    sum(G_CO, x_c(T,G_CO))                                  =e= D_c(t);
-eq_cold_balance_whr(T)..                    sum(G_WH, x_c(T,G_WH))                                  =e= D_c(t);
+eq_cold_balance_int(T)..                    sum(G_WH, x_c(T,G_WH))                                  =e= D_c(t);
 
 eq_conversion_BP(T,G)$(G_BP(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + x_h(T,G);
 eq_conversion_EX(T,G)$(G_EX(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + beta_v(G)*x_h(T,G);
@@ -421,22 +432,26 @@ eq_heat_maximum(T,G)$(G_HR(G))..            x_hr(T,G)                       =l= 
 * eq_storage_SOC_max(T,S)..                   SOC(T,S)                =l= F_SOC_max(S)*Y_s(S);
 * eq_storage_flow_max(T,S,SS)..               x_s(T,S,SS)             =l= F_s(S)*Y_s(S);
 
+eq_emissions_DH(T,G)$G_DH(G)..                   w_q_dh(T,G)                =e= sum(F$GF(G,F), qc_f(T,F)*x_f_dh(T,G))/M3;
+eq_emissions_WH(T,G)$G_WH(G)..                   w_q_wh(T,G)                =e= sum(F$GF(G,F), qc_f(T,F)*x_f_wh(T,G))/M3;
+
+
 * ======================================================================
 * MODEL
 * ======================================================================
 * ----- Model definition -----
 model 
 mdl_WH_ref               'WH source, reference case'
-/eq_tc_WH_ref, eq_cold_balance_ref, eq_conversion_CO, eq_cold_maximum/
+/eq_tc_WH_ref, eq_cold_balance_ref, eq_conversion_CO, eq_cold_maximum, eq_emissions_WH/
 
 mdl_DH_ref               'DH system, reference case'
-/eq_tc_DH_ref, eq_heat_balance_ref, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_fuel_maximum/
+/eq_tc_DH_ref, eq_heat_balance_ref, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_fuel_maximum, eq_emissions_DH/
 
-mdl_WH_whr               'WH source, whr case'
-/eq_tc_WH_whr, eq_cold_balance_whr, eq_conversion_CO, eq_conversion_HR_cold, eq_conversion_HR_heat, eq_cold_maximum, eq_heat_maximum/
+mdl_WH_int               'WH source, integrated case'
+/eq_tc_WH_int, eq_cold_balance_int, eq_conversion_CO, eq_conversion_HR_cold, eq_conversion_HR_heat, eq_cold_maximum, eq_heat_maximum, eq_emissions_WH/
 
-mdl_DH_whr               'DH system, whr case'
-/eq_tc_DH_whr, eq_heat_balance_whr, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_fuel_maximum/
+mdl_DH_int               'DH system, integrated case'
+/eq_tc_DH_int, eq_heat_balance_int, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_fuel_maximum, eq_emissions_Dh/
 ;
 
 mdl_WH_ref.optfile = 1;
@@ -447,28 +462,29 @@ mdl_DH_whr.optfile = 1;
 * ======================================================================
 * SOLVE
 * ======================================================================
+* this below could be simplified to be two gdx files, each including WH and DH results. One for reference case, one for integrated case.
 * ----- Reference case for waste heat source -----
 solve mdl_WH_ref using LP minimizing tc_WH;
-execute_unload 'OutputVars-WH_ref.gdx' tc_WH, x_f_wh, x_c;
+execute_unload '%OutDir%/OutputVars-WH_ref.gdx' tc_WH, x_f_wh, x_c, w_q_wh;
 
 * ----- Reference case for district heating system -----
 solve mdl_DH_ref using LP minimizing tc_DH;
-execute_unload 'OutputVars-DH_ref.gdx' tc_DH, x_f_dh, x_h, x_e;
+execute_unload '%OutDir%/OutputVars-DH_ref.gdx' tc_DH, x_f_dh, x_h, x_e, w_q_dh;
 
-* Determines if WHR is accepted by the DH system
+* WHR is accepted into DH system only if price of recovered heat is lower than marginal cost of DH system
 lambda_h(T)             = eq_heat_balance_ref.m(T);
-F_a(T,G_HR)             = 0 + 1$(pi_hr(T) <= lambda_h(T));
+F_a(T,G_HR)             = 0 + 1$(pi_hr(T) < lambda_h(T));
 
 * ----- WHR case for waste heat source -----
 solve mdl_WH_whr using LP minimizing tc_WH;
-execute_unload 'OutputVars-WH_whr.gdx' tc_WH, x_f_wh, x_c, x_hr, Y_h, pi_hr;
+execute_unload '%OutDir%/OutputVars-WH_int.gdx' tc_WH, x_f_wh, x_c, x_hr, Y_h, w_q_wh;
 
 * Fixes WHR production for use in the DH model
 x_hr.fx(T,G_HR)         = x_hr.l(T,G_HR);
 
 * ----- WHR case for district heating system -----
 solve mdl_DH_whr using LP minimizing tc_DH;
-execute_unload 'OutputVars-DH_whr.gdx' tc_DH, x_f_dh, x_h, x_e, x_hr;
+execute_unload '%OutDir%/OutputVars-DH_int.gdx' tc_DH, x_f_dh, x_h, x_e, x_hr, w_q_dh;
 
 * * ======================================================================
 * * POST-PROCESSING
@@ -483,29 +499,7 @@ execute_unload 'OutputVars-DH_whr.gdx' tc_DH, x_f_dh, x_h, x_e, x_hr;
 * * fuel_use(T,F) = sum(G$GF(G,F), x_f.l(T,G));
 * * fuel_sharE(F) = sum(T, fuel_use(T,F))/sum((T,G), x_f.l(T,G));
 
-* * ======================================================================
-* * OUTPUT
-* * ======================================================================
-* * --- Create output directory and unload GDX file --- *
-* $setglobal  dir_DH  ..\..\results\%DH_name%
-* $ifi %EHR% == NO    $setglobal  dir_WH  %dir_DH%\baseline
-* $ifi %EHR% == YES   $setglobal  dir_WH  %dir_DH%\%WH%
+* ======================================================================
+* END OF FILE
 
-* execute             'mkdir %dir_WH%'
-* execute_unload      '%dir_WH%\output.gdx'
-
-* * --- Output MC of DH if EHR is disabled --- *
-* $ifi NOT %EHR% == YES
-*     execute 'gdxdump %dir_WH%\output.gdx output=%dir_DH%\ts-MC_DH-%DH_name%.csv format=csv symb=MC_DH epsout=0 noheader';
-
-* * ======================================================================
-* * REPORTING
-* * ======================================================================
-* display "DH name: %DH_name%";
-* display "Output GDX file: %dir_WH%\output.gdx"
-
-* display "Variable levels"
-* display obj.l;
-
-* * ======================================================================
-* * END OF FILE
+* https://forum.gamsworld.org/viewtopic.php?t=11557

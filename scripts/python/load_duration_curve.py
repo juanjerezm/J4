@@ -76,8 +76,8 @@ load_category_ranges = [load_category_values[i+1] - load_category_values[i] for 
 df = pd.DataFrame()
 df['RemainingConsumption'] = dataset['TotalConsumption']
 
-for i, load_category_ranges in enumerate(load_category_ranges):
-    df[f'LoadCategory {i}'] = df['RemainingConsumption'].apply(lambda x: min(x, load_category_ranges))
+for i, load_category_range in enumerate(load_category_ranges):
+    df[f'LoadCategory {i}'] = df['RemainingConsumption'].apply(lambda x: min(x, load_category_range))
     df['RemainingConsumption'] = df['RemainingConsumption'] - df[f'LoadCategory {i}']
 
 df = df.drop(columns=['RemainingConsumption'])
@@ -93,7 +93,15 @@ print('----------------------------------------')
 print('Load category ranges:')
 print(load_category_values)
 print('----------------------------------------')
+print('Load category capacity:')
+print(load_category_ranges)
+print('----------------------------------------')
+print('Share of capacity in each load category:')
+share_of_capacity = [load_category_range / sum(load_category_ranges) for load_category_range in load_category_ranges]
+share_of_capacity = [round(share, 2) for share in share_of_capacity]
+print(share_of_capacity)
+print('----------------------------------------')
 print('Share of total consumption in each load category:')
-df.sum() / df.sum().sum()
+print(df.sum() / df.sum().sum())
 
 # %%

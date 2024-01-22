@@ -1,4 +1,4 @@
-﻿,'fuel price','carbon content','carbon price', 'extra cost'
+﻿,'fuel price','carbon content','carbon price', 'tariff'
 'biogas',           80.395335,  0,      0.0234675, 0
 'coal',             8.8024288,  339.732,0.0234675, 0
 'electricity',      timeVar,    timeVar,0.0234675, 0

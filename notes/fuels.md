@@ -1,14 +1,14 @@
-# Fuel data
+# Notes of fuel sources
 
-- Average 2020's exchange rate EUR/DKK: 0.1341 [source](https://www.exchangerates.org.uk/DKK-EUR-spot-exchange-rates-history-2020.html).
-- Energy conversion factor 3.6 GJ/MWh
+
+## Assumptions
+- No taxes or carbon quotas are included in the fuel prices.
+- Electricity prices include transmission tariffs for consumers, but not for generators.
+- We assume a "composite fuel" for biomass baseload: "biomass residues". It is a 75/25 mix of straw and woodwaste. This share is based on the actual share of straw and woodwaste in 2020's DH fuel mix in Denmark.
+
 
 ## Prices
-
-Fuel prices are obtained from:
-- [Analysis prerequisites for Energinet 2020](https://ens.dk/service/fremskrivninger-analyser-modeller/analyseforudsaetninger-til-energinet).
-- [Varmeplan Hovedstaden - Assumptions](https://varmeplanhovedstaden.dk/publikationer/anvendte-ffh50-forudsaetninger-potentialer-og-prognoser/).
-- [Varmeplan Hovedstaden - Market assumptions for waste energy](https://varmeplanhovedstaden.dk/wp-content/uploads/2023/07/FFH50-Markedsforudsaetninger-for-affaldsenergi_final-fd.pdf).
+Fuel prices are obtained from [Analysis prerequisites for Energinet 2020](https://ens.dk/service/fremskrivninger-analyser-modeller/analyseforudsaetninger-til-energinet), [Varmeplan Hovedstaden - Assumptions](https://varmeplanhovedstaden.dk/publikationer/anvendte-ffh50-forudsaetninger-potentialer-og-prognoser/), and [Varmeplan Hovedstaden - Market assumptions for waste energy](https://varmeplanhovedstaden.dk/wp-content/uploads/2023/07/FFH50-Markedsforudsaetninger-for-affaldsenergi_final-fd.pdf).
 
 - Biogas            : Production price (VPH - assumptions)
 - Coal              : Price for central plants (AF20).
@@ -19,7 +19,7 @@ Fuel prices are obtained from:
 - Wood pellets      : Average price for central and decentral plants (AF20).
 - Wood waste        : Price for central plants (VPH - assumptions).
 - Municipal waste   : Average price of imported, national, and local waste (VPH - waste assumptions). 
-
+- Biomass           : Average price for straw for central and decentral plants(AF20), and 'biomasseaffald' (VPH - waste assumptions).
 
 ## Emissions factor
 

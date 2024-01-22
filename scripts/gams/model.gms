@@ -16,7 +16,7 @@ $onEmpty
 * option limcol = 50
 
 * ----- Control flags -----
-$SetGlobal portfolio      'CPH'
+$SetGlobal portfolio      'test'
 $SetGlobal scenario       'no-policy'
 
 * ----- Directories -----
@@ -41,7 +41,7 @@ T                       'Timesteps'
 *SS                      'Storage state (SOS1 set)'  
 U                       'Units'
 G(U)                    'Generators' 
-S(U)                    'Storages'
+* S(U)                    'Storages'
 F                       'Fuels'
 GF(G,F)                 'Generator-fuel mapping'
 ;
@@ -70,12 +70,12 @@ $include    './data/common/name-generator.csv'
 $offDelim
 /;
 
-SET S(U)                'Storages'
-/
-$onDelim
-$include    './data/common/name-storage.csv'
-$offDelim
-/;
+* SET S(U)                'Storages'
+* /
+* $onDelim
+* $include    './data/common/name-storage.csv'
+* $offDelim
+* /;
 
 SET F                   'Fuels'
 /
@@ -306,6 +306,7 @@ beta_v(G)$G_EX(G)               = GNRT_DATA(G,'Cv');
 
 * ----- Parameter operations -----
 Y_c(G_CO)                       = smax(T, D_c(T));
+***====> carbon quota still included
 C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F));
 C_k(G)$(G_HR(G))                = GNRT_DATA(G,'annuity factor')*GNRT_DATA(G,'capital cost') + GNRT_DATA(G,'fixed cost');
 
@@ -326,7 +327,7 @@ x_hr(T,G)                   'Production of recovered heat (MWh)'
 x_e(T,G)                    'Production of electricity (MWh)'
 x_c(T,G)                    'Production of cold (MWh)'
 * SOC(T,S)                    'State-of-charge of storage (MWh)'
-Y_h(G)                      'Heat capacity (MWh)'
+Y_hr(G)                     'Heat capacity (MWh)'
 
 w_q_DH(T,G)                 'Carbon emissions of DH generator (ton/MWh)'
 w_q_WH(T,G)                 'Carbon emissions of WH generator (ton/MWh)'
@@ -401,7 +402,7 @@ eq_tc_WH_int..                              tc_WH   =e= + sum((T,G_WH),  C_f(T,G
                                                         + sum((T,G_CO),  C_c(G_CO)      * x_c(T,G_CO))
                                                         + sum((T,G_HR),  C_h(G_HR)      * x_hr(T,G_HR))
                                                         - sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
-                                                        + sum(G_HR,      C_k(G_HR)      * Y_h(G_HR))
+                                                        + sum(G_HR,      C_k(G_HR)      * Y_hr(G_HR))
                                                         ;   
 
 eq_heat_balance_ref(T)..                    sum(G_DH, x_h(T,G_DH))                                  =e= D_h(t);
@@ -424,7 +425,7 @@ eq_ramping_down(T,G)$(G_DH(G))..            x_f_dh(T,G) - x_f_dh(T++1,G)    =l= 
 
 eq_fuel_maximum(T,G)$(G_DH(G))..            x_f_dh(T,G)                     =l= F_a(T,G)*Y_f(G);
 eq_cold_maximum(T,G)$(G_CO(G))..            x_c(T,G)                        =l= F_a(T,G)*Y_c(G);
-eq_heat_maximum(T,G)$(G_HR(G))..            x_hr(T,G)                       =l= F_a(T,G)*Y_h(G);
+eq_heat_maximum(T,G)$(G_HR(G))..            x_hr(T,G)                       =l= F_a(T,G)*Y_hr(G);
 
 * eq_storage_balance(T,S)..                   SOC(T,S)                =e= (1-rho_s(S))*SOC(T--1,S) + eta_s(S)*x_s(T,S,'charge') - x_s(T,S,'discharge')/eta_s(S);
 * eq_storage_SOC_end(T,S)$(ord(T)=card(T))..  SOC(T,S)                =e= F_SOC_end(S)*Y_s(S);
@@ -432,8 +433,8 @@ eq_heat_maximum(T,G)$(G_HR(G))..            x_hr(T,G)                       =l= 
 * eq_storage_SOC_max(T,S)..                   SOC(T,S)                =l= F_SOC_max(S)*Y_s(S);
 * eq_storage_flow_max(T,S,SS)..               x_s(T,S,SS)             =l= F_s(S)*Y_s(S);
 
-eq_emissions_DH(T,G)$G_DH(G)..                   w_q_dh(T,G)                =e= sum(F$GF(G,F), qc_f(T,F)*x_f_dh(T,G))/M3;
-eq_emissions_WH(T,G)$G_WH(G)..                   w_q_wh(T,G)                =e= sum(F$GF(G,F), qc_f(T,F)*x_f_wh(T,G))/M3;
+eq_emissions_DH(T,G)$G_DH(G)..              w_q_dh(T,G)                     =e= sum(F$GF(G,F), qc_f(T,F)*x_f_dh(T,G))/M3;
+eq_emissions_WH(T,G)$G_WH(G)..              w_q_wh(T,G)                     =e= sum(F$GF(G,F), qc_f(T,F)*x_f_wh(T,G))/M3;
 
 
 * ======================================================================
@@ -456,35 +457,36 @@ mdl_DH_int               'DH system, integrated case'
 
 mdl_WH_ref.optfile = 1;
 mdl_DH_ref.optfile = 1;
-mdl_WH_whr.optfile = 1;
-mdl_DH_whr.optfile = 1;
+mdl_WH_int.optfile = 1;
+mdl_DH_int.optfile = 1;
 
 * ======================================================================
 * SOLVE
 * ======================================================================
-* this below could be simplified to be two gdx files, each including WH and DH results. One for reference case, one for integrated case.
-* ----- Reference case for waste heat source -----
+* Solve reference case for waste heat source
 solve mdl_WH_ref using LP minimizing tc_WH;
-execute_unload '%OutDir%/OutputVars-WH_ref.gdx' tc_WH, x_f_wh, x_c, w_q_wh;
 
-* ----- Reference case for district heating system -----
+* Solve reference case for district heating system
 solve mdl_DH_ref using LP minimizing tc_DH;
-execute_unload '%OutDir%/OutputVars-DH_ref.gdx' tc_DH, x_f_dh, x_h, x_e, w_q_dh;
+
+* Unload reference case results
+execute_unload '%OutDir%/OutVars-ref.gdx' tc_WH, x_f_wh, x_c, w_q_wh, tc_DH, x_f_dh, x_h, x_e, w_q_dh;
 
 * WHR is accepted into DH system only if price of recovered heat is lower than marginal cost of DH system
 lambda_h(T)             = eq_heat_balance_ref.m(T);
 F_a(T,G_HR)             = 0 + 1$(pi_hr(T) < lambda_h(T));
 
-* ----- WHR case for waste heat source -----
-solve mdl_WH_whr using LP minimizing tc_WH;
-execute_unload '%OutDir%/OutputVars-WH_int.gdx' tc_WH, x_f_wh, x_c, x_hr, Y_h, w_q_wh;
+* Solve integrated case for waste heat source
+solve mdl_WH_int using LP minimizing tc_WH;
 
-* Fixes WHR production for use in the DH model
+* Fixes WHR production from previous step, for use in the DH model
 x_hr.fx(T,G_HR)         = x_hr.l(T,G_HR);
 
-* ----- WHR case for district heating system -----
-solve mdl_DH_whr using LP minimizing tc_DH;
-execute_unload '%OutDir%/OutputVars-DH_int.gdx' tc_DH, x_f_dh, x_h, x_e, x_hr, w_q_dh;
+* Solve integrated case for district heating system 
+solve mdl_DH_int using LP minimizing tc_DH;
+
+* Unload integrated case results
+execute_unload '%OutDir%/OutVars-int.gdx' tc_WH, x_f_wh, x_c, x_hr, Y_hr, w_q_wh, tc_DH, x_f_dh, x_h, x_e, x_hr, w_q_dh;
 
 * * ======================================================================
 * * POST-PROCESSING

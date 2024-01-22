@@ -204,7 +204,8 @@ qc_e(T)                  'Carbon content of electricity (kg/MWh)'
 qc_f(T,F)                'Carbon content of fuel (kg/MWh)'
 
 Y_c(G)                  'Cold output capacity (MWh)'
-Y_f(G)                  'Fuel input capacity (MWh)'
+Y_h(G)                  'Heat output capacity (MWh)'
+Y_e(G)                  'Electricity output capacity (MWh)' 
 R_f(G)                  'Input ramping rate (-)'
 F_a(T,G)                'Generator availabity factor (-)'
 eta(T,G)                'Generator efficiency (-)'
@@ -246,12 +247,12 @@ $include    './data/common/ts-electricity-price.csv'
 $offDelim
 /
 
-pi_hr(T)
-/
-$onDelim
-$include    './data/common/ts-heat-price.csv'
-$offDelim
-/
+* pi_hr(T)
+* /
+* $onDelim
+* $include    './data/common/ts-heat-price.csv'
+* $offDelim
+* /
 
 qc_e(T)
 /
@@ -260,10 +261,10 @@ $include    './data/common/ts-electricity-carbon.csv'
 $offDelim
 /
 
-Y_f(G)
+Y_h(G)
 /
 $onDelim
-$include    './data/portfolios/portfolio-capacity-%portfolio%.csv'
+$include    './data/portfolios/portfolio-%portfolio%.csv'
 $offDelim
 /
 ;
@@ -309,6 +310,11 @@ Y_c(G_CO)                       = smax(T, D_c(T));
 ***====> carbon quota still included
 C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F));
 C_k(G)$(G_HR(G))                = GNRT_DATA(G,'annuity factor')*GNRT_DATA(G,'capital cost') + GNRT_DATA(G,'fixed cost');
+* The following line allows to define capacities as a fraction of the maximum load.
+Y_h(G)                          = Y_h(G)*smax(T, D_h(T));   
+* Parameter Y_e required only for extraction units, because already constrained for backpressure units.
+Y_e(G)$G_EX(G)                  = Y_h(G)*(beta_b(G) + beta_v(G));
+pi_hr(T)                        = sum(G_HR, C_h(G_HR) + C_f(T,G_HR)/(eta(T,G_HR)+1))/card(G_HR);
 
 * ======================================================================
 * VARIABLES
@@ -337,6 +343,9 @@ w_q_WH(T,G)                 'Carbon emissions of WH generator (ton/MWh)'
 * x_s(T,S,SS)                 'Storage charge/discharge (MWh)'    
 * ;
 
+* ----- Variable operations -----
+* SET used_generator(G)           'Generators used in the model';
+* used_generator(G)               = YES$(G_CO(G) OR G_HR(G) OR Y_h(G) GT 0);
 
 * ======================================================================
 * EQUATIONS
@@ -366,9 +375,10 @@ eq_ratio_EX(T,G)            'Electricity-to-heat ratio for extraction generators
 eq_ramping_up(T,G)          'Ramping-up limit'
 eq_ramping_down(T,G)        'Ramping-down limit'
 
-eq_fuel_maximum(T,G)        'Maximum fuel consumption'
-eq_cold_maximum(T,G)        'Maximum cold production'
 eq_heat_maximum(T,G)        'Maximum heat production'
+eq_elec_maximum(T,G)        'Maximum elec production for extraction units'
+eq_cold_maximum(T,G)        'Maximum cold production'
+eq_whrc_maximum(T,G)        'Maximum waste-heat recovery for heat-recovery units'
 
 * eq_storage_balance(T,S)     'Storage balance'
 * eq_storage_SOC_end(T,S)     'Storage initial state of charge'
@@ -420,12 +430,13 @@ eq_conversion_CO(T,G)$(G_CO(G))..           eta(T,G)     * x_f_wh(T,G)      =e= 
 eq_ratio_BP(T,G)$G_BP(G)..                  x_e(T,G)                        =e= beta_b(G)*x_h(T,G);
 eq_ratio_EX(T,G)$G_EX(G)..                  x_e(T,G)                        =g= beta_b(G)*x_h(T,G);
 
-eq_ramping_up(T,G)$(G_DH(G))..              x_f_dh(T++1,G) - x_f_dh(T,G)    =l= R_f(G)*Y_f(G);
-eq_ramping_down(T,G)$(G_DH(G))..            x_f_dh(T,G) - x_f_dh(T++1,G)    =l= R_f(G)*Y_f(G);
+eq_ramping_up(T,G)$(G_DH(G))..              x_h(T++1,G) - x_h(T,G)          =l= R_f(G)*Y_h(G);
+eq_ramping_down(T,G)$(G_DH(G))..            x_h(T,G) - x_h(T++1,G)          =l= R_f(G)*Y_h(G);
 
-eq_fuel_maximum(T,G)$(G_DH(G))..            x_f_dh(T,G)                     =l= F_a(T,G)*Y_f(G);
+eq_heat_maximum(T,G)$(G_DH(G))..            x_h(T,G)                        =l= F_a(T,G)*Y_h(G);
+eq_elec_maximum(T,G)$(G_EX(G))..            x_e(T,G)                        =l= F_a(T,G)*Y_e(G);
 eq_cold_maximum(T,G)$(G_CO(G))..            x_c(T,G)                        =l= F_a(T,G)*Y_c(G);
-eq_heat_maximum(T,G)$(G_HR(G))..            x_hr(T,G)                       =l= F_a(T,G)*Y_hr(G);
+eq_whrc_maximum(T,G)$(G_HR(G))..            x_hr(T,G)                       =l= F_a(T,G)*Y_hr(G);
 
 * eq_storage_balance(T,S)..                   SOC(T,S)                =e= (1-rho_s(S))*SOC(T--1,S) + eta_s(S)*x_s(T,S,'charge') - x_s(T,S,'discharge')/eta_s(S);
 * eq_storage_SOC_end(T,S)$(ord(T)=card(T))..  SOC(T,S)                =e= F_SOC_end(S)*Y_s(S);
@@ -446,13 +457,13 @@ mdl_WH_ref               'WH source, reference case'
 /eq_tc_WH_ref, eq_cold_balance_ref, eq_conversion_CO, eq_cold_maximum, eq_emissions_WH/
 
 mdl_DH_ref               'DH system, reference case'
-/eq_tc_DH_ref, eq_heat_balance_ref, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_fuel_maximum, eq_emissions_DH/
+/eq_tc_DH_ref, eq_heat_balance_ref, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_heat_maximum, eq_elec_maximum, eq_emissions_DH/
 
 mdl_WH_int               'WH source, integrated case'
-/eq_tc_WH_int, eq_cold_balance_int, eq_conversion_CO, eq_conversion_HR_cold, eq_conversion_HR_heat, eq_cold_maximum, eq_heat_maximum, eq_emissions_WH/
+/eq_tc_WH_int, eq_cold_balance_int, eq_conversion_CO, eq_conversion_HR_cold, eq_conversion_HR_heat, eq_cold_maximum, eq_whrc_maximum, eq_emissions_WH/
 
 mdl_DH_int               'DH system, integrated case'
-/eq_tc_DH_int, eq_heat_balance_int, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_fuel_maximum, eq_emissions_Dh/
+/eq_tc_DH_int, eq_heat_balance_int, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_heat_maximum, eq_elec_maximum, eq_emissions_DH/
 ;
 
 mdl_WH_ref.optfile = 1;

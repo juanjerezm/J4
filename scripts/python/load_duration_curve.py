@@ -40,7 +40,7 @@ load_duration_curve.plot(title='Load duration curve')
 
 #%% 
 # Define quantiles
-quantiles = [0.71, 0.91]
+quantiles = [0.35, 0.65]
 quantile_values = load_duration_curve.quantile(quantiles)
 quantile_values
 

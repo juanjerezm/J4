@@ -4,7 +4,7 @@
 
 
 * ----- NOTES -----
-* - 
+* - Tariff values are placeholders. They should be replaced with actual values.
 
 * ======================================================================
 *  SETUP:
@@ -108,12 +108,12 @@ $include    './data/common/attribute-generator.csv'
 $offDelim
 /;
 
-SET StrgAttrs(*)        'Auxiliary set to load storage data'
-/
-$onDelim
-$include    './data/common/attribute-storage.csv'
-$offDelim
-/;
+* SET StrgAttrs(*)        'Auxiliary set to load storage data'
+* /
+* $onDelim
+* $include    './data/common/attribute-storage.csv'
+* $offDelim
+* /;
 
 SET FuelAttrs(*)        'Auxiliary set to load fuel data'
 /
@@ -199,6 +199,7 @@ pi_e(T)                 'Price of electricity (EUR/MWh)'
 pi_f(T,F)               'Price of fuel (EUR/MWh)'
 pi_hr(T)                'Price of recovered heat (Marginal cost of HP operation) (EUR/MWh)'
 pi_q(F)                 'Price of carbon quota (EUR/kg)'
+tau_f(G)                'Fuel tariff (EUR/MWh)'
 
 qc_e(T)                  'Carbon content of electricity (kg/MWh)'
 qc_f(T,F)                'Carbon content of fuel (kg/MWh)'
@@ -288,6 +289,7 @@ C_e(G)$(G_CHP(G))               = GNRT_DATA(G,'variable cost - electricity');
 C_h(G)$(G_HO(G))                = GNRT_DATA(G,'variable cost - heat');
 C_h(G)$(G_HR(G))                = GNRT_DATA(G,'variable cost - heat');
 C_c(G)$(G_CO(G))                = GNRT_DATA(G,'variable cost - cold');
+tau_f(G)                        = GNRT_DATA(G,'fuel tariff');
 
 pi_f(T,F)                       = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
 pi_q(F)                         = FUEL_DATA(F,'carbon price');
@@ -308,7 +310,7 @@ beta_v(G)$G_EX(G)               = GNRT_DATA(G,'Cv');
 * ----- Parameter operations -----
 Y_c(G_CO)                       = smax(T, D_c(T));
 ***====> carbon quota still included
-C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F));
+C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f(G));
 C_k(G)$(G_HR(G))                = GNRT_DATA(G,'annuity factor')*GNRT_DATA(G,'capital cost') + GNRT_DATA(G,'fixed cost');
 * The following line allows to define capacities as a fraction of the maximum load.
 Y_h(G)                          = Y_h(G)*smax(T, D_h(T));   
@@ -391,17 +393,17 @@ eq_emissions_WH(T,G)        'Carbon emissions of WH generator'
 ;
 
 * ----- Equation definition -----
-eq_tc_DH_ref..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G_DH)    * x_f_dh(T,G_DH)) 
-                                                        + sum((T,G_HO),  C_h(G_HO)      * x_h(T,G_HO))
-                                                        + sum((T,G_CHP), C_e(G_CHP)     * x_e(T,G_CHP))
-                                                        - sum((T,G_CHP), pi_e(T)        * x_e(T,G_CHP))
+eq_tc_DH_ref..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH)) 
+                                                        + sum((T,G_HO),  C_h(G_HO)              * x_h(T,G_HO))
+                                                        + sum((T,G_CHP), C_e(G_CHP)             * x_e(T,G_CHP))
+                                                        - sum((T,G_CHP), (pi_e(T)-tau_f(G_CHP)) * x_e(T,G_CHP))
                                                         ;
 
-eq_tc_DH_int..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G_DH)    * x_f_dh(T,G_DH)) 
-                                                        + sum((T,G_HO),  C_h(G_HO)      * x_h(T,G_HO))
-                                                        + sum((T,G_CHP), C_e(G_CHP)     * x_e(T,G_CHP))
-                                                        - sum((T,G_CHP), pi_e(T)        * x_e(T,G_CHP))
-                                                        + sum((T,G_HR),  pi_hr(T)       * x_hr(T,G_HR))
+eq_tc_DH_int..                              tc_DH   =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH)) 
+                                                        + sum((T,G_HO),  C_h(G_HO)              * x_h(T,G_HO))
+                                                        + sum((T,G_CHP), C_e(G_CHP)             * x_e(T,G_CHP))
+                                                        - sum((T,G_CHP), (pi_e(T)-tau_f(G_CHP)) * x_e(T,G_CHP))
+                                                        + sum((T,G_HR),  pi_hr(T)               * x_hr(T,G_HR))
                                                         ;
 
 eq_tc_WH_ref..                              tc_WH   =e= + sum((T,G_CO),  C_f(T,G_CO)    * x_f_wh(T,G_CO)) 
@@ -474,6 +476,8 @@ mdl_DH_int.optfile = 1;
 * ======================================================================
 * SOLVE
 * ======================================================================
+execute_unload '%OutDir%/data.gdx';
+
 * Solve reference case for waste heat source
 solve mdl_WH_ref using LP minimizing tc_WH;
 

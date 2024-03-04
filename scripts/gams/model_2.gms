@@ -2,6 +2,9 @@
 * DESCRIPTION:
 * ======================================================================
 
+$Offlisting
+$Offsymlist
+$Offinclude
 
 * ----- NOTES -----
 * - Tariff values are placeholders. They should be replaced with actual values.
@@ -12,8 +15,8 @@
 * ----- Options -----
 $onEmpty
 * option optcr = 0.0001
-* option limrow = 50
-* option limcol = 50
+option limrow = 0
+option limcol = 0
 option EpsToZero = on
 
 * ----- Control flags -----
@@ -414,16 +417,6 @@ eq_emissions_WH(T,G)        'Carbon emissions of WH generator'
 PARAMETER
 P_inv                        'Subsidy on WHR investment'
 ;
-P_inv = 1;
-
-display G;
-display G_HR;
-
-* G('HP - waste heat') = NO;
-* G_HR('HP - waste heat')       = NO;
-
-display G;
-display G_HR;
 
 * ----- Equation definition -----
 eq_OPX_DH_ref..                             OPX_DH_ref  =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH)) 
@@ -529,21 +522,10 @@ lambda_h(T)             = eq_heat_balance_ref.m(T);
 F_a(T,G_HR)             = EPS + 1$(pi_hr(T) < lambda_h(T));
 
 
-* Solve integrated case for waste heat source
-solve mdl_WH_int using LP maximizing NPV;
 
-* Fixes WHR production from previous step, for use in the DH model
-x_hr.fx(T,G_HR)         = x_hr.l(T,G_HR);
+$ifi %scenario% == 'capital-subsidy' $include './scripts/gams/solve-capital-subsidy.inc'
 
-* Solve integrated case for district heating system 
-solve mdl_DH_int using LP minimizing OPX_DH_int;
 
-* Unload integrated case results
-execute_unload '%OutDir%/OutVars-int.gdx' NPV, OPX_WH_int, x_f_wh, x_c, x_hr, Y_hr, w_q_wh, OPX_DH_int, x_f_dh, x_h, x_e, x_hr, w_q_dh;
-
-$include './scripts/gams/paybacktime.inc'
-
-display Y_hr.l, NPV.l, CAPEX, OPX_WH_int.l, OPX_WH_ref.l, PaybackTime_discounted, PaybackTime_simplified;
 
 * * ======================================================================
 * * POST-PROCESSING
@@ -552,7 +534,7 @@ display Y_hr.l, NPV.l, CAPEX, OPX_WH_int.l, OPX_WH_ref.l, PaybackTime_discounted
 * * fuel_use(T,F)
 * * heat_share(G)       'Heat share (-)'
 * * fuel_share(F)
-* * ;
+* * ;g
 
 * * heat_share(G) = sum(T, x_h.l(T,G))/sum(T, D(T));
 * * fuel_use(T,F) = sum(G$GF(G,F), x_f.l(T,G));

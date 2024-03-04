@@ -24,27 +24,22 @@ def gdx_dfs(paths, variables=None, attributes=["level"]):
     # read gdx files into containers
     containers = [gt.Container(str(path)) for path in paths]
 
-    # finds all variables if variables is None
-    if variables is None:
-        variables = set()
-        for container in containers:
-            variables.update(container.listVariables())
-    else:
-        variables = set(variables)
-
-    # make a dictionary, with the name of variable as key and the dataframe as value
-    data_all = {variable: pd.DataFrame() for variable in variables}
-
-    for variable in variables:
-        for scenario, container in zip(scenarios, containers):
-            df_temp = container[variable].records
+    data_all = dict()
+    for scenario, container in zip(scenarios, containers):
+        if variables is None:
+            spec_var = container.listVariables()
+        else:
+            spec_var = variables
+        
+        for var in spec_var:
+        
+            df_temp = container[var].records
             df_temp.insert(0, "scenario", scenario)
-            df_temp.drop(
-                columns=[col for col in gams_attrs if col not in attributes],
-                inplace=True,
-            )
+            df_temp.drop(columns=[col for col in gams_attrs if col not in attributes],inplace=True)
 
-            data_all[variable] = pd.concat([data_all[variable], df_temp])
+            if var not in data_all:
+                data_all[var] = pd.DataFrame()
+            data_all[var] = pd.concat([data_all[var], df_temp])
 
     return data_all
 
@@ -58,8 +53,15 @@ policy = "capital-subsidy"
 directory = Path(f"results/{portfolio}/{policy}")
 
 # Use the .glob() method to find all .gdx files starting with WH or DH
-paths = list(directory.glob("WH*.gdx"))
+paths = list(directory.glob("output_*.gdx"))
 
 data = gdx_dfs(paths)
+
 print(data.keys())
-print(data["NPV"])
+
+print(data['NPV'])
+print(data['Y_hr'])
+print(data['OPX_WH_int'])
+print(data['OPX_WH_ref'])
+print(data['x_hr'])
+print(data['x_e'])

@@ -515,7 +515,7 @@ OPX_WH_ref.fx = OPX_WH_ref.l;
 solve mdl_DH_ref using LP minimizing OPX_DH_ref;
 
 * Unload reference case results
-execute_unload '%OutDir%/OutVars-ref.gdx' OPX_WH_ref, x_f_wh, x_c, w_q_wh, OPX_DH_ref, x_f_dh, x_h, x_e, w_q_dh;
+execute_unload '%OutDir%/output_reference.gdx' OPX_WH_ref, x_f_wh, x_c, w_q_wh, OPX_DH_ref, x_f_dh, x_h, x_e, w_q_dh;
 
 * WHR is accepted into DH system only if price of recovered heat is lower than marginal cost of DH system
 lambda_h(T)             = eq_heat_balance_ref.m(T);

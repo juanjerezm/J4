@@ -78,8 +78,14 @@ repeat
 
          summary(I,'DH cost')           = OPX_DH_int.l;
 
-         put_utility 'gdxout' / '%OutDir%/DH_' I.tl;
-         execute_unload OPX_DH_int, x_f_dh, x_h, x_e, x_hr, w_q_dh;
+         put_utility 'gdxin' / '%OutDir%/WH_' I.tl;
+         execute_load NPV, OPX_WH_int, x_f_wh, x_c, x_hr, Y_hr, w_q_wh;
+
+*         put_utility 'gdxout' / '%OutDir%/DH_' I.tl;
+*         execute_unload OPX_DH_int, x_f_dh, x_h, x_e, x_hr, w_q_dh;
+
+         put_utility 'gdxout' / '%OutDir%/output_' I.tl;
+         execute_unload NPV, OPX_WH_int, x_f_wh, x_c, x_hr, Y_hr, w_q_wh, OPX_DH_int, x_f_dh, x_h, x_e, x_hr, w_q_dh;
 
          display$handleDelete(handle_dh(I)) 'trouble deleting handles' ;
          handle_dh(I) = 0; 
@@ -91,4 +97,8 @@ until card(handle_dh) = 0 or timeelapsed > WallTime;
 * ----- Unload summary results -----
 execute_unload '%OutDir%/summary.gdx' summary;
 
-* * $include './scripts/gams/paybacktime.inc'
+execute 'rm -f %OutDir%/WH_*.gdx';
+
+
+
+* $include './scripts/gams/paybacktime.inc'

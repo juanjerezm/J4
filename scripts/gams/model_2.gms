@@ -411,15 +411,16 @@ P_inv                        'Subsidy on WHR investment' /0/
 ;
 
 * ----- Equation definition -----
-eq_OPX_DH..                                 OPX_DH  =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH)) 
+eq_OPX_DH..                                 OPX_DH  =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH))
                                                         + sum((T,G_HO),  C_h(G_HO)              * x_h(T,G_HO))
                                                         + sum((T,G_CHP), C_e(G_CHP)             * x_e(T,G_CHP))
                                                         - sum((T,G_CHP), (pi_e(T)-tau_f(G_CHP)) * x_e(T,G_CHP))
 $ifi %whr% == 'yes'                                     + sum((T,G_HR),  pi_hr(T)               * x_hr(T,G_HR))
                                                         ;
 
-eq_OPX_WH..                                 OPX_WH  =e= + sum((T,G_CO), C_f(T,G_CO) * x_f_wh(T,G_CO)) 
+eq_OPX_WH..                                 OPX_WH  =e= + sum((T,G_CO), C_f(T,G_CO) * x_f_wh(T,G_CO))
                                                         + sum((T,G_CO), C_c(G_CO)   * x_c(T,G_CO))
+$ifi %whr% == 'yes'                                     + sum((T,G_HR), C_f(T,G_HR) * x_f_wh(T,G_HR))
 $ifi %whr% == 'yes'                                     + sum((T,G_HR), C_h(G_HR)   * x_hr(T,G_HR))
 $ifi %whr% == 'yes'                                     - sum((T,G_HR), pi_hr(T)    * x_hr(T,G_HR))
 $ifi %whr% == 'yes'                                     + sum(G_HR,     C_fix(G_HR) * Y_hr(G_HR))

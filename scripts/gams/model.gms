@@ -488,6 +488,7 @@ $ifi %whr% == 'no'  $include './scripts/gams/solve_reference.inc'
 
 $ifi %whr% == 'yes' $ifi %scenario% == 'no-policy'          $include './scripts/gams/solve_no-policy.inc'
 $ifi %whr% == 'yes' $ifi %scenario% == 'capital-subsidy'    $include './scripts/gams/solve_capital-subsidy.inc'
+$ifi %whr% == 'yes' $ifi %scenario% == 'mandatory-access'   $include './scripts/gams/solve_mandatory-access.inc'
 
 * * ======================================================================
 * * POST-PROCESSING

@@ -305,7 +305,7 @@ C_fix(G)$(G_HR(G))              = GNRT_DATA(G,'fixed cost');
 pi_f(T,F)                       = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
 pi_q(F)                         = FUEL_DATA(F,'carbon price');
 qc_f(T,F)                       = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + qc_e(T)$(F_EL(F));
-tau_f(F)                        = FUEL_DATA(G,'fuel tax') + FUEL_DATA(G,'fuel tariff');
+tau_f(F)                        = FUEL_DATA(F,'fuel tax') + FUEL_DATA(F,'fuel tariff');
 R_f(G)                          = GNRT_DATA(G,'ramping rate');
 beta_b(G)$G_CHP(G)              = GNRT_DATA(G,'Cb');
 beta_v(G)$G_EX(G)               = GNRT_DATA(G,'Cv');
@@ -327,7 +327,7 @@ Y_c(G_CO)                       = 1     *smax(T, D_c(T));
 * Line below: required for extraction units, backpressure units already constrained.
 Y_e(G)$G_EX(G)                  = Y_h(G)*(beta_b(G) + beta_v(G));
 *  Calculate fuel cost from fuel price, carbon quota, and taxes/tariffs
-C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f(G));
+C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f(F));
 
 * Loads parameters specific to integrated case: WH price, reference DH marginal costs and reference WH OPEX
 $ifi %whr% == 'yes' $include './scripts/gams/reference_load.inc'
@@ -484,8 +484,10 @@ model_DH.optfile = 1;
 * Output data (before solving to avoid variables with values)
 execute_unload '%outDir%/data.gdx';
 
-$ifi %scenario% == 'no-policy'          $include './scripts/gams/solve_no-policy.inc'
-$ifi %scenario% == 'capital-subsidy'    $include './scripts/gams/solve_capital-subsidy.inc'
+$ifi %whr% == 'no'  $include './scripts/gams/solve_reference.inc'
+
+$ifi %whr% == 'yes' $ifi %scenario% == 'no-policy'          $include './scripts/gams/solve_no-policy.inc'
+$ifi %whr% == 'yes' $ifi %scenario% == 'capital-subsidy'    $include './scripts/gams/solve_capital-subsidy.inc'
 
 * * ======================================================================
 * * POST-PROCESSING

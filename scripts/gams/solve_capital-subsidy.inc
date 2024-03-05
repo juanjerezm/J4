@@ -2,21 +2,7 @@
 * This script uses the GAMS's "Grid and Multi-Threading Solve Facility" to solve the different support levels in parallel.
 * https://www.gams.com/latest/docs/UG_GridComputing.html
 
-$ifi %whr% == 'yes' $goto whr
-
-* ----- Reference case ----- *
-* Solve optimization for the waste-heat source
-solve model_WH_reference  using LP minimizing OPX_WH;
-
-* Solve optimization for the district heating system
-solve model_DH using LP minimizing OPX_DH;
-
-* Output results (variables)
-execute_unload '%outDir%/output_reference.gdx'  OPX_WH, x_f_wh, x_c, w_q_wh, OPX_DH, x_f_dh, x_h, x_e, w_q_dh;
-$goto end
-
 * ----- Integrated case ----- *
-$label whr
 SETS
 I                       'Number of iterations'
 /I00*I10/
@@ -109,8 +95,5 @@ until card(handle_dh) = 0 or timeelapsed > WallTime;
 * ----- Unload summary results -----
 execute_unload '%OutDir%/summary.gdx' summary;
 
+* Remove temporary files with WH source results
 execute 'rm -f %OutDir%/WH_*.gdx';
-
-$label end
-
-* $include './scripts/gams/paybacktime.inc'

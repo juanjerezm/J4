@@ -11,21 +11,27 @@
 * ======================================================================
 * ----- Options -----
 $onEmpty
-* option optcr = 0.0001
-* option limrow = 50
-* option limcol = 50
+$Offlisting
+$Offsymlist
+$Offinclude
+
+option limrow = 0
+option limcol = 0
 option EpsToZero = on
 
 * ----- Control flags -----
 $SetGlobal portfolio      'test'
 $SetGlobal scenario       'capital-subsidy'
+$SetGlobal whr            'yes'
 
-* ----- Directories -----
-* this command works with windows specifically. Change \ to / for linux.
-$SetGlobal OutDir       '.\results\%portfolio%\%scenario%\'
-execute                 'mkdir %OutDir%';
-
-* ----- Filenames -----
+* ----- Directories and filenames -----
+* Creates directories for output and transfer files
+$ifi %system.filesys% == msnt   $SetGlobal outDir   '.\results\%portfolio%\%scenario%\'
+$ifi %system.filesys% == unix   $SetGlobal outDir   './results/%portfolio%/%scenario%/'
+$ifi %system.filesys% == msnt   $SetGlobal transDir '%outDir%\transDir\'
+$ifi %system.filesys% == unix   $SetGlobal transDir '%outDir%/transDir/'
+execute                 'mkdir %outDir%';
+execute                 'mkdir %transDir%';
 
 
 * ----- Global scalars -----
@@ -208,11 +214,8 @@ C_inv(G)                'Investment cost of generator (EUR/MW)'
 D_h(T)                  'Demand of heat (MW)'
 D_c(T)                  'Demand of cold (MW)'
 
-lambda_h(T)             'Marginal cost of district heating system (EUR/MWh)'
-
 pi_e(T)                 'Price of electricity (EUR/MWh)'
 pi_f(T,F)               'Price of fuel (EUR/MWh)'
-pi_hr(T)                'Price of recovered heat (Marginal cost of HP operation) (EUR/MWh)'
 pi_q(F)                 'Price of carbon quota (EUR/kg)'
 tau_f(G)                'Fuel tariff (EUR/MWh)'
 
@@ -263,13 +266,6 @@ $include    './data/common/ts-electricity-price.csv'
 $offDelim
 /
 
-* pi_hr(T)
-* /
-* $onDelim
-* $include    './data/common/ts-heat-price.csv'
-* $offDelim
-* /
-
 qc_e(T)
 /
 $onDelim
@@ -297,7 +293,6 @@ $onDelim
 $include    './data/common/ts-generator-efficiency.csv'
 $offDelim
 ;
-$onlisting
 
 * - Assigned parameters -
 C_e(G)$(G_CHP(G))               = GNRT_DATA(G,'variable cost - electricity');
@@ -325,25 +320,28 @@ beta_v(G)$G_EX(G)               = GNRT_DATA(G,'Cv');
 * F_SOC_max(S)                    = STRG_DATA(S,'SOC ratio max');
 
 * ----- Parameter operations -----
-Y_c(G_CO)                       = smax(T, D_c(T));
-***====> carbon quota still included
-C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f(G));
-* The following line allows to define capacities as a fraction of the maximum load.
+* Line below: defines generation capacity as ratio of peak demand.
 Y_h(G)                          = Y_h(G)*smax(T, D_h(T));   
-* Parameter Y_e required only for extraction units, because already constrained for backpressure units.
+Y_c(G_CO)                       = 1     *smax(T, D_c(T));
+* Line below: required for extraction units, backpressure units already constrained.
 Y_e(G)$G_EX(G)                  = Y_h(G)*(beta_b(G) + beta_v(G));
-pi_hr(T)                        = sum(G_HR, C_h(G_HR) + C_f(T,G_HR)/(eta(T,G_HR)+1))/card(G_HR);
+*  Calculate fuel cost from fuel price, carbon quota, and taxes/tariffs
+C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f(G));
+
+* Loads parameters specific to integrated case: WH price, reference DH marginal costs and reference WH OPEX
+$ifi %whr% == 'yes' $include './scripts/gams/reference_load.inc'
+* Empties the list of heat-recovery generators
+$ifi %whr% == 'no'  G_HR(G)     = NO;
+$onlisting
 
 * ======================================================================
 * VARIABLES
 * ======================================================================
 * ----- Variable declaration -----
 FREE VARIABLES
-OPX_DH_ref                  'Operating cost for DH - reference case (EUR)'
-OPX_DH_int                  'Operating cost for DH - integrated case (EUR)'
-OPX_WH_ref                  'Operating cost for WH - reference case (EUR)'
-OPX_WH_int                  'Operating cost for WH - integrated case (EUR)'
-NPV                         'Net present value of WHR - integrated case (EUR)'
+OPX_DH                      'Operating cost for DH (EUR)'
+OPX_WH                      'Operating cost for WH (EUR)'
+NPV                         'Net present value of WHR investments (EUR)'
 ;
 
 POSITIVE VARIABLES
@@ -372,16 +370,12 @@ w_q_WH(T,G)                 'Carbon emissions of WH generator (ton/MWh)'
 * ======================================================================
 * ----- Equation declaration -----
 EQUATIONS
-eq_OPX_DH_ref               'Operating cost of DH system for reference case'
-eq_OPX_DH_int               'Operating cost of DH system for integrated case'
-eq_OPX_WH_ref               'Operating cost of WH for reference case'
-eq_OPX_WH_int               'Operating cost of WH for integrated case'
-eq_NPV                      'Net present value of WH for integrated case'
+eq_OPX_DH                   'Operating cost of DH system'
+eq_OPX_WH                   'Operating cost of WH source'
+eq_NPV                      'Net present value of WHR investment'
 
-eq_heat_balance_ref(T)      'Heat balance for reference case'
-eq_heat_balance_int(T)      'Heat balance for integrated case'
-eq_cold_balance_ref(T)      'Cold balance for reference case'
-eq_cold_balance_int(T)      'Cold balance for integrated case'
+eq_heat_balance(T)          'Heat balance in DH system'
+eq_cold_balance(T)          'Cold balance in WH source'
 
 eq_conversion_BP(T,G)       'Energy conversion for backpressure generators'
 eq_conversion_EX(T,G)       'Energy conversion for extraction generators'
@@ -411,51 +405,31 @@ eq_emissions_DH(T,G)        'Carbon emissions of DH generator'
 eq_emissions_WH(T,G)        'Carbon emissions of WH generator'
 ;
 
-PARAMETER
-P_inv                        'Subsidy on WHR investment'
+SCALAR
+P_inv                        'Subsidy on WHR investment' /0/
 ;
-P_inv = 1;
-
-display G;
-display G_HR;
-
-* G('HP - waste heat') = NO;
-* G_HR('HP - waste heat')       = NO;
-
-display G;
-display G_HR;
 
 * ----- Equation definition -----
-eq_OPX_DH_ref..                             OPX_DH_ref  =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH)) 
-                                                            + sum((T,G_HO),  C_h(G_HO)              * x_h(T,G_HO))
-                                                            + sum((T,G_CHP), C_e(G_CHP)             * x_e(T,G_CHP))
-                                                            - sum((T,G_CHP), (pi_e(T)-tau_f(G_CHP)) * x_e(T,G_CHP))
-                                                            ;
+eq_OPX_DH..                                 OPX_DH  =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH))
+                                                        + sum((T,G_HO),  C_h(G_HO)              * x_h(T,G_HO))
+                                                        + sum((T,G_CHP), C_e(G_CHP)             * x_e(T,G_CHP))
+                                                        - sum((T,G_CHP), (pi_e(T)-tau_f(G_CHP)) * x_e(T,G_CHP))
+$ifi %whr% == 'yes'                                     + sum((T,G_HR),  pi_hr(T)               * x_hr(T,G_HR))
+                                                        ;
 
-eq_OPX_DH_int..                             OPX_DH_int  =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH)) 
-                                                            + sum((T,G_HO),  C_h(G_HO)              * x_h(T,G_HO))
-                                                            + sum((T,G_CHP), C_e(G_CHP)             * x_e(T,G_CHP))
-                                                            - sum((T,G_CHP), (pi_e(T)-tau_f(G_CHP)) * x_e(T,G_CHP))
-                                                            + sum((T,G_HR),  pi_hr(T)               * x_hr(T,G_HR))
-                                                            ;
+eq_OPX_WH..                                 OPX_WH  =e= + sum((T,G_CO), C_f(T,G_CO) * x_f_wh(T,G_CO))
+                                                        + sum((T,G_CO), C_c(G_CO)   * x_c(T,G_CO))
+$ifi %whr% == 'yes'                                     + sum((T,G_HR), C_f(T,G_HR) * x_f_wh(T,G_HR))
+$ifi %whr% == 'yes'                                     + sum((T,G_HR), C_h(G_HR)   * x_hr(T,G_HR))
+$ifi %whr% == 'yes'                                     - sum((T,G_HR), pi_hr(T)    * x_hr(T,G_HR))
+$ifi %whr% == 'yes'                                     + sum(G_HR,     C_fix(G_HR) * Y_hr(G_HR))
+                                                        ;
 
-eq_OPX_WH_ref..                             OPX_WH_ref  =e= + sum((T,G_CO), C_f(T,G_CO) * x_f_wh(T,G_CO)) 
-                                                            + sum((T,G_CO), C_c(G_CO)   * x_c(T,G_CO))
-                                                            ;
+$ifi %whr% == 'yes'
+eq_NPV..                                    NPV =e= - sum(G_HR, C_inv(G_HR) * (1-P_inv) * Y_hr(G_HR)) + (OPX_WH_REF - OPX_WH)/AF;
 
-eq_OPX_WH_int..                             OPX_WH_int  =e= + sum((T,G_WH), C_f(T,G_WH) * x_f_wh(T,G_WH)) 
-                                                            + sum((T,G_CO), C_c(G_CO)   * x_c(T,G_CO))
-                                                            + sum((T,G_HR), C_h(G_HR)   * x_hr(T,G_HR))
-                                                            - sum((T,G_HR), pi_hr(T)    * x_hr(T,G_HR))
-                                                            + sum(G_HR,     C_fix(G_HR) * Y_hr(G_HR))
-                                                            ;   
-
-eq_NPV..                                    NPV =e= - sum(G_HR, C_inv(G_HR) * (1-P_inv) * Y_hr(G_HR)) + (OPX_WH_ref - OPX_WH_int)/AF;
-
-eq_heat_balance_ref(T)..                    sum(G_DH, x_h(T,G_DH))                                  =e= D_h(t);
-eq_heat_balance_int(T)..                    sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_hr(T,G_HR))        =e= D_h(t);
-eq_cold_balance_ref(T)..                    sum(G_CO, x_c(T,G_CO))                                  =e= D_c(t);
-eq_cold_balance_int(T)..                    sum(G_WH, x_c(T,G_WH))                                  =e= D_c(t);
+eq_heat_balance(T)..                        sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_hr(T,G_HR))    =e= D_h(t);
+eq_cold_balance(T)..                        sum(G_CO, x_c(T,G_CO)) + sum(G_HR, x_c(T,G_HR))     =e= D_c(t);
 
 eq_conversion_BP(T,G)$(G_BP(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + x_h(T,G);
 eq_conversion_EX(T,G)$(G_EX(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + beta_v(G)*x_h(T,G);
@@ -482,7 +456,7 @@ eq_whrc_maximum(T,G)$(G_HR(G))..            x_hr(T,G)                       =l= 
 * eq_storage_flow_max(T,S,SS)..               x_s(T,S,SS)             =l= F_s(S)*Y_s(S);
 
 eq_emissions_DH(T,G)$G_DH(G)..              w_q_dh(T,G)                     =e= sum(F$GF(G,F), qc_f(T,F)*x_f_dh(T,G))/M3;
-eq_emissions_WH(T,G)$G_WH(G)..              w_q_wh(T,G)                     =e= sum(F$GF(G,F), qc_f(T,F)*x_f_wh(T,G))/M3;
+eq_emissions_WH(T,G)$(G_CO(G) OR G_HR(G)).. w_q_wh(T,G)                     =e= sum(F$GF(G,F), qc_f(T,F)*x_f_wh(T,G))/M3;
 
 
 * ======================================================================
@@ -490,75 +464,33 @@ eq_emissions_WH(T,G)$G_WH(G)..              w_q_wh(T,G)                     =e= 
 * ======================================================================
 * ----- Model definition -----
 model 
-mdl_WH_ref               'WH source, reference case'
-/eq_OPX_WH_ref, eq_cold_balance_ref, eq_conversion_CO, eq_cold_maximum, eq_emissions_WH/
+model_WH_reference              'Model for WH source - reference case'
+/eq_OPX_WH, eq_cold_balance, eq_conversion_CO, eq_cold_maximum, eq_emissions_WH/
 
-mdl_DH_ref               'DH system, reference case'
-/eq_OPX_DH_ref, eq_heat_balance_ref, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_heat_maximum, eq_elec_maximum, eq_emissions_DH/
+model_WH_integrated             'Model for WH source - integrated case'
+/model_WH_reference, eq_NPV, eq_conversion_HR_cold, eq_conversion_HR_heat, eq_whrc_maximum/
 
-mdl_WH_int               'WH source, integrated case'
-/eq_OPX_WH_int, eq_NPV, eq_cold_balance_int, eq_conversion_CO, eq_conversion_HR_cold, eq_conversion_HR_heat, eq_cold_maximum, eq_whrc_maximum, eq_emissions_WH/
+model_DH                        'Model for DH system'
+/eq_OPX_DH, eq_heat_balance, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_heat_maximum, eq_elec_maximum, eq_emissions_DH/;
 
-mdl_DH_int               'DH system, integrated case'
-/eq_OPX_DH_int, eq_heat_balance_int, eq_conversion_BP, eq_conversion_EX, eq_conversion_HO, eq_ratio_BP, eq_ratio_EX, eq_ramping_up, eq_ramping_down, eq_heat_maximum, eq_elec_maximum, eq_emissions_DH/
-;
-
-mdl_WH_ref.optfile = 1;
-mdl_DH_ref.optfile = 1;
-mdl_WH_int.optfile = 1;
-mdl_DH_int.optfile = 1;
+model_WH_reference.optfile = 1;
+model_WH_integrated.optfile = 1;
+model_DH.optfile = 1;
 
 * ======================================================================
 * SOLVE
 * ======================================================================
-execute_unload '%OutDir%/data.gdx';
+* Output data (before solving to avoid variables with values)
+execute_unload '%outDir%/data.gdx';
 
-* Solve reference case for waste heat source
-solve mdl_WH_ref using LP minimizing OPX_WH_ref;
-* Fix operating costs for reference case to use in integrated case
-OPX_WH_ref.fx = OPX_WH_ref.l;
-
-* Solve reference case for district heating system
-solve mdl_DH_ref using LP minimizing OPX_DH_ref;
-
-* Unload reference case results
-execute_unload '%OutDir%/OutVars-ref.gdx' OPX_WH_ref, x_f_wh, x_c, w_q_wh, OPX_DH_ref, x_f_dh, x_h, x_e, w_q_dh;
-
-* WHR is accepted into DH system only if price of recovered heat is lower than marginal cost of DH system
-lambda_h(T)             = eq_heat_balance_ref.m(T);
-F_a(T,G_HR)             = EPS + 1$(pi_hr(T) < lambda_h(T));
-
-
-* Solve integrated case for waste heat source
-solve mdl_WH_int using LP maximizing NPV;
-
-* Fixes WHR production from previous step, for use in the DH model
-x_hr.fx(T,G_HR)         = x_hr.l(T,G_HR);
-
-* Solve integrated case for district heating system 
-solve mdl_DH_int using LP minimizing OPX_DH_int;
-
-* Unload integrated case results
-execute_unload '%OutDir%/OutVars-int.gdx' NPV, OPX_WH_int, x_f_wh, x_c, x_hr, Y_hr, w_q_wh, OPX_DH_int, x_f_dh, x_h, x_e, x_hr, w_q_dh;
-
-$include './scripts/gams/paybacktime.inc'
-
-display Y_hr.l, NPV.l, CAPEX, OPX_WH_int.l, OPX_WH_ref.l, PaybackTime_discounted, PaybackTime_simplified;
+$ifi %scenario% == 'no-policy'          $include './scripts/gams/solve_no-policy.inc'
+$ifi %scenario% == 'capital-subsidy'    $include './scripts/gams/solve_capital-subsidy.inc'
 
 * * ======================================================================
 * * POST-PROCESSING
 * * ======================================================================
-* * PARAMETERS
-* * fuel_use(T,F)
-* * heat_share(G)       'Heat share (-)'
-* * fuel_share(F)
-* * ;
-
-* * heat_share(G) = sum(T, x_h.l(T,G))/sum(T, D(T));
-* * fuel_use(T,F) = sum(G$GF(G,F), x_f.l(T,G));
-* * fuel_sharE(F) = sum(T, fuel_use(T,F))/sum((T,G), x_f.l(T,G));
+* Transfer results from reference case to be used in the next step
+$ifi %whr% == 'no'  $include './scripts/gams/reference_unload.inc'
 
 * ======================================================================
 * END OF FILE
-
-* https://forum.gamsworld.org/viewtopic.php?t=11557

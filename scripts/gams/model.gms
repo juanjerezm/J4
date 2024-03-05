@@ -217,7 +217,7 @@ D_c(T)                  'Demand of cold (MW)'
 pi_e(T)                 'Price of electricity (EUR/MWh)'
 pi_f(T,F)               'Price of fuel (EUR/MWh)'
 pi_q(F)                 'Price of carbon quota (EUR/kg)'
-tau_f(G)                'Fuel tariff (EUR/MWh)'
+tau_f(F)                'Fuel taxes and tariffs (EUR/MWh)'
 
 qc_e(T)                  'Carbon content of electricity (kg/MWh)'
 qc_f(T,F)                'Carbon content of fuel (kg/MWh)'
@@ -301,14 +301,15 @@ C_h(G)$(G_HR(G))                = GNRT_DATA(G,'variable cost - heat');
 C_c(G)$(G_CO(G))                = GNRT_DATA(G,'variable cost - cold');
 C_inv(G)$(G_HR(G))              = GNRT_DATA(G,'capital cost');
 C_fix(G)$(G_HR(G))              = GNRT_DATA(G,'fixed cost');
-tau_f(G)                        = GNRT_DATA(G,'fuel tariff');
 
 pi_f(T,F)                       = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
 pi_q(F)                         = FUEL_DATA(F,'carbon price');
 qc_f(T,F)                       = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + qc_e(T)$(F_EL(F));
+tau_f(F)                        = FUEL_DATA(G,'fuel tax') + FUEL_DATA(G,'fuel tariff');
 R_f(G)                          = GNRT_DATA(G,'ramping rate');
 beta_b(G)$G_CHP(G)              = GNRT_DATA(G,'Cb');
 beta_v(G)$G_EX(G)               = GNRT_DATA(G,'Cv');
+
 
 * C_s(S)                          = STRG_DATA(S,'OMV');
 * Y_s(S)                          = STRG_DATA(S,'SOC capacity');
@@ -413,7 +414,7 @@ P_inv                        'Subsidy on WHR investment' /0/
 eq_OPX_DH..                                 OPX_DH  =e= + sum((T,G_DH),  C_f(T,G_DH)            * x_f_dh(T,G_DH))
                                                         + sum((T,G_HO),  C_h(G_HO)              * x_h(T,G_HO))
                                                         + sum((T,G_CHP), C_e(G_CHP)             * x_e(T,G_CHP))
-                                                        - sum((T,G_CHP), (pi_e(T)-tau_f(G_CHP)) * x_e(T,G_CHP))
+                                                        - sum((T,G_CHP), pi_e(T)                * x_e(T,G_CHP))
 $ifi %whr% == 'yes'                                     + sum((T,G_HR),  pi_hr(T)               * x_hr(T,G_HR))
                                                         ;
 

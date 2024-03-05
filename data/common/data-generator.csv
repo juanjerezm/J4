@@ -1,5 +1,5 @@
 ﻿,'type','Cb','Cv','ramping rate','variable cost - heat','variable cost - electricity','variable cost - cold','fixed cost','capital cost','annuity factor','fuel tariff','aux'
-'electric chiller',CO,-,-,1,-,-,3,-,-,-,10,0
+'electric chiller',CO,-,-,1,-,-,2.264,-,-,-,10,0
 'free cooling',CO,-,-,1,-,-,0.001,-,-,-,10,0
 'HP - waste heat',HR,-,-,1,2.329,-,-,2127,914500,0.06,8,0
 'CHP - coal',BP,0.84,-,0.25,-,3.28,-,-,-,-,2,1

@@ -227,7 +227,7 @@ Y_h(G)                  'Heat output capacity (MWh)'
 Y_e(G)                  'Electricity output capacity (MWh)' 
 R_f(G)                  'Input ramping rate (-)'
 F_a(T,G)                'Generator availabity factor (-)'
-eta(T,G)                'Generator efficiency (-)'
+eta(T,G)                'Generator efficiency (-), (CHPs: electrical efficiency)'
 beta_b(G)               'Cb coefficient of CHPs (-)'
 beta_v(G)               'Cv coefficient of CHPs (-)'
 
@@ -432,7 +432,8 @@ eq_NPV..                                    NPV =e= - sum(G_HR, C_inv(G_HR) * (1
 eq_heat_balance(T)..                        sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_hr(T,G_HR))    =e= D_h(t);
 eq_cold_balance(T)..                        sum(G_CO, x_c(T,G_CO)) + sum(G_HR, x_c(T,G_HR))     =e= D_c(t);
 
-eq_conversion_BP(T,G)$(G_BP(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + x_h(T,G);
+*eq_conversion_BP(T,G)$(G_BP(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + x_h(T,G);
+eq_conversion_BP(T,G)$(G_BP(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G);
 eq_conversion_EX(T,G)$(G_EX(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + beta_v(G)*x_h(T,G);
 eq_conversion_HO(T,G)$(G_HO(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_h(T,G);
 eq_conversion_HR_heat(T,G)$(G_HR(G))..      (eta(T,G)+1) * x_f_wh(T,G)      =e= x_hr(T,G);

@@ -35,9 +35,12 @@ data_DH = data_DH[data_DH['Heat delivery'] > 0]
 
 
 #%% 
-# --> Define thresholds for network size classification
+# --> Define script parameters
 threshold_small =  0.5e6
 threshold_medium = 5.0e6
+
+save = True
+dpi = 150
 
 #%%
 # --> Describe national production data
@@ -53,17 +56,29 @@ data_DH.hist(column='Heat delivery', bins=35*5)
 plt.ylim(0, 50) # make easier to see small values
 plt.axvline(x=threshold_small, color='r', linestyle='-')
 plt.axvline(x=threshold_medium, color='r', linestyle='-')
+plt.xlabel('Annual heat delivery')
+plt.ylabel('Count (cropped)')
+
+if save:
+    plt.savefig('notes/source_files/DH-production-histogram.png', dpi=dpi)
 
 #%%
 # --> Classify by network size and get scaling factor
 
 data_DH["Network size"] = data_DH["Heat delivery"].apply(lambda x: "small" if x <= threshold_small else "medium" if x <= threshold_medium else "large")
+selected_DH = data_DH[data_DH['Network size'].isin(['large', 'medium'])]
 
-mean = data_DH[data_DH['Network size'].isin(['large', 'medium'])]['Heat delivery'].mean()
-scaling_factor = mean / data_DH['Heat delivery'].max()
+mean = selected_DH['Heat delivery'].mean()
+scaling_factor = selected_DH['Heat delivery'].mean() / selected_DH['Heat delivery'].max()
 
-print(f"Scaling factor: {scaling_factor:.2f}")
-print(f"Mean heat delivery for large and medium networks: {mean:.2e}")
+print(f"Scaling factor: \n {scaling_factor:.3f}")
+print("-------------------")
+print(f"Mean heat delivery for large and medium networks: \n {selected_DH['Heat delivery'].mean():.2e}")
+print("-------------------")
+print(f"Network closest to the mean: \n {selected_DH.loc[abs(selected_DH['Heat delivery'] - mean).idxmin(), 'Name']} ")
+print("-------------------")
+print(f"Selected networks (highest to lowest):")
+print(selected_DH.sort_values(by='Heat delivery', ascending=False)['Name'])
 
 #%%
 # --> Scaling CPH's heat demand data

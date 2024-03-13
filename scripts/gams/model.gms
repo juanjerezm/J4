@@ -4,7 +4,6 @@
 
 
 * ----- NOTES -----
-* - Tariff values are placeholders. They should be replaced with actual values.
 
 * ======================================================================
 *  SETUP:
@@ -330,8 +329,9 @@ Y_e(G)$G_EX(G)                  = Y_h(G)*(beta_b(G) + beta_v(G));
 C_f(T,G)                        = sum(F$GF(G,F), pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f(F));
 
 * Loads parameters specific to integrated case: WH price, reference DH marginal costs and reference WH OPEX
+******** THIS CAN BE MOVED WITHIN THE SCENARIO-SPECIFIC SCRIPTS ********
 $ifi %whr% == 'yes' $include './scripts/gams/reference_load.inc'
-* Empties the list of heat-recovery generators
+* Empties the list of heat-recovery generators if WHR is not considered
 $ifi %whr% == 'no'  G_HR(G)     = NO;
 $onlisting
 
@@ -432,7 +432,6 @@ eq_NPV..                                    NPV =e= - sum(G_HR, C_inv(G_HR) * (1
 eq_heat_balance(T)..                        sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_hr(T,G_HR))    =e= D_h(t);
 eq_cold_balance(T)..                        sum(G_CO, x_c(T,G_CO)) + sum(G_HR, x_c(T,G_HR))     =e= D_c(t);
 
-*eq_conversion_BP(T,G)$(G_BP(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + x_h(T,G);
 eq_conversion_BP(T,G)$(G_BP(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G);
 eq_conversion_EX(T,G)$(G_EX(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_e(T,G) + beta_v(G)*x_h(T,G);
 eq_conversion_HO(T,G)$(G_HO(G))..           eta(T,G)     * x_f_dh(T,G)      =e= x_h(T,G);

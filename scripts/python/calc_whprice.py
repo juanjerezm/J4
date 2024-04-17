@@ -39,7 +39,7 @@ efficiency = clean_quotation_marks(efficiency)
 
 efficiency["HP - waste heat"] = efficiency["HP - waste heat"] + 1 # adjust efficiency from cold to heat
 
-carbon_price = fuels.loc["electricity", "carbon price"]
+carbon_price = fuels.loc["electricity", "carbon pric4e"]
 tax_tariff = (
     fuels.loc["electricity", "fuel tax"] + fuels.loc["electricity", "fuel tariff"]
 )

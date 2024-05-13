@@ -1,3 +1,20 @@
+## ----- Project specific ----- ##
+# Result files
+/results/*
+
+# Gams files
+*.log~*
+*.~log
+*.lxi
+*.lst
+*.gsp
+**/225*/
+
+# VS Code
+.vscode/
+
+## ----- End of project specific ----- ##
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

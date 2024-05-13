@@ -1,7 +1,8 @@
 # TO-DO list
 
 ## General
-- [ ] Calculate long-term WHR cost
-- [ ] Add average WHR price into optimization model (LGT WHR cost - Marginal DH cost)
-- [ ] Add storage operation and investments
-- [ ] Add DH investment costs
+- [ ] Collect energy, carbon taxes, and tariffs from DE and FR
+  - [ ] Add those to datafiles
+- [ ] Update data
+  - [ ] Update DK tariffs data to year 2023, include distribution to medium level.
+- [ ] Change optimization to hour-by-hour positive OPEX.

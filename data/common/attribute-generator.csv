@@ -1,4 +1,5 @@
-﻿'type'
+'type'
+'capacity'
 'Cb'
 'Cv'
 'ramping rate'
@@ -7,6 +8,4 @@
 'variable cost - electricity'
 'fixed cost'
 'capital cost'
-'annuity factor'
-'fuel tariff'
 'aux'

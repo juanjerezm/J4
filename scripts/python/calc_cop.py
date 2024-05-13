@@ -45,7 +45,7 @@ def cop_chiller(T_in):
 
 
 
-df_source = pd.read_csv("data/_master-data/temperature-source.csv", skiprows=[1, 2], index_col="timestep")
+df_source = pd.read_csv("data/_master-data/temperature-source-2023.csv", skiprows=[1, 2], index_col="timestep")
 df_sink = pd.read_csv("data/_master-data/temperature-sink.csv", skiprows=[1, 2], index_col="timestep")
 
 df_efficiency = pd.DataFrame(index=df_source.index)
@@ -53,9 +53,9 @@ df_efficiency = pd.DataFrame(index=df_source.index)
 DT = 5 #K
 df_efficiency["HP - air"] = cop_heatpump("air", 10, 2020, df_source['air'], df_source['air'] - DT, df_sink['distribution return'], df_sink['distribution supply'])
 df_efficiency["HP - seawater"] = cop_heatpump("seawater", 20, 2020, df_source['seawater'], df_source['seawater'] - DT, df_sink['distribution return'], df_sink['distribution supply'])
-df_efficiency['HP - heat recovery'] = cop_heatpump("excess heat", 3, 2020, 30, 20, df_sink['distribution return'], df_sink['distribution supply']) - 1 #-1 because it's cooling efficiency here
+df_efficiency['HP - heat recovery'] = cop_heatpump("excess heat", 3, 2020, 30, 20, df_sink['distribution return'], df_sink['distribution supply'])
 df_efficiency["electric chiller"] = cop_chiller(df_source['air']+ DT)
 
 df_efficiency = df_efficiency.round(3)
 
-df_efficiency.to_csv("data/_master-data/variable-efficiencies.csv")
+df_efficiency.to_csv("data/_master-data/variable-efficiencies-2023.csv")

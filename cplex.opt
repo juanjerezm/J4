@@ -1,7 +1,6 @@
 Threads -1
 startalg 6
 
-* optcr = 0.001
 * numericalemphasis 1
 * mipemphasis 0
 * eprhs  1e-6

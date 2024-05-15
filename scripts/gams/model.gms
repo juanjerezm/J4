@@ -23,14 +23,15 @@ option optcr = 0.01;
 * Global 'run_name' identifies the run and is used to name the output files
 * MAKE SURE TO CHANGE THIS TO A UNIQUE NAME FOR EACH RUN
 
-$ifi not setglobal run_name     $SetGlobal run_name 'test_run'
+* $ifi not setglobal run_name     $SetGlobal run_name 'testrun'
+$ifi not setglobal run_name     $SetGlobal run_name 'testing2'
 
 * CHOOSE (uncomment) ONE OF THE FOLLOWING MODES:
 *   - 'single' solves the model once, with the assumed full-load hours
 *   - 'iterative' solves the model iteratively, updating the full-load hours
 
-* $ifi not setglobal mode         $SetGlobal mode 'single'
-$ifi not setglobal mode         $SetGlobal mode 'iterative'
+$ifi not setglobal mode         $SetGlobal mode 'single'
+* $ifi not setglobal mode         $SetGlobal mode 'iterative'
 
 * ----- Policy flags -----
 * CHOOSE (uncomment) ONE OF THE FOLLOWING POLICY TYPES:
@@ -56,8 +57,7 @@ $ifi %system.filesys% == unix   $SetGlobal outDir   './results/%run_name%/'
 execute 'mkdir %outDir%';
 
 * Execute the reference case
-$call gams ./scripts/gams/model_reference --run_name= %run_name% --policytype==%policytype% --country=%country% 
-
+$call gams ./scripts/gams/model_reference o=./results/%run_name%/model_reference.lst --run_name=%run_name% --policytype=%policytype% --country=%country% 
 
 * ----- Global scalars -----
 SCALAR
@@ -237,8 +237,7 @@ C_s_fix(S)              'Investment cost of storage (EUR/MWh)'
 C_p_inv                 'Investment cost of pipe connection (EUR/MW-m)'
 
 CO2_REF(F)              'Carbon emissions in reference case (kg)'
-OPX_DHN_REF             'Operating cost for DHN - reference case (EUR)'
-OPX_WHS_REF             'Operating cost for WHS - reference case (EUR)'
+OPX_REF(E)              'Operating cost for entity (stakeholder) - reference case (EUR)'
 MC_DH(T)                'Marginal cost of DH (EUR/MWh)'
 MC_DH_month(M)          'Marginal cost of DH - monthly average (EUR/MWh)'
 MC_HR(T,G)              'Marginal cost of HR units (EUR/MWh)'
@@ -292,31 +291,23 @@ r('WHS')                = 0.04;
 * Initial estimation full load hours
 N(G_HR)         = 8760;
 
-* - Zero-dimensional parameters -
-SCALAR OPX_DHN_REF
-/
-$onDelim
-$include    './results/%run_name%/transferDir/OPEX_DHN_ref.csv'
-$offDelim
-/;
-
-SCALAR OPX_WHS_REF
-/
-$onDelim
-$include    './results/%run_name%/transferDir/OPEX_WHS_ref.csv'
-$offDelim
-/;
-
 * - One-dimensional parameters -
 $offlisting
-PARAMETERS CO2_REF(F)
+PARAMETERS 
+CO2_REF(F)
 /
 $onDelim
 $include    './results/%run_name%/transferDir/CO2_ref.csv'
 $offDelim
-/;
+/
 
-PARAMETERS
+OPX_REF(E)
+/
+$onDelim
+$include    './results/%run_name%/transferDir/OPEX_ref.csv'
+$offDelim
+/
+
 MC_DH(T)
 /
 $onDelim
@@ -428,8 +419,7 @@ pi_h(T,G_HR)    = ((MC_DH(T) - MU_DH(G_HR)) + (MC_HR(T,G_HR) + MU_HR(G_HR)))/2;
 F_a(T,G_HR)$((MC_HR(T,G_HR) + MU_HR(G_HR)) GE (MC_DH(T) - MU_DH(G_HR))) = 0;
 
 * add a small tolerance value so the MIP solver doesn't complain
-OPX_DHN_REF = 1  + OPX_DHN_REF;
-OPX_WHS_REF = 1  + OPX_WHS_REF;
+OPX_REF(E) = 1  + OPX_REF(E);
 
 
 * ----- Support policy section -----
@@ -439,6 +429,7 @@ k_inv_p         'Investment subsidy fraction for connection pipe (-)'
 pi_h_ceil(G)    'Waste-heat ceiling price (EUR/MWh)'
 ;
 
+* Default values without support policy
 k_inv_g(G)      = 0;
 k_inv_p         = 0;
 pi_h_ceil(G)    = 0;
@@ -453,20 +444,17 @@ $ifi %policytype% == 'support' $include './scripts/gams/definition_policy.inc';
 * ======================================================================
 * ----- Variable declaration -----
 FREE VARIABLES
-NPV                         'Net present value of project - total (EUR)'
-OPX_DHN                     'Operating cost for DH (EUR)'
-OPX_WHS                     'Operating cost for WH (EUR)'
+NPV_all                     'Net present value of project - total (EUR)'
+OPX(E)                      'Operating cost for entity (stakeholder) (EUR)'
 ;
 
 POSITIVE VARIABLES
-NPV_DHN                     'Net present value of DHN investments (EUR)'
-NPV_WHS                     'Net present value of WHS investments (EUR)'
+NPV(E)                      'Net present value for entity (stakeholder) (EUR)'
 x_f(T,G,F)                  'Consumption of fuel by generator (MWh)'
 x_h(T,G)                    'Production of heat (MWh)'
 x_e(T,G)                    'Production of electricity (MWh)'
 x_c(T,G)                    'Production of cold (MWh)'
 z(T,S)                      'State-of-charge of storage (MWh)'
-y_cs(S)                     'Cooling storage capacity (MWh)'
 y_hr(G)                     'Heating capacity of heat-recovery generators (MWh)'
 ;
 
@@ -482,7 +470,7 @@ x_s(T,S,SS)                 'Storage charge/discharge flow (MWh)'
 * ======================================================================
 * ----- Equation declaration -----
 EQUATIONS
-eq_NPV                      'Net Present Value (total)'
+eq_NPV_all                  'Net Present Value (total)'
 eq_NPV_DHN                  'Net Present Value for DHN'
 eq_NPV_WHS                  'Net Present Value for WHS'
 eq_OPX_DHN                  'Operating cost of DH system'
@@ -512,26 +500,26 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 ;
 
 * ----- Equation definition -----
-eq_NPV..                                    NPV     =e= NPV_DHN + NPV_WHS;
+eq_NPV_all..                                NPV_all     =e= NPV('DHN') + NPV('WHS');
 
-eq_NPV_DHN..                                NPV_DHN =e= - sum(G_HR, L_p(G_HR) * C_p_inv       * y_hr(G_HR) * k_inv_p      ) + (OPX_DHN_REF - OPX_DHN)/AF('DHN');
-eq_NPV_WHS..                                NPV_WHS =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * k_inv_g(G_HR)) + (OPX_WHS_REF - OPX_WHS)/AF('WHS');
+eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv       * y_hr(G_HR) * k_inv_p      ) + (OPX_REF('DHN') - OPX('DHN'))/AF('DHN');
+eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * k_inv_g(G_HR)) + (OPX_REF('WHS') - OPX('WHS'))/AF('WHS');
 
-eq_OPX_DHN..                                OPX_DHN =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,F)     * x_f(T,G_DH,F))
-                                                        + sum((T,G_HO),              C_h(G_HO)    * x_h(T,G_HO))
-                                                        + sum((T,G_CHP),             C_e(G_CHP)   * x_e(T,G_CHP))
-                                                        - sum((T,G_CHP),             pi_e(T)      * x_e(T,G_CHP))
-                                                        + sum((T,G_HR),              pi_h(T,G_HR) * x_h(T,G_HR))
-                                                        ;
+eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,F)     * x_f(T,G_DH,F))
+                                                            + sum((T,G_HO),              C_h(G_HO)    * x_h(T,G_HO))
+                                                            + sum((T,G_CHP),             C_e(G_CHP)   * x_e(T,G_CHP))
+                                                            - sum((T,G_CHP),             pi_e(T)      * x_e(T,G_CHP))
+                                                            + sum((T,G_HR),              pi_h(T,G_HR) * x_h(T,G_HR))
+                                                            ;
 
-eq_OPX_WHS..                                OPX_WHS =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,F)      * x_f(T,G_CO,F))
-                                                        + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
-                                                        + sum((T,G_HR,F)$GF(G_HR,F), C_f(T,F)      * x_f(T,G_HR,F))
-                                                        + sum((T,G_HR),              C_h(G_HR)     * x_h(T,G_HR))
-                                                        - sum((T,G_HR),              pi_h(T,G_HR)  * x_h(T,G_HR))
-                                                        + sum(G_HR,                  C_g_fix(G_HR) * y_hr(G_HR))
-$ifi %policytype% == 'support' $ifi %country% == 'DE'   - sum(F, pi_q(F) * (CO2_ref(F) - sum((T,G)$GF(G,F), qc_f(T,F)*x_f(T,G,F))))
-                                                        ;
+eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,F)      * x_f(T,G_CO,F))
+                                                            + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
+                                                            + sum((T,G_HR,F)$GF(G_HR,F), C_f(T,F)      * x_f(T,G_HR,F))
+                                                            + sum((T,G_HR),              C_h(G_HR)     * x_h(T,G_HR))
+                                                            - sum((T,G_HR),              pi_h(T,G_HR)  * x_h(T,G_HR))
+                                                            + sum(G_HR,                  C_g_fix(G_HR) * y_hr(G_HR))
+$ifi %policytype% == 'support' $ifi %country% == 'DE'       - sum(F, pi_q(F) * (CO2_ref(F) - sum((T,G)$GF(G,F), qc_f(T,F)*x_f(T,G,F))))
+                                                            ;
 
 eq_load_heat(T)..                           sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_h(T,G_HR)*(1-rho_g(G_HR))) + sum(S_DH, x_s(T,S_DH,'discharge')) - sum(S_DH, x_s(T,S_DH,'charge')) =e= D_h(T);
 eq_load_cold(T)..                           sum(G_WH, x_c(T,G_WH))                                                                                                                 =e= D_c(T);

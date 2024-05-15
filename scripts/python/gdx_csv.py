@@ -33,7 +33,7 @@ def gdx_dfs(paths, variables=None, attributes=["level"]):
         
         for var in spec_var:
         
-            df_temp = container[var].records
+            df_temp = container[var].records # type: ignore
             df_temp.insert(0, "scenario", scenario)
             df_temp.drop(columns=[col for col in gams_attrs if col not in attributes],inplace=True)
 

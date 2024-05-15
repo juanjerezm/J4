@@ -29,8 +29,14 @@
     #BSUB -oo Output_%J.out 
     #BSUB -eo Error_%J.err 
 
-    # here follow the commands you want to execute 
-    # this must be modified to fit your run
-
-    gams /zhome/f0/5/124363/J4/scripts/gams/model --policytype=support o=output_test_hpc.lst 
+    # here follow the commands you want to execute
     
+    # Define project's HPC directory, and run's name
+    hpc_dir="/zhome/f0/5/124363/J4"
+    run_name="testingrun2"
+
+    # Create a directory based on the run_name
+    mkdir -p ${hpc_dir}/results/${run_name}/transferDir/
+
+    # Run the GAMS model with the run_name as a parameter
+    gams ${hpc_dir}/scripts/gams/model --run_name=${run_name} --policytype=socioeconomic o=${hpc_dir}/results/${run_name}/model.lst    

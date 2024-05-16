@@ -20,44 +20,44 @@ option limcol = 0
 option optcr = 0.01;
 
 * ----- Control flags -----
-* Global 'run_name' identifies the run and is used to name the output files
-* MAKE SURE TO CHANGE THIS TO A UNIQUE NAME FOR EACH RUN
+* --- Name flag ---
+* Flag 'name' identifies the optimization run, setting directories and filenames.
+* Results will be overwritten if 'name' is not unique. Do not use spaces or hyphens (-).
 
-* $ifi not setglobal run_name     $SetGlobal run_name 'testrun'
-$ifi not setglobal run_name     $SetGlobal run_name 'testing2'
+* $ifi not setglobal name     $SetGlobal name 'testrun'
+$ifi not setglobal name     $SetGlobal name 'testing4'
 
-* CHOOSE (uncomment) ONE OF THE FOLLOWING MODES:
-*   - 'single' solves the model once, with the assumed full-load hours
-*   - 'iterative' solves the model iteratively, updating the full-load hours
+* --- Solving flag ---
+* Uncomment solving mode:
+*   - 'single'      solves the model once, using assumed full-load hours
+*   - 'iterative'   solves the model iteratively, updating full-load hours
 
-$ifi not setglobal mode         $SetGlobal mode 'single'
-* $ifi not setglobal mode         $SetGlobal mode 'iterative'
+$ifi not setglobal mode     $SetGlobal mode 'single'
+$ifi not setglobal mode     $SetGlobal mode 'iterative'
 
-* ----- Policy flags -----
-* CHOOSE (uncomment) ONE OF THE FOLLOWING POLICY TYPES:
-*   - 'socioeconomic'   does not include any tax or support
-*   - 'taxation'        includes energy and carbon taxes,
-*   - 'support'         includes support measures on top of taxes
+* --- Policy flag ---
+* Uncomment policy setup to analyse:
+*  - 'socioeconomic' does not include taxes, tariffs or support schemes,
+*  - 'taxation'      includes energy/carbon taxes and electricity tariffs,
+*  - 'support'       includes support schemes on top of taxation
 
-* $ifi not setglobal policytype $SetGlobal policytype       'socioeconomic'
-$ifi not setglobal policytype $SetGlobal policytype       'taxation'
-* $ifi not setglobal policytype $SetGlobal policytype       'support'
+* $ifi not setglobal policytype $SetGlobal policytype 'socioeconomic'
+$ifi not setglobal policytype $SetGlobal policytype 'taxation'
+* $ifi not setglobal policytype $SetGlobal policytype 'support'
 
-* ----- Country flags -----
-* CHOOSE (uncomment) ONE OF THE FOLLOWING COUNTRIES:
-
-$ifi not setglobal country          $SetGlobal country          'DK'
-* $ifi not setglobal country          $SetGlobal country          'DE'
-* $ifi not setglobal country          $SetGlobal country          'FR'
+* ----- Country flag -----
+* Uncomment country to analyse:
+$ifi not setglobal country  $SetGlobal country  'DK'
+* $ifi not setglobal country  $SetGlobal country  'DE'
+* $ifi not setglobal country  $SetGlobal country  'FR'
 
 * ----- Directories, filenames, and scripts -----
 * Create directories for output
-$ifi %system.filesys% == msnt   $SetGlobal outDir   '.\results\%run_name%\'
-$ifi %system.filesys% == unix   $SetGlobal outDir   './results/%run_name%/'
-execute 'mkdir %outDir%';
+$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%name%\';
+$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%name%/';
 
 * Execute the reference case
-$call gams ./scripts/gams/model_reference o=./results/%run_name%/model_reference.lst --run_name=%run_name% --policytype=%policytype% --country=%country% 
+$call gams ./scripts/gams/model_reference o=./results/%name%/model_reference.lst --name=%name% --policytype=%policytype% --country=%country% 
 
 * ----- Global scalars -----
 SCALAR
@@ -250,9 +250,10 @@ pi_h(T,G)               'Price of recovered heat (EUR/MWh)'
 pi_e(T)                 'Price of electricity (EUR/MWh)'
 pi_f(T,F)               'Price of fuel (EUR/MWh)'
 pi_q(F)                 'Price of carbon quota (EUR/kg)'
-tau_f(F)                'Fuel taxes and tariffs (EUR/MWh)'
-qc_e(T)                  'Carbon content of electricity (kg/MWh)'
-qc_f(T,F)                'Carbon content of fuel (kg/MWh)'
+tau_f_v(F)              'Fuel taxes and volumetric tariffs (EUR/MWh)'
+tau_f_c(F)              'Fuel capacity tariffs (EUR/MW)'
+qc_e(T)                 'Carbon content of electricity (kg/MWh)'
+qc_f(T,F)               'Carbon content of fuel (kg/MWh)'
 
 D_h(T)                  'Demand of heat (MW)'
 D_c(T)                  'Demand of cold (MW)'
@@ -297,21 +298,21 @@ PARAMETERS
 CO2_REF(F)
 /
 $onDelim
-$include    './results/%run_name%/transferDir/CO2_ref.csv'
+$include    './results/%name%/transferDir/CO2_ref.csv'
 $offDelim
 /
 
 OPX_REF(E)
 /
 $onDelim
-$include    './results/%run_name%/transferDir/OPEX_ref.csv'
+$include    './results/%name%/transferDir/OPEX_ref.csv'
 $offDelim
 /
 
 MC_DH(T)
 /
 $onDelim
-$include    './results/%run_name%/transferDir/ts-margcost-heat.csv'
+$include    './results/%name%/transferDir/ts-margcost-heat.csv'
 $offDelim
 /
 
@@ -368,7 +369,8 @@ C_g_fix(G)$(G_HR(G))    = GNRT_DATA(G,'fixed cost');
 pi_f(T,F)               = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
 pi_q(F)                 = FUEL_DATA(F,'carbon price');
 qc_f(T,F)               = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + qc_e(T)$(F_EL(F));
-tau_f(F)                = FUEL_DATA(F,'fuel tax') + FUEL_DATA(F,'fuel tariff');
+tau_f_v(F)              = FUEL_DATA(F,'fuel tax') + FUEL_DATA(F,'volumetric tariff');
+tau_f_c(F)              = FUEL_DATA(F,'capacity tariff');
 
 Y_f(G_DH)               = GNRT_DATA(G_DH,'capacity');  
 beta_b(G)$G_CHP(G)      = GNRT_DATA(G,'Cb');
@@ -389,8 +391,8 @@ Y_c(G_CO)               = smax(T, D_c(T));
 
 *  Calculate fuel cost from fuel price, carbon quota, and taxes/tariffs. Depends on the policy type
 $ifi %policytype% == 'socioeconomic'    C_f(T,F)    = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,F)    = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f(F);
-$ifi %policytype% == 'support'          C_f(T,F)    = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f(F);
+$ifi %policytype% == 'taxation'         C_f(T,F)    = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F);
+$ifi %policytype% == 'support'          C_f(T,F)    = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F);
 
 * Calculate annuity factor
 AF(E)               = r(E) * (1 + r(E)) ** lifetime(E) / ((1 + r(E)) ** lifetime(E) - 1);
@@ -456,6 +458,7 @@ x_e(T,G)                    'Production of electricity (MWh)'
 x_c(T,G)                    'Production of cold (MWh)'
 z(T,S)                      'State-of-charge of storage (MWh)'
 y_hr(G)                     'Heating capacity of heat-recovery generators (MWh)'
+y_f_used(E,F)               'Maximum fuel consumption of fuel per entity at any timestep (MW)'
 ;
 
 SOS1 VARIABLES
@@ -491,6 +494,8 @@ eq_conversion_HR_2(T,G)     'Conversion constraint for heat-recovery generators 
 eq_max_DH(T,G)              'Capacity constraint for DH generators (input-based)'
 eq_max_HR(T,G)              'Capacity constraint for heat-recovery generators (output-based)'
 eq_max_CO(T,G)              'Capacity constraint for cold-only generators (output-based)'
+eq_max_fueluse_DHN(T,F)     'Maximum fuel consumption by DHN at any timestep'
+eq_max_fueluse_WHS(T,F)     'Maximum fuel consumption by WHS at any timestep'
 
 eq_sto_balance(T,S)         'Storage balance'
 eq_sto_end(T,S)             'Storage initial state of charge'
@@ -510,6 +515,7 @@ eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(
                                                             + sum((T,G_CHP),             C_e(G_CHP)   * x_e(T,G_CHP))
                                                             - sum((T,G_CHP),             pi_e(T)      * x_e(T,G_CHP))
                                                             + sum((T,G_HR),              pi_h(T,G_HR) * x_h(T,G_HR))
+$ifi not %policytype% == 'socioeconomic'                    - sum(F, tau_f_c(F) * y_f_used('DHN',F))
                                                             ;
 
 eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,F)      * x_f(T,G_CO,F))
@@ -518,6 +524,7 @@ eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(
                                                             + sum((T,G_HR),              C_h(G_HR)     * x_h(T,G_HR))
                                                             - sum((T,G_HR),              pi_h(T,G_HR)  * x_h(T,G_HR))
                                                             + sum(G_HR,                  C_g_fix(G_HR) * y_hr(G_HR))
+$ifi not %policytype% == 'socioeconomic'                    - sum(F, tau_f_c(F) * y_f_used('WHS',F))
 $ifi %policytype% == 'support' $ifi %country% == 'DE'       - sum(F, pi_q(F) * (CO2_ref(F) - sum((T,G)$GF(G,F), qc_f(T,F)*x_f(T,G,F))))
                                                             ;
 
@@ -536,6 +543,8 @@ eq_conversion_HR_2(T,G)$G_HR(G)..           eta_g(T,G) * sum(F$GF(G,F), x_f(T,G,
 eq_max_DH(T,G)$G_DH(G)..                                 sum(F$GF(G,F), x_f(T,G,F)) =l= F_a(T,G)*Y_f(G);
 eq_max_CO(T,G)$G_CO(G)..                                                x_c(T,G)    =l= F_a(T,G)*Y_c(G);
 eq_max_HR(T,G)$G_HR(G)..                                                x_h(T,G)    =l= F_a(T,G)*y_hr(G);
+eq_max_fueluse_DHN(T,F)..                       sum(G_DH$GF(G_DH,F), x_f(T,G_DH,F)) =l= y_f_used('DHN',F);
+eq_max_fueluse_WHS(T,F)..                       sum(G_WH$GF(G_WH,F), x_f(T,G_WH,F)) =l= y_f_used('WHS',F);
 
 eq_sto_balance(T,S)..                       z(T,S)      =e= (1-rho_s(S)) * z(T--1,S) + eta_s(S)*x_s(T,S,'charge') - x_s(T,S,'discharge')/eta_s(S);
 eq_sto_end(T,S)$(ord(T)=card(T))..          z(T,S)      =e= F_s_end(S) * Y_s(S);
@@ -561,6 +570,6 @@ mdl_all.optfile = 1;
 $ifi %mode% == 'single'     $include './scripts/gams/solve_single.inc';
 $ifi %mode% == 'iterative'  $include './scripts/gams/solve_iterative.inc';
 
-execute_unload './results/%run_name%/results_integrated-%run_name%.gdx'
+execute_unload './results/%name%/results-%name%-integrated.gdx'
 * ======================================================================
 * END OF FILE

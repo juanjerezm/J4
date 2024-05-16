@@ -30,13 +30,16 @@
     #BSUB -eo Error_%J.err 
 
     # here follow the commands you want to execute
-    
-    # Define project's HPC directory, and run's name
+  
+    # Define project's HPC directory, replace with your own.
     hpc_dir="/zhome/f0/5/124363/J4"
-    run_name="testingrun2"
+    
+    # Define control flags
+    name="testeo"
+    policytype="taxation"
+    country="DK"
 
-    # Create a directory based on the run_name
-    mkdir -p ${hpc_dir}/results/${run_name}/transferDir/
-
-    # Run the GAMS model with the run_name as a parameter
-    gams ${hpc_dir}/scripts/gams/model --run_name=${run_name} --policytype=socioeconomic o=${hpc_dir}/results/${run_name}/model.lst    
+    # Create directories and run model
+    mkdir -p ${hpc_dir}/results/${name}/transferDir/
+    gams ${hpc_dir}/scripts/gams/model --name=${name} --policytype=${policytype} --country=${country} o=${hpc_dir}/results/${name}/model.lst
+    

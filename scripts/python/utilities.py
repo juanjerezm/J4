@@ -1,8 +1,7 @@
 import pandas as pd
-from typing import Dict, List
-import pandas as pd
 import gams.transfer as gt
 from pathlib import Path
+from typing import List, Union, Dict, Optional
 
 def print_line(length: int = 50) -> None:
     """
@@ -32,7 +31,7 @@ def print_title(title: str) -> None:
     print_line()
 
 
-def filter_df(df: pd.DataFrame, include: dict = {}, exclude: dict = {}) -> pd.DataFrame:
+def filter(df: pd.DataFrame, include: dict = {}, exclude: dict = {}) -> pd.DataFrame:
     """
     Filters a DataFrame based on inclusion (whitelist) and exclusion (blacklist) criteria.
     Keys are strings that correspond to dataframe columns.
@@ -218,14 +217,18 @@ def diff(df, reference_col: str, reference_item: str, value_col: str) -> pd.Data
     return df
 
 
-def gdxs_dfs(paths, variables=None, attributes=["level"]):
+def gdxdf_var(
+    paths: Union[List[str], List[Path]],
+    variables: Optional[List[str]] = None,
+    attributes: List[str] = ["level"],
+) -> Dict[str, pd.DataFrame]:
     """
-    Reads GDX files from the given paths and returns a dictionary of pandas DataFrames.
+    Reads GDX files from the given paths and returns all or some variables in a dictionary of pandas DataFrames.
 
     Args:
-        paths (list): A list of file paths to the GDX files.
-        variables (list, optional): A list of variable names to read from the GDX files. If None, all variables will be read.
-        attributes (list, optional): A list of attribute names to include in the resulting DataFrames. Defaults to ['level'].
+        paths (Union[List[str], List[Path]]): A list of file paths to the GDX files.
+        variables (List[str], optional): A list of variable names to read from the GDX files. If None, all variables will be read.
+        attributes (List[str], optional): A list of attribute names to include in the resulting DataFrames. Defaults to ['level'].
 
     Returns:
         dict: A dictionary where the keys are variable names and the values are pandas DataFrames containing the data.
@@ -233,41 +236,80 @@ def gdxs_dfs(paths, variables=None, attributes=["level"]):
     """
     gams_attrs = ["level", "marginal", "lower", "upper", "scale"]
 
-    # IF PATH IS A LIST OF STRING, CONVER TO LIST OF PATHS FROM PATHLIB
-    if isinstance(paths[0], str):
-        paths = [Path(path) for path in paths]
+    paths = [Path(path) for path in paths]
 
-    scenarios = [path.stem.split("_")[-1] for path in paths]
+    # scenario names are the last part of the file name after the last hyphen
+    scenarios = [path.stem.split("-")[-1] for path in paths]
 
     # read gdx files into containers
     containers = [gt.Container(str(path)) for path in paths]
 
     data_all = dict()
     for scenario, container in zip(scenarios, containers):
-        print(scenario)
-        print(container)
         if variables is None:
             spec_var = container.listVariables()
         else:
             spec_var = variables
-        
-        print(spec_var)
+
         for var in spec_var:
-        
-            df_temp = container[var].records # type: ignore
-            print(type(df_temp))
+            df_temp = container[var].records  # type: ignore
             if df_temp is None:
-                # write message and continue
                 print(f"Empty DataFrame for {var} in {scenario}")
                 continue
 
-            # print(var)
-            # print(df_temp)
             df_temp.insert(0, "scenario", scenario)
-            df_temp.drop(columns=[col for col in gams_attrs if col not in attributes],inplace=True)
+            df_temp.drop(
+                columns=[col for col in gams_attrs if col not in attributes],
+                inplace=True,
+            )
 
             if var not in data_all:
                 data_all[var] = pd.DataFrame()
             data_all[var] = pd.concat([data_all[var], df_temp])
+
+    return data_all
+
+
+import gams.transfer as gt
+
+
+def gdxdf_par(
+    paths: Union[List[str], List[Path]], parameters: List[str]
+) -> Dict[str, pd.DataFrame]:
+    """
+    Reads GDX files from the given paths and returns the specified parameters in a dictionary of DataFrames.
+
+    Note:
+    - If a parameter is not found in a GDX file, an empty DataFrame will be returned for that parameter.
+
+    Args:
+        paths ([List[str], List[Path]]): A list of file paths to the GDX files.
+        parameters (List[str]): A list of parameters names to read from the GDX files.
+
+    Returns:
+        Dict[str, pd.DataFrame]: A dictionary where the keys are parameter names and the values are pandas DataFrames containing the data.
+
+    """
+
+    paths = [Path(path) for path in paths]
+
+    # scenario names are the last part of the file name after the last hyphen
+    scenarios = [path.stem.split("-")[-1] for path in paths]
+
+    # read gdx files into containers
+    containers = [gt.Container(str(path)) for path in paths]
+
+    data_all = dict()
+    for scenario, container in zip(scenarios, containers):
+        for par in parameters:
+            df_temp = container[par].records  # type: ignore
+            if df_temp is None:
+                print(f"Empty DataFrame for {par} in {scenario}")
+                continue
+
+            df_temp.insert(0, "scenario", scenario)
+            if par not in data_all:
+                data_all[par] = pd.DataFrame()
+            data_all[par] = pd.concat([data_all[par], df_temp])
 
     return data_all

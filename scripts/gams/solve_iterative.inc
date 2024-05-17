@@ -10,7 +10,7 @@ $ifi %policytype% == 'support' $ifi %country% == 'DK' $goto DK_support_loop
 loop(IDX,
     log_n(IDX, G_HR, 'input')  = N(G_HR);
     
-    solve mdl_all using mip maximizing NPV;
+    solve mdl_all using mip maximizing NPV_all;
     N(G_HR)                     = sum((T), x_h.l(T,G_HR))/(y_hr.l(G_HR)+1e-6);
     log_n(IDX, G_HR, 'output')  = N(G_HR);
 
@@ -32,7 +32,7 @@ $label DK_support_loop
 loop(IDX,
     log_n(IDX, G_HR, 'input')  = N(G_HR);
     
-    solve mdl_all using mip maximizing NPV;
+    solve mdl_all using mip maximizing NPV_all;
     N(G_HR)                     = sum((T), x_h.l(T,G_HR))/(y_hr.l(G_HR)+1e-6);
     log_n(IDX, G_HR, 'output')  = N(G_HR);
 

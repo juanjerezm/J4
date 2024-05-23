@@ -178,7 +178,7 @@ F_EL(F)     = YES$(sameas(F,'electricity'));
 * ======================================================================
 * ----- Parameter declaration -----
 PARAMETERS
-C_f(T,F)                'Cost of fuel consumption (EUR/MWh)'
+C_f(T,G,F)              'Cost of fuel consumption (EUR/MWh)'
 C_h(G)                  'Cost of heat production (EUR/MWh)'
 C_c(G)                  'Cost of cold production (EUR/MWh)'
 C_e(G)                  'Cost of electricity production (EUR/MWh)'
@@ -191,6 +191,7 @@ pi_f(T,F)               'Price of fuel (EUR/MWh)'
 pi_q(F)                 'Price of carbon quota (EUR/kg)'
 tau_f_v(F)              'Fuel taxes and volumetric tariffs (EUR/MWh)'
 tau_f_c(F)              'Fuel capacity tariffs (EUR/MW)'
+tau_g(G)                'Special fuel surcharges for generator (EUR/MWh)'
 qc_e(T)                 'Carbon content of electricity (kg/MWh)'
 qc_f(T,F)               'Carbon content of fuel (kg/MWh)'
 
@@ -244,6 +245,13 @@ $onDelim
 $include    './data/common/ts-electricity-carbon.csv'
 $offDelim
 /
+
+tau_g(G)
+/
+$onDelim
+$include    './data/common/data-generator-fuel-surcharge-%country%.csv'
+$OffDelim
+/
 ;
 
 * - Multi-dimensional parameters -
@@ -286,10 +294,11 @@ F_s_max(S)              = STRG_DATA(S,'SOC ratio max');
 * ----- Parameter operations -----
 * cold-only capacity defined by peak demand
 Y_c(G_CO)               = smax(T, D_c(T));
+
 *  Calculate fuel cost from fuel price, carbon quota, and taxes/tariffs
-$ifi %policytype% == 'socioeconomic'    C_f(T,F)    = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,F)    = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F);
-$ifi %policytype% == 'support'          C_f(T,F)    = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F);        
+$ifi %policytype% == 'socioeconomic'    C_f(T,G,F)  = pi_f(T,F);
+$ifi %policytype% == 'taxation'         C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F) + tau_g(G);
+$ifi %policytype% == 'support'          C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F) + tau_g(G);
 
 * ======================================================================
 * VARIABLES
@@ -352,15 +361,15 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 * ----- Equation definition -----
 eq_obj_DHN..                                OPX('DHN')  =e= obj;
 eq_obj_WHS..                                OPX('WHS')  =e= obj;
-eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,F)   * x_f(T,G_DH,F))
-                                                            + sum((T,G_HO),              C_h(G_HO)  * x_h(T,G_HO))
-                                                            + sum((T,G_CHP),             C_e(G_CHP) * x_e(T,G_CHP))
-                                                            - sum((T,G_CHP),             pi_e(T)    * x_e(T,G_CHP))
+eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
+                                                            + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
+                                                            + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
+                                                            - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
 $ifi not %policytype% == 'socioeconomic'                    - sum(F, tau_f_c(F) * y_f_used('DHN',F))
                                                             ;
 
-eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,F)  * x_f(T,G_CO,F))
-                                                            + sum((T,G_CO),              C_c(G_CO) * x_c(T,G_CO))
+eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f(T,G_CO,F))
+                                                            + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
 $ifi not %policytype% == 'socioeconomic'                    - sum(F, tau_f_c(F) * y_f_used('WHS',F))
                                                             ;
 

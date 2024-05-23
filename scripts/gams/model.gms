@@ -32,7 +32,7 @@ $ifi not setglobal name     $SetGlobal name 'testing4'
 *   - 'single'      solves the model once, using assumed full-load hours
 *   - 'iterative'   solves the model iteratively, updating full-load hours
 
-$ifi not setglobal mode     $SetGlobal mode 'single'
+* $ifi not setglobal mode     $SetGlobal mode 'single'
 $ifi not setglobal mode     $SetGlobal mode 'iterative'
 
 * --- Policy flag ---
@@ -225,7 +225,7 @@ lifetime(E)             'Lifetime of investment (years)'
 r(E)                    'Discount rate of investment (-)'
 AF(E)                   'Project annuity factor (-)'
 
-C_f(T,F)                'Cost of fuel consumption (EUR/MWh)'
+C_f(T,G,F)              'Cost of fuel consumption (EUR/MWh)'
 C_h(G)                  'Cost of heat production (EUR/MWh)'
 C_c(G)                  'Cost of cold production (EUR/MWh)'
 C_e(G)                  'Cost of electricity production (EUR/MWh)'
@@ -252,6 +252,7 @@ pi_f(T,F)               'Price of fuel (EUR/MWh)'
 pi_q(F)                 'Price of carbon quota (EUR/kg)'
 tau_f_v(F)              'Fuel taxes and volumetric tariffs (EUR/MWh)'
 tau_f_c(F)              'Fuel capacity tariffs (EUR/MW)'
+tau_g(G)                'Special fuel surcharges for generator (EUR/MWh)'
 qc_e(T)                 'Carbon content of electricity (kg/MWh)'
 qc_f(T,F)               'Carbon content of fuel (kg/MWh)'
 
@@ -343,6 +344,13 @@ $onDelim
 $include    './data/common/ts-electricity-carbon.csv'
 $offDelim
 /
+
+tau_g(G)
+/
+$onDelim
+$include    './data/common/data-generator-fuel-surcharge-%country%.csv'
+$OffDelim
+/
 ;
 
 * - Multi-dimensional parameters -
@@ -390,20 +398,20 @@ F_s_max(S)              = STRG_DATA(S,'SOC ratio max');
 Y_c(G_CO)               = smax(T, D_c(T));
 
 *  Calculate fuel cost from fuel price, carbon quota, and taxes/tariffs. Depends on the policy type
-$ifi %policytype% == 'socioeconomic'    C_f(T,F)    = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,F)    = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F);
-$ifi %policytype% == 'support'          C_f(T,F)    = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F);
+$ifi %policytype% == 'socioeconomic'    C_f(T,G,F)  = pi_f(T,F);
+$ifi %policytype% == 'taxation'         C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F) + tau_g(G);
+$ifi %policytype% == 'support'          C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F) + tau_g(G);
 
 * Calculate annuity factor
 AF(E)               = r(E) * (1 + r(E)) ** lifetime(E) / ((1 + r(E)) ** lifetime(E) - 1);
 
 * Calculate marginal cost of HR units
-MC_HR(T,G_HR)       = sum(F$GF(G_HR,F), C_f(T,F))/eta_g(T,G_HR) + C_h(G_HR);
+MC_HR(T,G_HR)       = sum(F$GF(G_HR,F), C_f(T,G_HR,F))/eta_g(T,G_HR) + C_h(G_HR);
 
 * Substract the cooling substitution cost from the HR marginal. This implementation is janky, but it works assuming FC is always used when available.
 MC_HR(T,G_HR)       = MC_HR(T,G_HR)
-                    - ((sum(F$GF('free_cooling',F),     C_f(T,F)/eta_g(T,'free_cooling'))     + C_c('free_cooling'))/eta_g(T,G_HR))$(F_a(T,'free_cooling') GE 0) 
-                    - ((sum(F$GF('electric_chiller',F), C_f(T,F)/eta_g(T,'electric_chiller')) + C_c('electric_chiller'))/eta_g(T,G_HR))$(F_a(T,'free_cooling') EQ 0)
+                    - ((sum(F$GF('free_cooling',F),     C_f(T,'free_cooling',F)    /eta_g(T,'free_cooling'))     + C_c('free_cooling'))/eta_g(T,G_HR))$(F_a(T,'free_cooling') GE 0) 
+                    - ((sum(F$GF('electric_chiller',F), C_f(T,'electric_chiller',F)/eta_g(T,'electric_chiller')) + C_c('electric_chiller'))/eta_g(T,G_HR))$(F_a(T,'free_cooling') EQ 0)
                     ;
 
 * Calculate monthly averages, and reassign values to each hour
@@ -510,17 +518,17 @@ eq_NPV_all..                                NPV_all     =e= NPV('DHN') + NPV('WH
 eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv       * y_hr(G_HR) * k_inv_p      ) + (OPX_REF('DHN') - OPX('DHN'))/AF('DHN');
 eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * k_inv_g(G_HR)) + (OPX_REF('WHS') - OPX('WHS'))/AF('WHS');
 
-eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,F)     * x_f(T,G_DH,F))
-                                                            + sum((T,G_HO),              C_h(G_HO)    * x_h(T,G_HO))
-                                                            + sum((T,G_CHP),             C_e(G_CHP)   * x_e(T,G_CHP))
-                                                            - sum((T,G_CHP),             pi_e(T)      * x_e(T,G_CHP))
-                                                            + sum((T,G_HR),              pi_h(T,G_HR) * x_h(T,G_HR))
+eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
+                                                            + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
+                                                            + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
+                                                            - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
+                                                            + sum((T,G_HR),              pi_h(T,G_HR)  * x_h(T,G_HR))
 $ifi not %policytype% == 'socioeconomic'                    - sum(F, tau_f_c(F) * y_f_used('DHN',F))
                                                             ;
 
-eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,F)      * x_f(T,G_CO,F))
+eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f(T,G_CO,F))
                                                             + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
-                                                            + sum((T,G_HR,F)$GF(G_HR,F), C_f(T,F)      * x_f(T,G_HR,F))
+                                                            + sum((T,G_HR,F)$GF(G_HR,F), C_f(T,G_HR,F) * x_f(T,G_HR,F))
                                                             + sum((T,G_HR),              C_h(G_HR)     * x_h(T,G_HR))
                                                             - sum((T,G_HR),              pi_h(T,G_HR)  * x_h(T,G_HR))
                                                             + sum(G_HR,                  C_g_fix(G_HR) * y_hr(G_HR))

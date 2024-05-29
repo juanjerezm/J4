@@ -12,15 +12,15 @@
 * ======================================================================
 * ----- GAMS Options -----
 $onEmpty
-* $Offlisting
-* $Offsymlist 
-* $Offinclude
+$Offlisting
+$Offsymlist 
+$Offinclude
 option limrow = 0
 option limcol = 0
 
 * ----- Control flags -----
 * Set default values if script not called from integrated model
-$ifi not set name       $setlocal name          'testrun9'
+$ifi not set name       $setlocal name          'default'
 $ifi not set policytype $setlocal policytype    'taxation'
 $ifi not set country    $setlocal country       'DK'
 
@@ -41,16 +41,26 @@ D6                      'Million divisor'       /1E-6/;
 * ----- Set declaration -----
 SET
 T                       'Timesteps'
+H                       'Hours'
+M                       'Months'
 G                       'Generators'
 S                       'Storages'
 SS                      'Storage state (SOS1 set)'
 F                       'Fuels'
+TM(T,M)                 'Timestep-month mapping'
+TH(T,H)                 'Timestep-hour mapping'
 GF(G,F)                 'Generator-fuel mapping'
 ;
 
 * ----- Set definition -----
 SET T                   'Timesteps' 
 /T0001*T8760/;
+
+SET H                   'Hours'
+/H01*H24/;
+
+SET M                   'Months'
+/M01*M12/;
 
 SET SS                  'Storage states (SOS1 set)'
 /'charge', 'discharge'/;
@@ -77,6 +87,20 @@ SET F                   'Fuels'
 /
 $onDelim
 $include    './data/common/name-fuel.csv'
+$offDelim
+/;
+
+SET TM(T,M)              'Timestep-month mapping'
+/
+$onDelim
+$include    './data/common/ts-TM-mapping.csv'
+$offDelim
+/;
+
+SET TH(T,H)              'Timestep-hour mapping'
+/
+$onDelim
+$include    './data/common/ts-TH-mapping.csv'
 $offDelim
 /;
 
@@ -189,9 +213,10 @@ C_s(S)                  'Storage variable cost (EUR/MWh)'
 pi_e(T)                 'Price of electricity (EUR/MWh)'
 pi_f(T,F)               'Price of fuel (EUR/MWh)'
 pi_q(F)                 'Price of carbon quota (EUR/kg)'
-tau_f_v(F)              'Fuel taxes and volumetric tariffs (EUR/MWh)'
-tau_f_c(F)              'Fuel capacity tariffs (EUR/MW)'
-tau_g(G)                'Special fuel surcharges for generator (EUR/MWh)'
+tax_fuel_f(F)           'Fuel taxes - by fuel (EUR/MWh)'
+tax_fuel_g(G)           'Fuel taxes - by generator (EUR/MWh)'
+tariff_v(T)             'Volumetric electricity tariff - time-of-use (EUR/MWh)'
+tariff_c(F)             'Capacity electricity tariff - constant (EUR/MW)'
 qc_e(T)                 'Carbon content of electricity (kg/MWh)'
 qc_f(T,F)               'Carbon content of fuel (kg/MWh)'
 
@@ -246,10 +271,10 @@ $include    './data/common/ts-electricity-carbon.csv'
 $offDelim
 /
 
-tau_g(G)
+tax_fuel_g(G)
 /
 $onDelim
-$include    './data/common/data-generator-fuel-surcharge-%country%.csv'
+$include    './data/common/data-fueltax-generator-%country%.csv'
 $OffDelim
 /
 ;
@@ -267,6 +292,12 @@ $include    './data/common/ts-generator-efficiency.csv'
 $offDelim
 ;
 
+TABLE tariff_schedule_v(H,M)
+$onDelim
+$include    './data/common/data-tariffschedule-vol-%country%.csv'
+$offDelim
+;
+
 * - Assigned parameters -
 C_e(G)$(G_CHP(G))       = GNRT_DATA(G,'variable cost - electricity');
 C_h(G)$(G_HO(G))        = GNRT_DATA(G,'variable cost - heat');
@@ -275,8 +306,8 @@ C_c(G)$(G_CO(G))        = GNRT_DATA(G,'variable cost - cold');
 pi_f(T,F)               = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
 pi_q(F)                 = FUEL_DATA(F,'carbon price');
 qc_f(T,F)               = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + qc_e(T)$(F_EL(F));
-tau_f_v(F)              = FUEL_DATA(F,'fuel tax') + FUEL_DATA(F,'volumetric tariff');
-tau_f_c(F)              = FUEL_DATA(F,'capacity tariff');
+tax_fuel_f(F)           = FUEL_DATA(F,'fuel tax');
+tariff_c(F)             = FUEL_DATA(F,'capacity tariff');
 
 Y_f(G_DH)               = GNRT_DATA(G_DH,'capacity');  
 beta_b(G)$G_CHP(G)      = GNRT_DATA(G,'Cb');
@@ -295,10 +326,13 @@ F_s_max(S)              = STRG_DATA(S,'SOC ratio max');
 * cold-only capacity defined by peak demand
 Y_c(G_CO)               = smax(T, D_c(T));
 
+* Mapping Hour-Month tariff to timestep tariff
+tariff_v(T)             = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M));
+
 *  Calculate fuel cost from fuel price, carbon quota, and taxes/tariffs
 $ifi %policytype% == 'socioeconomic'    C_f(T,G,F)  = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F) + tau_g(G);
-$ifi %policytype% == 'support'          C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tau_f_v(F) + tau_g(G);
+$ifi %policytype% == 'taxation'         C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F));
+$ifi %policytype% == 'support'          C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F));
 
 * ======================================================================
 * VARIABLES
@@ -365,12 +399,12 @@ eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(
                                                             + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
                                                             + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
                                                             - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
-$ifi not %policytype% == 'socioeconomic'                    - sum(F, tau_f_c(F) * y_f_used('DHN',F))
+$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('DHN',F))
                                                             ;
 
 eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f(T,G_CO,F))
                                                             + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
-$ifi not %policytype% == 'socioeconomic'                    - sum(F, tau_f_c(F) * y_f_used('WHS',F))
+$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('WHS',F))
                                                             ;
 
 eq_load_heat(T)..                           sum(G_DH, x_h(T,G_DH)) + sum(S_DH, x_s(T,S_DH,'discharge')) - sum(S_DH, x_s(T,S_DH,'charge')) =e= D_h(T);
@@ -420,6 +454,22 @@ CO2(F)      'Reference CO2 emissions (kg)'
 ;
 MC_DH(T)    = EPS + eq_load_heat.m(T);
 CO2(F)      = sum((T,G)$GF(G,F), qc_f(T,F)*x_f.l(T,G,F));
+
+PARAMETERS
+value_taxes(E)     'Value of energy taxes and ETS (EUR/year)'
+value_tariffs(E)   'Value of electricity tariffs (EUR/year)'
+value_support(E)   'Value of support schemes (EUR/year)'
+;
+
+$ifi     %policytype% == 'socioeconomic' value_taxes(E)         = 0;
+$ifi not %policytype% == 'socioeconomic' value_taxes('DHN')     = sum((T,G_DH,F)$GF(G_DH,F), (qc_f(T,F)*pi_q(F) + tax_fuel_f(F) + tax_fuel_g(G_DH)) * x_f.l(T,G_DH,F));
+$ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = sum((T,G_WH,F)$GF(G_WH,F), (qc_f(T,F)*pi_q(F) + tax_fuel_f(F) + tax_fuel_g(G_WH)) * x_f.l(T,G_WH,F));
+
+$ifi     %policytype% == 'socioeconomic' value_tariffs(E)       = 0;
+$ifi not %policytype% == 'socioeconomic' value_tariffs('DHN')   = sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_DH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
+$ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = sum((T,G_WH,F)$(GF(G_WH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_WH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
+
+value_support(E)       = 0;
 
 execute_unload  './results/%name%/results-%name%-reference.gdx';
 execute 'gdxdump ./results/%name%/results-%name%-reference.gdx format=csv epsout=0 noheader output=./results/%name%/transferDir/OPEX_ref.csv symb=OPX';

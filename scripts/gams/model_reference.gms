@@ -25,9 +25,6 @@ $ifi not set policytype $setlocal policytype    'taxation'
 $ifi not set country    $setlocal country       'DK'
 
 * ----- Directories, filenames, and scripts -----
-* Make directory for results transfered to the integrated case
-$ifi %system.filesys% == msnt   execute 'mkdir    .\results\%name%\transferDir';
-$ifi %system.filesys% == unix   execute 'mkdir -p ./results/%name%/transferDir';
 
 * ----- Global scalars -----
 SCALARS
@@ -212,7 +209,7 @@ C_s(S)                  'Storage variable cost (EUR/MWh)'
 
 pi_e(T)                 'Price of electricity (EUR/MWh)'
 pi_f(T,F)               'Price of fuel (EUR/MWh)'
-pi_q(F)                 'Price of carbon quota (EUR/kg)'
+pi_q                    'Price of carbon quota (EUR/kg)'
 tax_fuel_f(F)           'Fuel taxes - by fuel (EUR/MWh)'
 tax_fuel_g(G)           'Fuel taxes - by generator (EUR/MWh)'
 tariff_v(T)             'Volumetric electricity tariff - time-of-use (EUR/MWh)'
@@ -240,6 +237,10 @@ eta_s(S)                'Storage throughput efficiency (-)'
 ;
 
 * ----- Parameter definition -----
+* - Direct assignment - (This should, ideally, be done in a separate data file)
+* ETS quota price
+pi_q            = 0.0853;
+
 * - One-dimensional parameters -
 $offlisting
 PARAMETERS
@@ -304,7 +305,6 @@ C_h(G)$(G_HO(G))        = GNRT_DATA(G,'variable cost - heat');
 C_c(G)$(G_CO(G))        = GNRT_DATA(G,'variable cost - cold');
 
 pi_f(T,F)               = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
-pi_q(F)                 = FUEL_DATA(F,'carbon price');
 qc_f(T,F)               = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + qc_e(T)$(F_EL(F));
 tax_fuel_f(F)           = FUEL_DATA(F,'fuel tax');
 tariff_c(F)             = FUEL_DATA(F,'capacity tariff');
@@ -329,10 +329,13 @@ Y_c(G_CO)               = smax(T, D_c(T));
 * Mapping Hour-Month tariff to timestep tariff
 tariff_v(T)             = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M));
 
-*  Calculate fuel cost from fuel price, carbon quota, and taxes/tariffs
-$ifi %policytype% == 'socioeconomic'    C_f(T,G,F)  = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F));
-$ifi %policytype% == 'support'          C_f(T,G,F)  = pi_f(T,F) + qc_f(T,F)*pi_q(F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F));
+*  Calculate fuel cost from fuel price, taxes (per fuel and generator), electricity tariffs and ETS quotas
+C_f(T,G,F)$G_DH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
+
+* Fuel costs for WHS depend on the policy type
+$ifi %policytype% == 'socioeconomic'    C_f(T,G,F)$G_WH(G)  = pi_f(T,F);
+$ifi %policytype% == 'taxation'         C_f(T,G,F)$G_WH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
+$ifi %policytype% == 'support'          C_f(T,G,F)$G_WH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
 
 * ======================================================================
 * VARIABLES
@@ -448,12 +451,19 @@ mdl_WHS              'WHS'
 solve mdl_DHN using mip minimizing obj;
 solve mdl_WHS using mip minimizing obj;
 
+* Following parameters are inputs to the integrated model
 PARAMETERS
-MC_DH(T)    'Reference marginal cost of DHN (EUR/MWh)'
-CO2(F)      'Reference CO2 emissions (kg)'
+MC_DH(T)        'Reference marginal cost of DHN (EUR/MWh)'
+OPX_ref(E)      'Reference operating cost (EUR/year)'
+CO2_ref(T)      'Reference CO2 emissions per heat production (kg/MWh)'
+XH_ref(T,G)     'Reference heat production (MWh)'
+XF_ref(T,G,F)   'Reference fuel consumption (MWh)'
 ;
-MC_DH(T)    = EPS + eq_load_heat.m(T);
-CO2(F)      = sum((T,G)$GF(G,F), qc_f(T,F)*x_f.l(T,G,F));
+MC_DH(T)                    = EPS + eq_load_heat.m(T);
+OPX_ref(E)                  = EPS + OPX.l(E);
+CO2_ref(T)                  = EPS + sum((G,F)$GF(G,F), qc_f(T,F)*x_f.l(T,G,F))/D_h(T);
+XH_ref(T,G_DH)              = EPS + x_h.l(T,G_DH);
+XF_ref(T,G_DH,F)$GF(G_DH,F) = EPS + x_f.l(T,G_DH,F);
 
 PARAMETERS
 value_taxes(E)     'Value of energy taxes and ETS (EUR/year)'
@@ -461,20 +471,17 @@ value_tariffs(E)   'Value of electricity tariffs (EUR/year)'
 value_support(E)   'Value of support schemes (EUR/year)'
 ;
 
-$ifi     %policytype% == 'socioeconomic' value_taxes(E)         = 0;
-$ifi not %policytype% == 'socioeconomic' value_taxes('DHN')     = sum((T,G_DH,F)$GF(G_DH,F), (qc_f(T,F)*pi_q(F) + tax_fuel_f(F) + tax_fuel_g(G_DH)) * x_f.l(T,G_DH,F));
-$ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = sum((T,G_WH,F)$GF(G_WH,F), (qc_f(T,F)*pi_q(F) + tax_fuel_f(F) + tax_fuel_g(G_WH)) * x_f.l(T,G_WH,F));
+$ifi     %policytype% == 'socioeconomic' value_taxes('WHS')     = 0;
+$ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = sum((T,G_WH,F)$GF(G_WH,F), x_f.l(T,G_WH,F) * (tax_fuel_f(F) + tax_fuel_g(G_WH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
+                                         value_taxes('DHN')     = sum((T,G_DH,F)$GF(G_DH,F), x_f.l(T,G_DH,F) * (tax_fuel_f(F) + tax_fuel_g(G_DH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
 
-$ifi     %policytype% == 'socioeconomic' value_tariffs(E)       = 0;
-$ifi not %policytype% == 'socioeconomic' value_tariffs('DHN')   = sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_DH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
-$ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = sum((T,G_WH,F)$(GF(G_WH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_WH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
+$ifi     %policytype% == 'socioeconomic' value_tariffs('WHS')   = 0;
+$ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = sum((T,G_WH,F)$(GF(G_WH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_WH,F)) + sum(F, tariff_c(F) * y_f_used.l('WHS',F));
+                                         value_tariffs('DHN')   = sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_DH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
 
 value_support(E)       = 0;
 
 execute_unload  './results/%name%/results-%name%-reference.gdx';
-execute 'gdxdump ./results/%name%/results-%name%-reference.gdx format=csv epsout=0 noheader output=./results/%name%/transferDir/OPEX_ref.csv symb=OPX';
-execute 'gdxdump ./results/%name%/results-%name%-reference.gdx format=csv epsout=0 noheader output=./results/%name%/transferDir/CO2_ref.csv symb=CO2';
-execute 'gdxdump ./results/%name%/results-%name%-reference.gdx format=csv epsout=0 noheader output=./results/%name%/transferDir/ts-margcost-heat.csv symb=MC_DH';
 
 * ======================================================================
 * END OF FILE

@@ -7,5 +7,5 @@ $ifi %country% == 'DK'  PARAMETER AF_og(E);
 $ifi %country% == 'DK'  AF_og(E)        = AF(E); 
 $ifi %country% == 'DK'  r('DHN')        = 0.031;
 $ifi %country% == 'DK'  AF(E)           = r(E) * (1 + r(E)) ** lifetime(E) / ((1 + r(E)) ** lifetime(E) - 1);
-$ifi %country% == 'DK'  pi_h_ceil(G_HR) = 93*0.1342;
+$ifi %country% == 'DK'  pi_h_ceil(G_HR) = 93*0.1342*3.6;
 $ifi %country% == 'DK'  pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-MU_DH(G_HR))) = pi_h_ceil(G_HR)-MU_DH(G_HR);

@@ -470,6 +470,7 @@ $ifi %policytype% == 'support' $include './scripts/gams/definition_policy.inc';
 FREE VARIABLES
 NPV_all                     'Net present value of project - total (EUR)'
 OPX(E)                      'Operating cost for entity (stakeholder) (EUR)'
+WH_trnsctn                  'Transaction of waste-heat (EUR)'
 ;
 
 POSITIVE VARIABLES
@@ -500,6 +501,7 @@ eq_NPV_DHN                  'Net Present Value for DHN'
 eq_NPV_WHS                  'Net Present Value for WHS'
 eq_OPX_DHN                  'Operating cost of DH system'
 eq_OPX_WHS                  'Operating cost of WH source'
+eq_trnsctn                  'Transaction of waste-heat'  
 
 eq_load_heat(T)             'Heat load in DHN'
 eq_load_cold(T)             'Cold load in WHS'
@@ -529,14 +531,13 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 * ----- Equation definition -----
 eq_NPV_all..                                NPV_all     =e= NPV('DHN') + NPV('WHS');
 
-eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv       * y_hr(G_HR) * (1 - k_inv_p      )) + (OPX_REF('DHN') - OPX('DHN'))/AF('DHN');
-eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_g(G_HR))) + (OPX_REF('WHS') - OPX('WHS'))/AF('WHS');
+eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv       * y_hr(G_HR) * (1 - k_inv_p      )) + (OPX_REF('DHN') - OPX('DHN') - WH_trnsctn)/AF('DHN');
+eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_g(G_HR))) + (OPX_REF('WHS') - OPX('WHS') + WH_trnsctn)/AF('WHS');
 
 eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
                                                             + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
                                                             + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
                                                             - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
-                                                            + sum((T,G_HR),              pi_h(T,G_HR)  * x_h(T,G_HR))
 $ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('DHN',F))
                                                             ;
 
@@ -544,11 +545,12 @@ eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(
                                                             + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
                                                             + sum((T,G_HR,F)$GF(G_HR,F), C_f(T,G_HR,F) * x_f(T,G_HR,F))
                                                             + sum((T,G_HR),              C_h(G_HR)     * x_h(T,G_HR))
-                                                            - sum((T,G_HR),              pi_h(T,G_HR)  * x_h(T,G_HR))
                                                             + sum(G_HR,                  C_g_fix(G_HR) * y_hr(G_HR))
 $ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('WHS',F))
 $ifi %policytype% == 'support' $ifi %country% == 'DE'       - pi_q * sum((T, G_HR), x_h(T,G_HR)*CO2_ref(T))
                                                             ;
+
+eq_trnsctn..                                WH_trnsctn  =e= sum((T,G_HR), pi_h(T,G_HR)  * x_h(T,G_HR));
 
 eq_load_heat(T)..                           sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_h(T,G_HR)*(1-rho_g(G_HR))) + sum(S_DH, x_s(T,S_DH,'discharge')) - sum(S_DH, x_s(T,S_DH,'charge')) =e= D_h(T);
 eq_load_cold(T)..                           sum(G_WH, x_c(T,G_WH))                                                                                                                 =e= D_c(T);

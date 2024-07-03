@@ -35,8 +35,8 @@
     hpc_dir="/zhome/f0/5/124363/J4"
     
     # Define control flags
-    name="testeo"
-    policytype="taxation"
+    name="default"
+    policytype="support"
     country="DK"
 
     # Create directories and run model

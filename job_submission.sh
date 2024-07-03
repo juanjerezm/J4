@@ -32,7 +32,7 @@
     # here follow the commands you want to execute
   
     # Define project's HPC directory, replace with your own.
-    hpc_dir="/zhome/f0/5/124363/J4"
+    base_dir="/zhome/f0/5/124363/J4"
     
     # Define control flags
     name="default"
@@ -40,6 +40,6 @@
     country="DK"
 
     # Create directories and run model
-    mkdir -p ${hpc_dir}/results/${name}/transferDir/
-    gams ${hpc_dir}/scripts/gams/model --name=${name} --policytype=${policytype} --country=${country} o=${hpc_dir}/results/${name}/model.lst
+    mkdir -p ${base_dir}/results/${name}/transferDir/
+    gams ${base_dir}/scripts/gams/model --name=${name} --policytype=${policytype} --country=${country} o=${base_dir}/results/${name}/model.lst
     

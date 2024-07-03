@@ -13,8 +13,8 @@
     #BSUB -B 
     #BSUB -N 
 
-    #BSUB -oo Output_%J.out 
-    #BSUB -eo Error_%J.err 
+    #BSUB -oo ${base_dir}/results/${name}/Output_%J.out 
+    #BSUB -eo ${base_dir}/results/${name}/Error_%J.err 
     
-    gams ${hpc_dir}/scripts/gams/model --name=${name} --country=${country} --policytype=${policytype} o=${hpc_dir}/results/${name}/model.lst
+    gams ${base_dir}/scripts/gams/model --name=${name} --country=${country} --policytype=${policytype} o=${base_dir}/results/${name}/model.lst
     

@@ -142,7 +142,7 @@ def job_creation(scenario: ScenarioParams) -> None:
         name=scenario.name,
         country=scenario.country,
         policytype=scenario.policy,
-        hpc_dir=cfg["base_path"].as_posix(),
+        base_dir=cfg["base_path"].as_posix(),
     )
 
     with scenario.jobscript.open(mode="w+") as file:

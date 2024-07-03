@@ -11,12 +11,15 @@
 *  SETUP:
 * ======================================================================
 * ----- GAMS Options -----
-$onEmpty
-$Offlisting
-$Offsymlist 
-$Offinclude
-option limrow = 0
-option limcol = 0
+$eolCom                 // Activates end-of-line comments with '//' (default)
+$onEmpty                // Allows empty sets or parameters
+$Offlisting             // Suppresses listing of input lines
+$offSymList             // Suppresses listing of symbol map
+$offInclude             // Suppresses listing of include-files 
+option solprint = off   // Toggles solution listing
+option limRow = 0       // Maximum number of rows listed in equation block
+option limCol = 0       // Maximum number of columns listed in one variable block
+option optcr = 0.01;    // Relative optimality tolerance
 
 * ----- Control flags -----
 * Set default values if script not called from integrated model

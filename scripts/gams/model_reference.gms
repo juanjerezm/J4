@@ -354,6 +354,7 @@ x_f(T,G,F)                  'Consumption of fuel by generator (MWh)'
 x_h(T,G)                    'Production of heat (MWh)'
 x_e(T,G)                    'Production of electricity (MWh)'
 x_c(T,G)                    'Production of cold (MWh)'
+w_g(T,G)                    'Carbon emissions of generator (kg)'
 z(T,S)                      'State-of-charge of storage (MWh)'
 y_f_used(E,F)               'Maximum fuel consumption of fuel per entity at any timestep (MW)'
 ;
@@ -388,6 +389,8 @@ eq_max_DH(T,G)              'Capacity constraint for DH generators (input-based)
 eq_max_CO(T,G)              'Capacity constraint for cold-only generators (output-based)'
 eq_max_fueluse_DHN(T,F)     'Maximum fuel consumption by DHN at any timestep'
 eq_max_fueluse_WHS(T,F)     'Maximum fuel consumption by WHS at any timestep'
+
+eq_carbon_emissions(T,G)    'Carbon emissions of generators'
 
 eq_sto_balance(T,S)         'Storage balance'
 eq_sto_end(T,S)             'Storage initial state-of-charge'
@@ -426,6 +429,8 @@ eq_max_CO(T,G)$G_CO(G)..                                                x_c(T,G)
 eq_max_fueluse_DHN(T,F)..                       sum(G_DH$GF(G_DH,F), x_f(T,G_DH,F)) =l= y_f_used('DHN',F);
 eq_max_fueluse_WHS(T,F)..                       sum(G_CO$GF(G_CO,F), x_f(T,G_CO,F)) =l= y_f_used('WHS',F);
 
+eq_carbon_emissions(T,G)..                   sum((F)$GF(G,F), qc_f(T,F)*x_f(T,G,F)) =e= w_g(T,G);
+
 eq_sto_balance(T,S)..                       z(T,S)      =e= (1-rho_s(S)) * z(T--1,S) + eta_s(S)*x_s(T,S,'charge') - x_s(T,S,'discharge')/eta_s(S);
 eq_sto_end(T,S)$(ord(T)=card(T))..          z(T,S)      =e= F_s_end(S)*Y_s(S);
 eq_sto_min(T,S)..                           z(T,S)      =g= F_s_min(S)*Y_s(S);
@@ -458,7 +463,7 @@ XF_ref(T,G,F)   'Reference fuel consumption (MWh)'
 ;
 MC_DH(T)                    = EPS + eq_load_heat.m(T);
 OPX_ref(E)                  = EPS + OPX.l(E);
-CO2_ref(T)                  = EPS + sum((G,F)$GF(G,F), qc_f(T,F)*x_f.l(T,G,F))/D_h(T);
+CO2_ref(T)                  = EPS + sum(G, w_g.l(T,G))/D_h(T);
 XH_ref(T,G_DH)              = EPS + x_h.l(T,G_DH);
 XF_ref(T,G_DH,F)$GF(G_DH,F) = EPS + x_f.l(T,G_DH,F);
 

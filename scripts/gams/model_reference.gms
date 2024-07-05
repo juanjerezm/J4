@@ -370,8 +370,7 @@ x_s(T,S,SS)                 'Storage charge/discharge flow (MWh)'
 * ======================================================================
 * ----- Equation declaration -----
 EQUATIONS
-eq_obj_DHN                  'Auxiliary equation to optimize OPX of the DHN only'
-eq_obj_WHS                  'Auxiliary equation to optimize OPX of the WHS only'
+eq_obj                      'Objective function of joint OPEX'
 eq_OPX_DHN                  'Operating cost of DH system'
 eq_OPX_WHS                  'Operating cost of WH source'
 
@@ -399,8 +398,7 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 
 
 * ----- Equation definition -----
-eq_obj_DHN..                                OPX('DHN')  =e= obj;
-eq_obj_WHS..                                OPX('WHS')  =e= obj;
+eq_obj..                                    obj         =e= OPX('DHN') + OPX('WHS');
 eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
                                                             + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
                                                             + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
@@ -440,19 +438,15 @@ eq_sto_flo(T,S,SS)..                        x_s(T,S,SS) =l= F_s_flo(S)*Y_s(S);
 * ======================================================================
 * ----- Model definition -----
 model 
-mdl_DHN              'DHN'    
-/eq_obj_DHN, eq_OPX_DHN, eq_load_heat, eq_conversion_HO, eq_conversion_BP_1, eq_conversion_BP_2, eq_conversion_EX_1, eq_conversion_EX_2, eq_max_DH, eq_sto_balance, eq_sto_end, eq_sto_min, eq_sto_max, eq_sto_flo, eq_max_fueluse_DHN/
-
-mdl_WHS              'WHS'
-/eq_obj_WHS, eq_OPX_WHS, eq_load_cold, eq_conversion_CO, eq_max_CO, eq_max_fueluse_WHS/
+mdl_all             'DHN and WHS'       !! Each entity is independent of the other, so we can solve them together
+/all/
 ;
 
 
 * ======================================================================
 * SOLVE AND POST-PROCESSING
 * ======================================================================
-solve mdl_DHN using mip minimizing obj;
-solve mdl_WHS using mip minimizing obj;
+solve mdl_all using mip minimizing obj;
 
 * Following parameters are inputs to the integrated model
 PARAMETERS

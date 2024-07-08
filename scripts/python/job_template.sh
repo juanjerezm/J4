@@ -1,20 +1,20 @@
 
     #!/bin/sh
     
-    #BSUB -J ${name}
+    #BSUB -J ${project}_${scenario}
     #BSUB -q man
 
-    #BSUB -n 16
+    #BSUB -n 8
     #BSUB -R "span[hosts=1]"
     #BSUB -R "rusage[mem=10GB]"
     #BSUB -M 10GB
-    #BSUB -W 01:00 
+    #BSUB -W 02:00 
 
     #BSUB -B 
     #BSUB -N 
 
-    #BSUB -oo ${base_dir}/results/${name}/Output_%J.out 
-    #BSUB -eo ${base_dir}/results/${name}/Error_%J.err 
+    #BSUB -oo ${base_dir}/results/${project}/${scenario}/Output_%J.out 
+    #BSUB -eo ${base_dir}/results/${project}/${scenario}/Error_%J.err 
     
-    gams ${base_dir}/scripts/gams/model --name=${name} --country=${country} --policytype=${policytype} o=${base_dir}/results/${name}/model.lst
+    gams ${base_dir}/scripts/gams/model --project=${project} --scenario=${scenario} --country=${country} --policytype=${policytype} o=${base_dir}/results/${project}/${scenario}/model.lst
     

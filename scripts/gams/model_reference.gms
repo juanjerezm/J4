@@ -22,7 +22,8 @@ option limCol = 0       !! Maximum number of columns listed in one variable bloc
 option optcr = 0.01;    !! Relative optimality tolerance
 
 * ----- Control flags -----
-* Set default values if script not called from integrated model
+* Set default values if script not called from integrated model nor command line
+$ifi not set project    $setlocal project       'default_prj'
 $ifi not set scenario   $setlocal scenario      'default_scn'
 $ifi not set policytype $setlocal policytype    'taxation'
 $ifi not set country    $setlocal country       'DK'
@@ -483,7 +484,7 @@ $ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = sum((T,G_WH,F)
 
 value_support(E)       = 0;
 
-execute_unload  './results/%name%/results-%name%-reference.gdx';
+execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx';
 
 * ======================================================================
 * END OF FILE

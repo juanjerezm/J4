@@ -22,20 +22,15 @@ option limCol = 0       !! Maximum number of columns listed in one variable bloc
 option optcr = 0.01;    !! Relative optimality tolerance
 
 * ----- Control flags -----
-* --- Name flag ---
-* Flag 'name' identifies the optimization run, setting directories and filenames.
-* Results will be overwritten if 'name' is not unique. Do not use spaces or hyphens (-).
+* --- "project" and "scenario" flags
+* These are unique identifiers setting directories and filenames.
+* Results will be overwritten if these flags are not unique.
+* DO NOT USE spaces or hyphens (-)
+* - project: a collection of related scenarios
+* - scenario: the name of a specific run
 
-* $ifi not setglobal name     $SetGlobal name 'default'
-$ifi not setglobal name     $SetGlobal name 'default'
-
-* --- Solving flag ---
-* Uncomment solving mode:
-*   - 'single'      solves the model once, using assumed full-load hours
-*   - 'iterative'   solves the model iteratively, updating full-load hours
-
-* $ifi not setglobal mode     $SetGlobal mode 'single'
-$ifi not setglobal mode     $SetGlobal mode 'iterative'
+$ifi not setglobal project  $SetGlobal project  'default_prj'
+$ifi not setglobal scenario $SetGlobal scenario 'default_scn'
 
 * --- Policy flag ---
 * Uncomment policy setup to analyse:
@@ -53,13 +48,21 @@ $ifi not setglobal country  $SetGlobal country  'DK'
 * $ifi not setglobal country  $SetGlobal country  'DE'
 * $ifi not setglobal country  $SetGlobal country  'FR'
 
+* --- Solving flag ---
+* Uncomment solving mode:
+*   - 'single'      solves the model once, using assumed full-load hours
+*   - 'iterative'   solves the model iteratively, updating full-load hours
+
+* $ifi not setglobal mode     $SetGlobal mode 'single'
+$ifi not setglobal mode     $SetGlobal mode 'iterative'
+
 * ----- Directories, filenames, and scripts -----
 * Create directories for output
-$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%name%\';
-$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%name%/';
+$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
+$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
 
 * Execute the reference case
-$call gams ./scripts/gams/model_reference o=./results/%name%/model_reference.lst --name=%name% --policytype=%policytype% --country=%country% 
+$call gams ./scripts/gams/model_reference o=./results/%project%/%scenario%/model_reference.lst --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% 
 
 * ----- Global scalars -----
 SCALAR
@@ -316,7 +319,7 @@ r('WHS')        = 0.04;
 N(G_HR)         = 8760;
 
 * - Parameters from the reference case -
-$gdxin './results/%name%/results-%name%-reference.gdx'
+$gdxin './results/%project%/%scenario%/results-%scenario%-reference.gdx'
 $load MC_DH, OPX_REF, CO2_REF, XH_ref, XF_ref 
 $gdxin
 
@@ -618,6 +621,6 @@ $ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = sum((T,G_WH,F)
 $ifi not %policytype% == 'support'       value_support(E)       = 0;
 $ifi     %policytype% == 'support'       $include './scripts/gams/value_policy.inc';
  
-execute_unload './results/%name%/results-%name%-integrated.gdx'
+execute_unload './results/%project%/%scenario%/results-%scenario%-integrated.gdx'
 * ======================================================================
 * END OF FILE

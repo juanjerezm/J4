@@ -4,6 +4,7 @@ It reads scenario parameters from a CSV file, creates job scripts based on a tem
 and submits the jobs to the HPC system.
 
 Minimum usage:
+module load python3/3.10.0      (if default python is not 3.7+)
 python3 HPC_submission.py path/to/scenarios.csv --submit
 
 Arguments:
@@ -43,7 +44,7 @@ TIMESTAMP = datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
 cfg = {
-    "base_path": Path("/zhome/f0/5/124363/J4"),
+    "base_path": Path("/zhome/f0/5/124363/J4-test"),
     "template_path": Path("scripts/python/job_template.sh"),
     "max_runs": 10,
     "opt_submit": False,
@@ -56,12 +57,14 @@ class ScenarioParams:
     Represents the parameters for a scenario.
 
     Attributes:
+        project (str): The project associated with the scenario.
         name (str): The name of the scenario.
         country (str): The country associated with the scenario.
         policy (str): The policy applied in the scenario.
         jobscript (Path): The path to the jobscript associated with the scenario.
     """
 
+    project: str
     name: str
     country: str
     policy: str
@@ -69,8 +72,16 @@ class ScenarioParams:
 
     def __post_init__(self) -> None:
         self.jobscript = (
-            cfg["base_path"] / "results" / self.name / f"jobscript_{TIMESTAMP}.sh"
+            cfg["base_path"]
+            / "results"
+            / self.project
+            / self.name
+            / f"jobscript_{TIMESTAMP}.sh"
         )
+
+    def __str__(self) -> str:
+        """Return a string representation of the object."""
+        return f"- Scenario parameters: project: {self.project}, name: {self.name}, country={self.country}, policy={self.policy}"
 
 
 def read_csv(file_path: Path) -> List[ScenarioParams]:
@@ -139,7 +150,8 @@ def job_creation(scenario: ScenarioParams) -> None:
         None
     """
     job_content = load_template().substitute(
-        name=scenario.name,
+        project=scenario.project,
+        scenario=scenario.name,
         country=scenario.country,
         policytype=scenario.policy,
         base_dir=cfg["base_path"].as_posix(),
@@ -233,14 +245,17 @@ def main():
     scenarios = read_csv(cfg["file_path"])
     check_max_runs(scenarios)
 
+    print("---------------------------------")
     print(f"Scenarios loaded successfully ({len(scenarios)} scenarios):")
     for scenario in scenarios:
         print(scenario)
 
+    print("---------------------------------")
     for scenario in scenarios:
         scenario.jobscript.parent.mkdir(parents=True, exist_ok=True)
         job_creation(scenario)
         job_submision(scenario)
+        print("---------------------------------")
 
 
 if __name__ == "__main__":

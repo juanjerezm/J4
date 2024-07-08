@@ -1,3 +1,4 @@
+
 * ======================================================================
 * DESCRIPTION:
 * ======================================================================
@@ -155,10 +156,24 @@ ACRONYMS DH 'District heating network', WH 'Waste heat source';
 ACRONYMS timeVar 'time-variable data';
 
 * --- Load data attributes ---
+SET EnttAttrs(*)        'Auxiliary set to load entity data'
+/
+$onDelim
+$include    './data/common/attribute-entity.csv'
+$offDelim
+/;
+
 SET GnrtAttrs(*)        'Auxiliary set to load generator data'
 /
 $onDelim
 $include    './data/common/attribute-generator.csv'
+$offDelim
+/;
+
+SET CnctAttrs(*)        'Auxiliary set to load connection data'
+/
+$onDelim
+$include    './data/common/attribute-connection.csv'
 $offDelim
 /;
 
@@ -177,6 +192,12 @@ $offDelim
 /;
 
 * --- Load data values --- *
+TABLE ENTT_DATA(E,EnttAttrs)    'Entity data'
+$onDelim
+$include    './data/common/data-entity.csv'
+$offDelim
+;
+
 TABLE GNRT_DATA(G,GnrtAttrs)    'Generator data'
 $onDelim
 $include    './data/common/data-generator.csv'
@@ -186,6 +207,12 @@ $offDelim
 TABLE STRG_DATA(S,StrgAttrs)    'Storage data'
 $onDelim
 $include    './data/common/data-storage.csv'
+$offDelim
+;
+
+TABLE CNCT_DATA(G,CnctAttrs)    'Connection data'
+$onDelim
+$include    './data/common/data-connection.csv'
 $offDelim
 ;
 
@@ -251,7 +278,7 @@ C_g_inv(G)              'Investment cost of generator (EUR/MW)'
 C_s(S)                  'Storage variable cost (EUR/MWh)'
 C_s_inv(S)              'Fixed cost of storage (EUR/MWh)'
 C_s_fix(S)              'Investment cost of storage (EUR/MWh)'
-C_p_inv                 'Investment cost of pipe connection (EUR/MW-m)'
+C_p_inv(G)              'Investment cost of pipe connection (EUR/MW-m)'
 
 MC_DH(T)                'Marginal cost of DH (EUR/MWh)'
 OPX_REF(E)              'Operating cost for entity (stakeholder) - reference case (EUR)'
@@ -301,22 +328,8 @@ eta_s(S)                'Storage throughput efficiency (-)'
 $offlisting
 * ----- Parameter definition -----
 * - Direct assignment - (This should, ideally, be done in a separate data file)
-* ETS quota price
-pi_q            = 0.0853;
-
-* DH transmission pipe, 0 - 50 MW
-L_p(G_HR)       = 1000;
-rho_g(G_HR)     = 0.03;
-C_p_inv         = 25;
-
-* Investment project parameters
-lifetime('DHN') = 40;
-lifetime('WHS') = 25;
-r('DHN')        = 0.04;
-r('WHS')        = 0.04;
-
-* Initial estimation full load hours
-N(G_HR)         = 8760;
+pi_q            = 0.0853;   !! Price of carbon quota (EUR/kg)
+N(G_HR)         = 8760;     !! Initial estimation of full load hours for HR units
 
 * - Parameters from the reference case -
 $gdxin './results/%project%/%scenario%/results-%scenario%-reference.gdx'
@@ -381,6 +394,9 @@ $offDelim
 ;
 
 * - Assigned parameters -
+lifetime(E)             = ENTT_DATA(E,'lifetime');
+r(E)                    = ENTT_DATA(E,'discount rate');
+
 C_e(G)$(G_CHP(G))       = GNRT_DATA(G,'variable cost - electricity');
 C_h(G)$(G_HO(G))        = GNRT_DATA(G,'variable cost - heat');
 C_h(G)$(G_HR(G))        = GNRT_DATA(G,'variable cost - heat');
@@ -397,6 +413,10 @@ Y_f(G_DH)               = GNRT_DATA(G_DH,'capacity');
 beta_b(G)$G_CHP(G)      = GNRT_DATA(G,'Cb');
 beta_v(G)$G_EX(G)       = GNRT_DATA(G,'Cv');
 
+C_p_inv(G)$(G_HR(G))    = CNCT_DATA(G,'capital cost');
+L_p(G)$(G_HR(G))        = CNCT_DATA(G,'length');
+rho_g(G)$(G_HR(G))      = CNCT_DATA(G,'loss factor');
+
 C_s(S)                  = STRG_DATA(S,'OMV');
 Y_s(S)                  = STRG_DATA(S,'SOC capacity');
 eta_s(S)                = STRG_DATA(S,'throughput efficiency');
@@ -407,11 +427,8 @@ F_s_min(S)              = STRG_DATA(S,'SOC ratio min');
 F_s_max(S)              = STRG_DATA(S,'SOC ratio max');
 
 * ----- Parameter operations -----
-* cold-only capacity defined by peak demand
-Y_c(G_CO)               = smax(T, D_c(T));
-
-* Mapping Hour-Month tariff to timestep tariff
-tariff_v(T)             = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M));
+Y_c(G_CO)           = smax(T, D_c(T));  !! Cold-only capacity defined by peak demand
+tariff_v(T)         = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M)); !! mapping hour-month schedule to timesteps
 
 *  Calculate fuel cost from fuel price, taxes (per fuel and generator), electricity tariffs and ETS quotas
 C_f(T,G,F)$G_DH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
@@ -442,7 +459,7 @@ loop(T,
 );
 
 * Define initial mark-ups from investement costs, and availability factor from it
-MU_DH(G_HR)     = (L_p(G_HR) * C_p_inv       * AF('DHN')                )/(N(G_HR) + D6);
+MU_DH(G_HR)     = (L_p(G_HR) * C_p_inv(G_HR) * AF('DHN')                )/(N(G_HR) + D6);
 MU_HR(G_HR)     = (            C_g_inv(G_HR) * AF('WHS') + C_g_fix(G_HR))/(N(G_HR) + D6);
 pi_h(T,G_HR)    = ((MC_DH(T) - MU_DH(G_HR)) + (MC_HR(T,G_HR) + MU_HR(G_HR)))/2;
 F_a(T,G_HR)$((MC_HR(T,G_HR) + MU_HR(G_HR)) GE (MC_DH(T) - MU_DH(G_HR))) = 0;
@@ -539,7 +556,7 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 * ----- Equation definition -----
 eq_NPV_all..                                NPV_all     =e= NPV('DHN') + NPV('WHS');
 
-eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv       * y_hr(G_HR) * (1 - k_inv_p      )) + (OPX_REF('DHN') - OPX('DHN') - WH_trnsctn)/AF('DHN');
+eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_p      )) + (OPX_REF('DHN') - OPX('DHN') - WH_trnsctn)/AF('DHN');
 eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_g(G_HR))) + (OPX_REF('WHS') - OPX('WHS') + WH_trnsctn)/AF('WHS');
 
 eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))

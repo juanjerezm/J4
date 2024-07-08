@@ -242,8 +242,7 @@ eta_s(S)                'Storage throughput efficiency (-)'
 
 * ----- Parameter definition -----
 * - Direct assignment - (This should, ideally, be done in a separate data file)
-* ETS quota price
-pi_q            = 0.0853;
+pi_q            = 0.0853;   !! Price of carbon quota (EUR/kg)
 
 * - One-dimensional parameters -
 $offlisting
@@ -327,11 +326,8 @@ F_s_min(S)              = STRG_DATA(S,'SOC ratio min');
 F_s_max(S)              = STRG_DATA(S,'SOC ratio max');
 
 * ----- Parameter operations -----
-* cold-only capacity defined by peak demand
-Y_c(G_CO)               = smax(T, D_c(T));
-
-* Mapping Hour-Month tariff to timestep tariff
-tariff_v(T)             = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M));
+Y_c(G_CO)           = smax(T, D_c(T));  !! Cold-only capacity defined by peak demand
+tariff_v(T)         = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M)); !! mapping hour-month schedule to timesteps
 
 *  Calculate fuel cost from fuel price, taxes (per fuel and generator), electricity tariffs and ETS quotas
 C_f(T,G,F)$G_DH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));

@@ -44,7 +44,7 @@ TIMESTAMP = datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
 cfg = {
-    "base_path": Path("/zhome/f0/5/124363/J4-test"),
+    "base_path": Path("/zhome/f0/5/124363/J4"),
     "template_path": Path("scripts/python/job_template.sh"),
     "max_runs": 10,
     "opt_submit": False,

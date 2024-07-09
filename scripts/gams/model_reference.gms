@@ -29,6 +29,7 @@ $ifi not set policytype $setlocal policytype    'taxation'
 $ifi not set country    $setlocal country       'DK'
 
 * ----- Directories, filenames, and scripts -----
+* $call gams ./scripts/gams/params.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/params.lst
 
 * ----- Global scalars -----
 SCALARS
@@ -44,6 +45,7 @@ SET
 T                       'Timesteps'
 H                       'Hours'
 M                       'Months'
+E                       'Entity'
 G                       'Generators'
 S                       'Storages'
 SS                      'Storage state (SOS1 set)'
@@ -53,113 +55,6 @@ TH(T,H)                 'Timestep-hour mapping'
 GF(G,F)                 'Generator-fuel mapping'
 ;
 
-* ----- Set definition -----
-SET T                   'Timesteps' 
-/T0001*T8760/;
-
-SET H                   'Hours'
-/H01*H24/;
-
-SET M                   'Months'
-/M01*M12/;
-
-SET SS                  'Storage states (SOS1 set)'
-/'charge', 'discharge'/;
-
-SET E                   'Entity'
-/'DHN', 'WHS'/
-;
-
-SET G                   'Generators'
-/
-$onDelim
-$include    './data/common/name-generator.csv'
-$offDelim
-/;
-
-SET S(*)                'Storages'
-/
-$onDelim
-$include    './data/common/name-storage.csv'
-$offDelim
-/;
-
-SET F                   'Fuels'
-/
-$onDelim
-$include    './data/common/name-fuel.csv'
-$offDelim
-/;
-
-SET TM(T,M)              'Timestep-month mapping'
-/
-$onDelim
-$include    './data/common/ts-TM-mapping.csv'
-$offDelim
-/;
-
-SET TH(T,H)              'Timestep-hour mapping'
-/
-$onDelim
-$include    './data/common/ts-TH-mapping.csv'
-$offDelim
-/;
-
-SET GF(G,F)             'Generator-fuel mapping'
-/
-$onDelim
-$include    './data/common/map-generator-fuel.csv'
-$offDelim
-/;
-
-* ======================================================================
-*  Auxiliary data loading (required after definition of sets, but before subsets)
-* ======================================================================
-* --- Define acronyms ---
-ACRONYMS EX 'Extraction', BP 'Backpressure', HO 'Heat-only', HR 'Heat recovery', CO 'Cold-only';
-ACRONYMS DH 'District heating network', WH 'Waste heat source';
-ACRONYMS timeVar 'time-variable data';
-
-* --- Load data attributes ---
-SET GnrtAttrs(*)        'Auxiliary set to load generator data'
-/
-$onDelim
-$include    './data/common/attribute-generator.csv'
-$offDelim
-/;
-
-SET StrgAttrs(*)        'Auxiliary set to load storage data'
-/
-$onDelim
-$include    './data/common/attribute-storage.csv'
-$offDelim
-/;
-
-SET FuelAttrs(*)        'Auxiliary set to load fuel data'
-/
-$onDelim
-$include    './data/common/attribute-fuel.csv'
-$offDelim
-/;
-
-* --- Load data values --- *
-TABLE GNRT_DATA(G,GnrtAttrs)    'Generator data'
-$onDelim
-$include    './data/common/data-generator.csv'
-$offDelim
-;
-
-TABLE STRG_DATA(S,StrgAttrs)    'Storage data'
-$onDelim
-$include    './data/common/data-storage.csv'
-$offDelim
-;
-
-TABLE FUEL_DATA(F,FuelAttrs)    'Fuel data'
-$onDelim
-$include    './data/common/data-fuel-%country%.csv'
-$offDelim
-;
 
 * ======================================================================
 * SUBSETS
@@ -179,24 +74,6 @@ S_WH(S)                 'WH storages'
 F_EL(F)                 'Electricity fuel'
 ;
 
-* --- Subset definition ---
-G_BP(G)     = YES$(GNRT_DATA(G,'TYPE') EQ BP);
-G_EX(G)     = YES$(GNRT_DATA(G,'TYPE') EQ EX);
-G_HO(G)     = YES$(GNRT_DATA(G,'TYPE') EQ HO);
-G_CO(G)     = YES$(GNRT_DATA(G,'TYPE') EQ CO);
-G_HR(G)     = YES$(GNRT_DATA(G,'TYPE') EQ HR);
-
-G_CHP(G)    = YES$(G_BP(G) OR G_EX(G));
-G_DH(G)     = YES$(G_HO(G) OR G_CHP(G));
-G_WH(G)     = YES$(G_CO(G) OR G_HR(G));
-
-S_DH(S)     = YES$(STRG_DATA(S,'TYPE') EQ DH);
-S_WH(S)     = YES$(STRG_DATA(S,'TYPE') EQ WH); 
-
-F_EL(F)     = YES$(sameas(F,'electricity'));
-
-* ----- Subset operations -----
-
 
 * ======================================================================
 * PARAMETERS
@@ -207,8 +84,6 @@ C_f(T,G,F)              'Cost of fuel consumption (EUR/MWh)'
 C_h(G)                  'Cost of heat production (EUR/MWh)'
 C_c(G)                  'Cost of cold production (EUR/MWh)'
 C_e(G)                  'Cost of electricity production (EUR/MWh)'
-C_g_fix(G)              'Fixed cost of generator (EUR/MW)'
-C_g_inv(G)              'Investment cost of generator (EUR/MW)'
 C_s(S)                  'Storage variable cost (EUR/MWh)'
 
 pi_e(T)                 'Price of electricity (EUR/MWh)'
@@ -241,101 +116,15 @@ eta_s(S)                'Storage throughput efficiency (-)'
 ;
 
 * ----- Parameter definition -----
-* - Direct assignment - (This should, ideally, be done in a separate data file)
-pi_q            = 0.0853;   !! Price of carbon quota (EUR/kg)
-
-* - One-dimensional parameters -
-$offlisting
-PARAMETERS
-D_h(T)
-/
-$onDelim
-$include    './data/common/ts-demand-heat.csv'
-$offDelim
-/
-
-D_c(T)
-/
-$onDelim
-$include    './data/common/ts-demand-cold.csv'
-$offDelim
-/
-
-pi_e(T)
-/
-$onDelim
-$include    './data/common/ts-electricity-price.csv'
-$offDelim
-/
-
-qc_e(T)
-/
-$onDelim
-$include    './data/common/ts-electricity-carbon.csv'
-$offDelim
-/
-
-tax_fuel_g(G)
-/
-$onDelim
-$include    './data/common/data-fueltax-generator-%country%.csv'
-$OffDelim
-/
-;
-
-* - Multi-dimensional parameters -
-TABLE F_a(T,G)
-$onDelim
-$include    './data/common/ts-generator-availability.csv'
-$offDelim
-;
-
-TABLE eta_g(T,G)
-$onDelim
-$include    './data/common/ts-generator-efficiency.csv'
-$offDelim
-;
-
-TABLE tariff_schedule_v(H,M)
-$onDelim
-$include    './data/common/data-tariffschedule-vol-%country%.csv'
-$offDelim
-;
-
-* - Assigned parameters -
-C_e(G)$(G_CHP(G))       = GNRT_DATA(G,'variable cost - electricity');
-C_h(G)$(G_HO(G))        = GNRT_DATA(G,'variable cost - heat');
-C_c(G)$(G_CO(G))        = GNRT_DATA(G,'variable cost - cold');
-
-pi_f(T,F)               = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
-qc_f(T,F)               = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + qc_e(T)$(F_EL(F));
-tax_fuel_f(F)           = FUEL_DATA(F,'fuel tax');
-tariff_c(F)             = FUEL_DATA(F,'capacity tariff');
-
-Y_f(G_DH)               = GNRT_DATA(G_DH,'capacity');  
-beta_b(G)$G_CHP(G)      = GNRT_DATA(G,'Cb');
-beta_v(G)$G_EX(G)       = GNRT_DATA(G,'Cv');
-
-C_s(S)                  = STRG_DATA(S,'OMV');
-Y_s(S)                  = STRG_DATA(S,'SOC capacity');
-eta_s(S)                = STRG_DATA(S,'throughput efficiency');
-rho_s(S)                = STRG_DATA(S,'self-discharge factor');
-F_s_flo(S)              = STRG_DATA(S,'throughput ratio');
-F_s_end(S)              = STRG_DATA(S,'SOC ratio end');
-F_s_min(S)              = STRG_DATA(S,'SOC ratio min');
-F_s_max(S)              = STRG_DATA(S,'SOC ratio max');
-
-* ----- Parameter operations -----
-Y_c(G_CO)           = smax(T, D_c(T));  !! Cold-only capacity defined by peak demand
-tariff_v(T)         = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M)); !! mapping hour-month schedule to timesteps
-
-*  Calculate fuel cost from fuel price, taxes (per fuel and generator), electricity tariffs and ETS quotas
-C_f(T,G,F)$G_DH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
-
-* Fuel costs for WHS depend on the policy type
-$ifi %policytype% == 'socioeconomic'    C_f(T,G,F)$G_WH(G)  = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,G,F)$G_WH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
-$ifi %policytype% == 'support'          C_f(T,G,F)$G_WH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
+$gdxin results/%project%/%scenario%/params.gdx
+$load T, H, M, G, S, SS, E, F, TM, TH, GF                                       !! Load sets
+$load G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL         !! Load subsets
+$load D_h, D_c                                                                  !! Load system parameters
+$load C_e, C_h, C_c, Y_c, Y_f, F_a, eta_g, beta_b, beta_v                       !! Load generator parameters
+$load C_f, pi_f, qc_f, pi_q, pi_e, qc_e                                         !! Load fuel parameters
+$load tax_fuel_f, tariff_c, tariff_v, tax_fuel_g                                !! Load tax-and-tariff parameters
+$load C_s, Y_s, eta_s, rho_s, F_s_flo, F_s_end, F_s_min, F_s_max                !! Load storage parameters
+$gdxin
 
 * ======================================================================
 * VARIABLES

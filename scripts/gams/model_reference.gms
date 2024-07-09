@@ -29,6 +29,10 @@ $ifi not set policytype $setlocal policytype    'taxation'
 $ifi not set country    $setlocal country       'DK'
 
 * ----- Directories, filenames, and scripts -----
+* Create directories for output if script not called from integrated model nor command line
+$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
+$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
+
 * $call gams ./scripts/gams/params.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/params.lst
 
 * ----- Global scalars -----

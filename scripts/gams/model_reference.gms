@@ -263,15 +263,15 @@ value_tariffs(E)   'Value of electricity tariffs (EUR/year)'
 value_support(E)   'Value of support schemes (EUR/year)'
 ;
 
-$ifi     %policytype% == 'socioeconomic' value_taxes('WHS')     = 0;
-$ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = sum((T,G_WH,F)$GF(G_WH,F), x_f.l(T,G_WH,F) * (tax_fuel_f(F) + tax_fuel_g(G_WH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
-                                         value_taxes('DHN')     = sum((T,G_DH,F)$GF(G_DH,F), x_f.l(T,G_DH,F) * (tax_fuel_f(F) + tax_fuel_g(G_DH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
+$ifi     %policytype% == 'socioeconomic' value_taxes('WHS')     = EPS;
+$ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = EPS + sum((T,G_WH,F)$GF(G_WH,F), x_f.l(T,G_WH,F) * (tax_fuel_f(F) + tax_fuel_g(G_WH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
+                                         value_taxes('DHN')     = EPS + sum((T,G_DH,F)$GF(G_DH,F), x_f.l(T,G_DH,F) * (tax_fuel_f(F) + tax_fuel_g(G_DH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
 
-$ifi     %policytype% == 'socioeconomic' value_tariffs('WHS')   = 0;
-$ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = sum((T,G_WH,F)$(GF(G_WH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_WH,F)) + sum(F, tariff_c(F) * y_f_used.l('WHS',F));
-                                         value_tariffs('DHN')   = sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_DH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
+$ifi     %policytype% == 'socioeconomic' value_tariffs('WHS')   = EPS;
+$ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = EPS + sum((T,G_WH,F)$(GF(G_WH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_WH,F)) + sum(F, tariff_c(F) * y_f_used.l('WHS',F));
+                                         value_tariffs('DHN')   = EPS + sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_DH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
 
-value_support(E)       = 0;
+value_support(E)       = EPS;
 
 execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx';
 

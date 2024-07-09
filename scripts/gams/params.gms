@@ -18,6 +18,10 @@ $ifi not set scenario   $setlocal scenario      'default_scn'
 $ifi not set policytype $setlocal policytype    'taxation'
 $ifi not set country    $setlocal country       'DK'
 
+* ----- Directories, filenames, and scripts -----
+* Create directories for output if script not called from integrated model nor command line
+$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
+$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
 
 * ======================================================================
 *  SETS
@@ -43,21 +47,24 @@ SET E                   'Entity'
 SET G(*)                'Generators'
 /
 $onDelim
-$include    './data/common/name-generator.csv'
+$if     EXIST './data/%project%/%scenario%/name-generator.csv' $include './data/%project%/%scenario%/name-generator.csv'
+$if not EXIST './data/%project%/%scenario%/name-generator.csv' $include               './data/common/name-generator.csv'
 $offDelim
 /;
 
 SET S(*)                'Storages'
 /
 $onDelim
-$include    './data/common/name-storage.csv'
+$if     EXIST './data/%project%/%scenario%/name-storage.csv' $include './data/%project%/%scenario%/name-storage.csv'
+$if not EXIST './data/%project%/%scenario%/name-storage.csv' $include               './data/common/name-storage.csv'
 $offDelim
 /;
 
 SET F(*)                'Fuels'
 /
 $onDelim
-$include    './data/common/name-fuel.csv'
+$if     EXIST './data/%project%/%scenario%/name-fuel.csv' $include './data/%project%/%scenario%/name-fuel.csv'
+$if not EXIST './data/%project%/%scenario%/name-fuel.csv' $include               './data/common/name-fuel.csv'
 $offDelim
 /;
 
@@ -78,7 +85,8 @@ $offDelim
 SET GF(G,F)             'Generator-fuel mapping'
 /
 $onDelim
-$include    './data/common/map-generator-fuel.csv'
+$if     EXIST './data/%project%/%scenario%/map-generator-fuel.csv' $include './data/%project%/%scenario%/map-generator-fuel.csv'
+$if NOT EXIST './data/%project%/%scenario%/map-generator-fuel.csv' $include               './data/common/map-generator-fuel.csv'
 $offDelim
 /;
 
@@ -130,31 +138,36 @@ $offDelim
 * --- Load data values --- *
 TABLE ENTT_DATA(E,EnttAttrs)    'Entity data'
 $onDelim
-$include    './data/common/data-entity.csv'
+$if     EXIST './data/%project%/%scenario%/data-entity.csv' $include './data/%project%/%scenario%/data-entity.csv'
+$if NOT EXIST './data/%project%/%scenario%/data-entity.csv' $include               './data/common/data-entity.csv'
 $offDelim
 ;
 
 TABLE GNRT_DATA(G,GnrtAttrs)    'Generator data'
 $onDelim
-$include    './data/common/data-generator.csv'
+$if     EXIST './data/%project%/%scenario%/data-generator.csv' $include './data/%project%/%scenario%/data-generator.csv'
+$if NOT EXIST './data/%project%/%scenario%/data-generator.csv' $include               './data/common/data-generator.csv'
 $offDelim
 ;
 
 TABLE STRG_DATA(S,StrgAttrs)    'Storage data'
 $onDelim
-$include    './data/common/data-storage.csv'
+$if     EXIST './data/%project%/%scenario%/data-storage.csv' $include './data/%project%/%scenario%/data-storage.csv'
+$if NOT EXIST './data/%project%/%scenario%/data-storage.csv' $include               './data/common/data-storage.csv'
 $offDelim
 ;
 
 TABLE CNCT_DATA(G,CnctAttrs)    'Connection data'
 $onDelim
-$include    './data/common/data-connection.csv'
+$if     EXIST './data/%project%/%scenario%/data-connection.csv' $include './data/%project%/%scenario%/data-connection.csv'
+$if NOT EXIST './data/%project%/%scenario%/data-connection.csv' $include               './data/common/data-connection.csv'
 $offDelim
 ;
 
 TABLE FUEL_DATA(F,FuelAttrs)    'Fuel data'
 $onDelim
-$include    './data/common/data-fuel-%country%.csv'
+$if     EXIST './data/%project%/%scenario%/data-fuel-%country%.csv' $include './data/%project%/%scenario%/data-fuel-%country%.csv'
+$if NOT EXIST './data/%project%/%scenario%/data-fuel-%country%.csv' $include               './data/common/data-fuel-%country%.csv'
 $offDelim
 ;
 
@@ -255,35 +268,40 @@ PARAMETERS
 D_h(T)
 /
 $onDelim
-$include    './data/common/ts-demand-heat.csv'
+$if     EXIST './data/%project%/%scenario%/ts-demand-heat.csv' $include './data/%project%/%scenario%/ts-demand-heat.csv'
+$if NOT EXIST './data/%project%/%scenario%/ts-demand-heat.csv' $include               './data/common/ts-demand-heat.csv' 
 $offDelim
 /
 
 D_c(T)
 /
 $onDelim
-$include    './data/common/ts-demand-cold.csv'
+$if     EXIST './data/%project%/%scenario%/ts-demand-cold.csv' $include './data/%project%/%scenario%/ts-demand-cold.csv'
+$if NOT EXIST './data/%project%/%scenario%/ts-demand-cold.csv' $include               './data/common/ts-demand-cold.csv'
 $offDelim
 /
 
 pi_e(T)
 /
 $onDelim
-$include    './data/common/ts-electricity-price.csv'
+$if     EXIST './data/%project%/%scenario%/ts-electricity-price.csv' $include './data/%project%/%scenario%/ts-electricity-price.csv'
+$if NOT EXIST './data/%project%/%scenario%/ts-electricity-price.csv' $include               './data/common/ts-electricity-price.csv'
 $offDelim
 /
 
 qc_e(T)
 /
 $onDelim
-$include    './data/common/ts-electricity-carbon.csv'
+$if     EXIST './data/%project%/%scenario%/ts-electricity-carbon.csv' $include './data/%project%/%scenario%/ts-electricity-carbon.csv'
+$if NOT EXIST './data/%project%/%scenario%/ts-electricity-carbon.csv' $include               './data/common/ts-electricity-carbon.csv'
 $offDelim
 /
 
 tax_fuel_g(G)
 /
 $onDelim
-$include    './data/common/data-fueltax-generator-%country%.csv'
+$if     EXIST './data/%project%/%scenario%/data-fueltax-generator-%country%.csv' $include './data/%project%/%scenario%/data-fueltax-generator-%country%.csv'
+$if NOT EXIST './data/%project%/%scenario%/data-fueltax-generator-%country%.csv' $include               './data/common/data-fueltax-generator-%country%.csv'
 $OffDelim
 /
 ;
@@ -291,19 +309,22 @@ $OffDelim
 * - Multi-dimensional parameters -
 TABLE F_a(T,G)
 $onDelim
-$include    './data/common/ts-generator-availability.csv'
+$if     EXIST './data/%project%/%scenario%/ts-generator-availability.csv' $include './data/%project%/%scenario%/ts-generator-availability.csv'
+$if NOT EXIST './data/%project%/%scenario%/ts-generator-availability.csv' $include               './data/common/ts-generator-availability.csv'
 $offDelim
 ;
 
 TABLE eta_g(T,G)
 $onDelim
-$include    './data/common/ts-generator-efficiency.csv'
+$if     EXIST './data/%project%/%scenario%/ts-generator-efficiency.csv' $include './data/%project%/%scenario%/ts-generator-efficiency.csv'
+$if NOT EXIST './data/%project%/%scenario%/ts-generator-efficiency.csv' $include               './data/common/ts-generator-efficiency.csv'
 $offDelim
 ;
 
 TABLE tariff_schedule_v(H,M)
 $onDelim
-$include    './data/common/data-tariffschedule-vol-%country%.csv'
+$if     EXIST './data/%project%/%scenario%/data-tariffschedule-vol-%country%.csv' $include './data/%project%/%scenario%/data-tariffschedule-vol-%country%.csv'¨
+$if NOT EXIST './data/%project%/%scenario%/data-tariffschedule-vol-%country%.csv' $include               './data/common/data-tariffschedule-vol-%country%.csv'
 $offDelim
 ;
 

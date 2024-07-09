@@ -376,11 +376,20 @@ PARAMETERS
 value_taxes(E)     'Value of energy taxes and ETS (EUR/year)'
 value_tariffs(E)   'Value of electricity tariffs (EUR/year)'
 value_support(E)   'Value of support schemes (EUR/year)'
+out_FPC_DH(G_HR)    'Fixed price component for DH (EUR/MWh)'
+out_FPC_HR(G_HR)    'Fixed price component for HR (EUR/MWh)'
+out_MPC_DH(T,G_HR)  'Marginal price component for DH (EUR/MWh)'
+out_MPC_HR(T,G_HR)  'Marginal price component for HR (EUR/MWh)'
+AP_DH(T,G_HR)       'Acceptable price for DH (EUR/MWh)'
+AP_HR(T,G_HR)       'Acceptable price for HR (EUR/MWh)'
 ;
 
-$ifi     %policytype% == 'socioeconomic' value_taxes('WHS')     = 0;
-$ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = sum((T,G_WH,F)$GF(G_WH,F), x_f.l(T,G_WH,F) * (tax_fuel_f(F) + tax_fuel_g(G_WH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
-                                         value_taxes('DHN')     = sum((T,G_DH,F)$GF(G_DH,F), x_f.l(T,G_DH,F) * (tax_fuel_f(F) + tax_fuel_g(G_DH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
+out_FPC_DH(G_HR)    = EPS + MU_DH(G_HR);
+out_FPC_HR(G_HR)    = EPS + MU_HR(G_HR);
+out_MPC_DH(T,G_HR)  = EPS + MC_DH(T);
+out_MPC_HR(T,G_HR)  = EPS + MC_HR(T,G_HR);
+AP_DH(T,G_HR)       = EPS + MC_DH(T) - MU_DH(G_HR);
+AP_HR(T,G_HR)       = EPS + MC_HR(T,G_HR) + MU_HR(G_HR);
 
 $ifi     %policytype% == 'socioeconomic' value_taxes('WHS')     = EPS;
 $ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = EPS + sum((T,G_WH,F)$GF(G_WH,F), x_f.l(T,G_WH,F) * (tax_fuel_f(F) + tax_fuel_g(G_WH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));

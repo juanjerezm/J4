@@ -10,7 +10,7 @@ python3 HPC_submission.py path/to/scenarios.csv --submit
 Arguments:
 - path/to/scenarios.csv: Path to the CSV file containing the scenario parameters.
 - --submit: Optional flag to indicate whether to submit the jobs or not, set to False by default.
-- --base_path: Optional argument to specify the base path for the project.
+- --base_path: Optional argument to specify the base path for the model.
 - --template_path: Optional argument to specify the path to the job template file.
 - --max_runs: Optional argument to specify the maximum number of runs allowed.
 
@@ -112,7 +112,7 @@ def check_file_exist(file_path: Path) -> None:
     """Check if the input csv-file exists."""
     if not file_path.is_file():
         sys.exit(
-            "ERROR: Input csv-file not found, make sure its full path is included. SCRIPT HAS STOPPED"
+            "ERROR: Input csv-file not found, script has stopped."
         )
 
 
@@ -195,7 +195,7 @@ def parse_args():
         "--base_path",
         type=Path,
         default=cfg["base_path"],
-        help="Base path for the project",
+        help="Base path for the model",
     )
     parser.add_argument(
         "--template_path",

@@ -270,9 +270,6 @@ def gdxdf_var(
     return data_all
 
 
-import gams.transfer as gt
-
-
 def gdxdf_par(
     paths: Union[List[str], List[Path]], parameters: List[str]
 ) -> Dict[str, pd.DataFrame]:
@@ -302,7 +299,11 @@ def gdxdf_par(
     data_all = dict()
     for scenario, container in zip(scenarios, containers):
         for par in parameters:
-            df_temp = container[par].records  # type: ignore
+            try:
+                df_temp = container[par].records  # type: ignore
+            except KeyError:
+                print(f"KeyError: {par} not found in {scenario}")
+                continue
             if df_temp is None:
                 print(f"Empty DataFrame for {par} in {scenario}")
                 continue

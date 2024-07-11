@@ -27,18 +27,18 @@ rename_columns = {'G': 'generator', 'level': 'value'}
 df = ut.rename_columns(df, rename_columns)
 
 # rename some values. The new values need to be used in the rest of the script
-rename_values = {'generator': {'AMV1': 'Amagerværket1', 'AVV1': 'Avedøreværket1'}, 'scenario': {'reference': 'baseline'}}
+rename_values = {'generator': {'AMV1': 'Amagerværket1', 'AVV1': 'Avedøreværket1'}, 'case': {'reference': 'baseline'}}
 df = ut.rename_values(df, rename_values)
 
 # exclude generator 'AVV2' from the dataframe
 exclude = {'generator': ['AVV2']}
 df = ut.filter(df, exclude=exclude)
 
-# aggregate 'value' column by scenario and generator
-df = ut.aggregate(df, ['scenario', 'generator'], ['value'])
+# aggregate 'value' column by case and generator
+df = ut.aggregate(df, ['case', 'generator'], ['value'])
 
-# calculate the difference in the 'value' column with respect to 'baseline' in the 'scenario' column 
-df = ut.diff(df, 'scenario', 'baseline', 'value')
+# calculate the difference in the 'value' column with respect to 'baseline' in the 'case' column 
+df = ut.diff(df, 'case', 'baseline', 'value')
 
 # Observe the condensed df
 print(df.head(10))

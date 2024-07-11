@@ -156,13 +156,13 @@ def aggregate(df: pd.DataFrame, categories: List[str], sums: List[str]) -> pd.Da
         0        A      3
         1        B      7
     """
-    df = df.groupby(categories, as_index=False)[sums].sum()
+    df = df.groupby(categories, as_index=False, observed=False)[sums].sum()
     return df
 
 
 def diff(df, reference_col: str, reference_item: str, value_col: str) -> pd.DataFrame:
     """
-    Calculate the change in value_col relative to a reference item on a reference column, such as a baseline (item) scenario (column).
+    Calculate the change in value_col relative to a reference item on a reference column.
     Differences are calculated for each combination of elements in the columns that are not value_col.
 
     Parameters:
@@ -211,7 +211,7 @@ def diff(df, reference_col: str, reference_item: str, value_col: str) -> pd.Data
         # Exclude the base row from the main dataframe
         df_filtered = df.drop(reference_item)
         # Subtract the base row from the rest of the dataframe
-        df = df_filtered.subtract(df_reference.squeeze(), axis=1)
+        df = df_filtered.subtract(df_reference.squeeze(), axis=1, fill_value=0)
 
     df = df.reset_index()
     return df
@@ -238,14 +238,14 @@ def gdxdf_var(
 
     paths = [Path(path) for path in paths]
 
-    # scenario names are the last part of the file name after the last hyphen
-    scenarios = [path.stem.split("-")[-1] for path in paths]
+    # case names are the last part of the file name after the last hyphen
+    cases = [path.stem.split("-")[-1] for path in paths]
 
     # read gdx files into containers
     containers = [gt.Container(str(path)) for path in paths]
 
     data_all = dict()
-    for scenario, container in zip(scenarios, containers):
+    for case, container in zip(cases, containers):
         if variables is None:
             spec_var = container.listVariables()
         else:
@@ -254,10 +254,10 @@ def gdxdf_var(
         for var in spec_var:
             df_temp = container[var].records  # type: ignore
             if df_temp is None:
-                print(f"Empty DataFrame for {var} in {scenario}")
+                print(f"Empty DataFrame for {var} in {case}")
                 continue
 
-            df_temp.insert(0, "scenario", scenario)
+            df_temp.insert(0, "case", case)
             df_temp.drop(
                 columns=[col for col in gams_attrs if col not in attributes],
                 inplace=True,
@@ -290,25 +290,25 @@ def gdxdf_par(
 
     paths = [Path(path) for path in paths]
 
-    # scenario names are the last part of the file name after the last hyphen
-    scenarios = [path.stem.split("-")[-1] for path in paths]
+    # case names are the last part of the file name after the last hyphen
+    cases = [path.stem.split("-")[-1] for path in paths]
 
     # read gdx files into containers
     containers = [gt.Container(str(path)) for path in paths]
 
     data_all = dict()
-    for scenario, container in zip(scenarios, containers):
+    for case, container in zip(cases, containers):
         for par in parameters:
             try:
                 df_temp = container[par].records  # type: ignore
             except KeyError:
-                print(f"KeyError: {par} not found in {scenario}")
+                print(f"KeyError: {par} not found in {case}")
                 continue
             if df_temp is None:
-                print(f"Empty DataFrame for {par} in {scenario}")
+                print(f"Empty DataFrame for {par} in {case}")
                 continue
 
-            df_temp.insert(0, "scenario", scenario)
+            df_temp.insert(0, "case", case)
             if par not in data_all:
                 data_all[par] = pd.DataFrame()
             data_all[par] = pd.concat([data_all[par], df_temp])

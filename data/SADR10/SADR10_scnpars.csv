@@ -1,0 +1,10 @@
+project,name,country,policy
+SADR10,DEsoc,DE,socioeconomic
+SADR10,DEtax,DE,taxation
+SADR10,DEsup,DE,support
+SADR10,DKsoc,DK,socioeconomic
+SADR10,DKtax,DK,taxation
+SADR10,DKsup,DK,support
+SADR10,FRsoc,FR,socioeconomic
+SADR10,FRtax,FR,taxation
+SADR10,FRsup,FR,support

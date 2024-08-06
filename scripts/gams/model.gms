@@ -405,5 +405,10 @@ $ifi not %policytype% == 'support'       value_support(E)       = EPS;
 $ifi     %policytype% == 'support'       $include './scripts/gams/value_policy.inc';
 
 execute_unload './results/%project%/%scenario%/results-%scenario%-integrated.gdx'
+,
+$ifi %mode% == 'iterative' log_n,
+NPV_all, OPX, WH_trnsctn, NPV, x_f, x_h, x_e, x_c, w, z, y_hr, y_f_used, x_s,
+value_taxes, value_tariffs, value_support, out_FPC_DH, out_FPC_HR, out_MPC_DH, out_MPC_HR, AP_DH, AP_HR
+;
 * ======================================================================
 * END OF FILE

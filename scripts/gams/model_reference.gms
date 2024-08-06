@@ -275,7 +275,15 @@ $ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = EPS + sum((T,G
 
 value_support(E)       = EPS;
 
-execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx';
+execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx'
+,
+obj, OPX, x_f, x_h, x_e, x_c, w, z, y_f_used, x_s,
+MC_DH, OPX_ref, CO2_ref, XH_ref, XF_ref, 
+value_taxes, value_tariffs, value_support
+;
+
+
+
 
 * ======================================================================
 * END OF FILE

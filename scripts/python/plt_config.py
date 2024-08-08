@@ -1,5 +1,7 @@
+from typing import Dict
+
 COUNTRIES = {"DK": "Denmark", "DE": "Germany", "FR": "France"}
-POLICIES = {"socioeconomic": "Technical", "taxation": "Taxation", "support": "Support"}
+POLICIES: Dict[str, str] = {"socioeconomic": "Technical", "taxation": "Taxation", "support": "Support"}
 
 # muted palette
 # fuels_data = [

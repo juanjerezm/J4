@@ -10,9 +10,10 @@ import utilities as utils
 
 
 cfg = {
-    # "base_path": Path("/zhome/f0/5/124363/J4"),
-    "base_path": Path("C:/Users/juanj/GitHub/PhD/J4 - model")
-    # "base_path": Path("//home.cc.dtu.dk/jujmo/J4")
+    "base_path": Path(r"C:\Users\jujmo\Github\J4")              # DTU laptop
+    # "base_path": Path("C:/Users/juanj/GitHub/PhD/J4 - model") # Home PC
+    # "base_path": Path("/zhome/f0/5/124363/J4"),               # HPC (local)
+    # "base_path": Path("//home.cc.dtu.dk/jujmo/J4")            # HPC (home)
 }
 
 

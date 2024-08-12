@@ -30,6 +30,7 @@ class Scenario:
     policy: str
     dir: Path = field(init=False)
     data: pd.DataFrame = field(init=False)
+    fig: Figure = field(init=False)
 
     def __post_init__(self):
         self.dir = Path("results") / self.project / self.name / "csv"
@@ -42,12 +43,14 @@ class Scenario:
         self.data = pd.read_csv(file)
         return
 
-    def process_data(self) -> None:
+    def process_data(self) -> None:       
         df = self.data
+        df = utils.filter(df, {"case": "reference"})        
         # Rename fuels, aggregate, and calculate net change
+        df['F'] = df['G'].map(cfg.GenFuelMap)
+
         df = utils.rename_values(df, {"F": cfg.FUEL_NAMES})
-        df = utils.aggregate(df, ["case", "F"], ["level"])
-        df = utils.diff(df, "case", "reference", "level")
+        df = utils.aggregate(df, ["T","F"], ["level"])
         df["level"] = df["level"] * SCALE
 
         # Assign country and policy data
@@ -58,8 +61,7 @@ class Scenario:
         )  # .values() if renamed, .keys() if not
 
         # Clean up
-        df = df.drop(columns=["case"])
-        df = df[["country", "policy", "F", "level"]]
+        df = df[["country", "policy", "T", "F", "level"]]
         self.data = df
         return
 
@@ -134,44 +136,52 @@ def main():
         scenario.get_data(var)
         scenario.process_data()
 
-    df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
-    df = exclude_empty_category(df, "F")
+        Fuel_order = ['Mun. waste', 'Biomass', 'Coal', 'Electricity', 'Oil products', 'Other']
+        scenario.data['F'] = pd.Categorical(scenario.data['F'], categories=Fuel_order, ordered=True)
 
-    fig, axes = plt.subplots(1, 3, figsize=(width / 2.54, height / 2.54), sharey=True)
+    for scenario in scenarios:
+        country = scenario.country
+        policy = scenario.policy
+        scenario.data = exclude_empty_category(scenario.data, "F")
+        scenario.data = scenario.data.pivot(index="T", columns="F", values="level")
+        daily_data = scenario.data.groupby(np.arange(len(scenario.data)) // 24).sum()
 
-    for ax, country in zip(axes, cfg.COUNTRIES):
-        data = df[df["country"] == country]
-        data = data.pivot(index="policy", columns="F", values="level")
+        # Optionally, reset the index if needed
+        daily_data = daily_data.reset_index(drop=True)
 
-        data.plot(kind="bar", stacked=True, ax=ax, legend=False, color=cfg.FUEL_COLORS)
-        ax.set_title(f"{cfg.COUNTRIES[country]}", fontweight="bold")
-        ax.set_xticklabels(data.index, rotation=90)
-        ax.set_xlabel("")
+        scenario.fig, ax = plt.subplots(figsize=(width/2.54, height/2.54))
+        daily_data.plot(kind='bar', stacked=True, ax=ax, color=cfg.FUEL_COLORS, width=1)
 
-    format_yaxis(axes, y_range, y_step, y_title)
+        # read a new dataframe 
+        demand = pd.read_csv("data/common/ts-demand-heat.csv", header=None,names=['T','Demand'], index_col=0)
+        demand = demand.groupby(np.arange(len(demand)) // 24).sum()
 
-    (_, _, x_center), (y_down, _, _) = axes_coordinates(axes)
+        # overlay a line plot in which every point is 10000
+        ax.plot(demand.index, demand["Demand"], color='black', linewidth=0.5)
 
-    handles, labels = get_legend_elements(axes)
 
-    legend = fig.legend(
-        handles,
-        labels,
-        loc="lower center",
-        bbox_to_anchor=(x_center, 0),
-        bbox_transform=fig.transFigure,
-        ncol=3,
-        title="Fuel",
-        title_fontproperties={"weight": "bold"},
-    )
+        ax.set_ylabel(y_title, fontweight="bold")
+        ax.set_ylim(y_range)
+        y_ticks = np.arange(y_range[0], y_range[1] + y_step, y_step)
+        ax.set_yticks(y_ticks)
+        ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.5)
 
-    _, legend_height = legend_dimensions(fig, legend)
-    plt.subplots_adjust(wspace=0.1, bottom=(y_down + legend_height))
+        ax.set_title(f"{country}, {policy}", fontweight="bold")
+        ax.set_xticks(range(0, len(demand), 30))
 
-    if save:
-        plt.savefig(f"{out_dir}/{plot_name}.png", dpi=DPI)
-    if show:
-        plt.show()
+        ax.set_xticklabels([])
+
+        # scenario.fig = fig
+        if save:
+            plt.savefig(f"{out_dir}/{plot_name}_{scenario.country}_{scenario.policy}.png", dpi=DPI)
+        if show:
+            plt.show()
+
+    # for scenario in scenarios:
+        # if save:
+            # plt.savefig(f"{out_dir}/{plot_name}_{scenario.country}_{scenario.policy}.png", dpi=DPI)
+        # if show:
+            # plt.show()
 
 
 if __name__ == "__main__":
@@ -181,19 +191,19 @@ if __name__ == "__main__":
     show = False
 
     scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
-    var = "x_f"
-    SCALE = 1e-3  # GWh/MWh
+    var = "x_h"
+    SCALE = 1  # MWh/MWh
 
 
-    width = 8.5  # cm
+    width = 19  # cm
     height = 10  # cm
     DPI = 900
 
-    y_range = (-50, 10)
-    y_step = 10
-    y_title = "Fuel consumption - annual change [GWh]"
+    y_range = (0, 50000)
+    y_step = 10000
+    y_title = "Daily heat Production [MWh]"
 
-    out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots"
-    plot_name = "FuelChange"
+    out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/tsHeatProd"
+    plot_name = "tsHeatProd"
 
     main()

@@ -43,11 +43,35 @@ class Scenario:
         return
 
     def process_data(self) -> None:
+        # df = self.data
+        # # Rename fuels, aggregate, and calculate net change
+        # df['F'] = df['G'].map(cfg.GenFuelMap)
+
+        # df = utils.rename_values(df, {"F": cfg.FUEL_NAMES})
+        # df = utils.aggregate(df, ["case", "F"], ["level"])
+        # df = utils.diff(df, "case", "reference", "level")
+        # df["level"] = df["level"] * SCALE
+
+        # # Assign country and policy data
+        # df = df.assign(country=self.country, policy=self.policy)
+        # df = utils.rename_values(df, {"policy": cfg.POLICIES})
+        # df["policy"] = pd.Categorical(
+        #     df["policy"], categories=cfg.POLICIES.values(), ordered=True
+        # )  # .values() if renamed, .keys() if not
+
+        # # Clean up
+        # df = df.drop(columns=["case"])
+        # df = df[["country", "policy", "F", "level"]]
+        # self.data = df
+        
         df = self.data
+        df = utils.filter(df, {"case": "reference"})        
         # Rename fuels, aggregate, and calculate net change
+        df['F'] = df['G'].map(cfg.GenFuelMap)
+
         df = utils.rename_values(df, {"F": cfg.FUEL_NAMES})
-        df = utils.aggregate(df, ["case", "F"], ["level"])
-        df = utils.diff(df, "case", "reference", "level")
+        df = utils.aggregate(df, ["F"], ["level"])
+        # df = utils.diff(df, "case", "reference", "level")
         df["level"] = df["level"] * SCALE
 
         # Assign country and policy data
@@ -58,7 +82,7 @@ class Scenario:
         )  # .values() if renamed, .keys() if not
 
         # Clean up
-        df = df.drop(columns=["case"])
+        # df = df.drop(columns=["case"])
         df = df[["country", "policy", "F", "level"]]
         self.data = df
         return
@@ -144,6 +168,9 @@ def main():
         data = data.pivot(index="policy", columns="F", values="level")
 
         data.plot(kind="bar", stacked=True, ax=ax, legend=False, color=cfg.FUEL_COLORS)
+
+        # remove minor ticks
+        ax.yaxis.set_tick_params(which="minor", size=0)
         ax.set_title(f"{cfg.COUNTRIES[country]}", fontweight="bold")
         ax.set_xticklabels(data.index, rotation=90)
         ax.set_xlabel("")
@@ -181,7 +208,7 @@ if __name__ == "__main__":
     show = False
 
     scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
-    var = "x_f"
+    var = "x_h"
     SCALE = 1e-3  # GWh/MWh
 
 
@@ -189,11 +216,11 @@ if __name__ == "__main__":
     height = 10  # cm
     DPI = 900
 
-    y_range = (-50, 10)
-    y_step = 10
-    y_title = "Fuel consumption - annual change [GWh]"
+    y_range = (0, 9000)
+    y_step = 1500
+    y_title = "Heat Production [GWh]"
 
     out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots"
-    plot_name = "FuelChange"
+    plot_name = "HeatProduction"
 
     main()

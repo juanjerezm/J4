@@ -1,4 +1,5 @@
 # Standard library imports
+from calendar import c
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Tuple
@@ -44,10 +45,6 @@ class Scenario:
 
     def process_data(self) -> None:
         df = self.data
-        # Rename fuels, aggregate, and calculate net change
-        df = utils.rename_values(df, {"F": cfg.FUEL_NAMES})
-        df = utils.aggregate(df, ["case", "F"], ["level"])
-        df = utils.diff(df, "case", "reference", "level")
         df["level"] = df["level"] * SCALE
 
         # Assign country and policy data
@@ -59,7 +56,7 @@ class Scenario:
 
         # Clean up
         df = df.drop(columns=["case"])
-        df = df[["country", "policy", "F", "level"]]
+        df = df[["country", "policy", "E", "level"]]
         self.data = df
         return
 
@@ -135,16 +132,24 @@ def main():
         scenario.process_data()
 
     df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
-    df = exclude_empty_category(df, "F")
+    df = exclude_empty_category(df, "E")
 
     fig, axes = plt.subplots(1, 3, figsize=(width / 2.54, height / 2.54), sharey=True)
 
+    bar_width = 0.35
+
+
     for ax, country in zip(axes, cfg.COUNTRIES):
         data = df[df["country"] == country]
-        data = data.pivot(index="policy", columns="F", values="level")
+        data = data.pivot(index="policy", columns="E", values="level")
 
-        data.plot(kind="bar", stacked=True, ax=ax, legend=False, color=cfg.FUEL_COLORS)
+        # Plot grouped bars instead of stacked
+        positions = np.arange(len(data.index))
+        for i, entity in enumerate(data.columns):
+            ax.bar(positions + i * bar_width, data[entity], bar_width, label=entity, color=cfg.EntityPallete[entity])
+
         ax.set_title(f"{cfg.COUNTRIES[country]}", fontweight="bold")
+        ax.set_xticks(positions + bar_width / 2)  # Center x-ticks between grouped bars
         ax.set_xticklabels(data.index, rotation=90)
         ax.set_xlabel("")
 
@@ -161,7 +166,7 @@ def main():
         bbox_to_anchor=(x_center, 0),
         bbox_transform=fig.transFigure,
         ncol=3,
-        title="Fuel",
+        title="Entity",
         title_fontproperties={"weight": "bold"},
     )
 
@@ -177,23 +182,23 @@ def main():
 if __name__ == "__main__":
     # modify process_data() for specific plot
     # modify exclude_empty_category() for specific plot
-    save = True
-    show = False
+    save = False
+    show = True
 
     scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
-    var = "x_f"
-    SCALE = 1e-3  # GWh/MWh
+    var = "NPV"
+    SCALE = 1e-6  # M€/€
 
 
     width = 8.5  # cm
     height = 10  # cm
     DPI = 900
 
-    y_range = (-50, 10)
-    y_step = 10
-    y_title = "Fuel consumption - annual change [GWh]"
+    y_range = (0, 15)
+    y_step = 3
+    y_title = "NPV [M€]"
 
     out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots"
-    plot_name = "FuelChange"
+    plot_name = "NPV"
 
     main()

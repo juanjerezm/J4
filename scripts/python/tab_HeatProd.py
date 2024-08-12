@@ -33,8 +33,13 @@ class ScenarioParams:
 
     def process_data(self) -> None:
         df = self.data
+        
+        df = utils.aggregate(df, ["case", "G"], ["level"])
+        df = utils.diff(df, "case", "reference", "level")
+        df = utils.filter(df, include={"G": "HR_DC"})
         df["level"] = df["level"] * SCALE
-        df["level"] = df["level"].round(1)
+
+        df["level"] = df["level"].round(2)
 
         # Assign country and policy data
         df = df.assign(country=self.country, policy=self.policy)
@@ -84,7 +89,7 @@ def main(file_path_input):
     scenarios = load_scenario_params(Path(file_path_input))
     print(f"Scenarios loaded successfully:")
 
-    var = "y_hr"
+    var = "x_h"
     for scenario in scenarios:
         scenario.get_data(var)
         scenario.process_data()
@@ -96,11 +101,11 @@ def main(file_path_input):
 
     # save to csv
     outdir = r"C:\Users\juanj\OneDrive - Danmarks Tekniske Universitet\Papers\J4 - article\diagrams\plots"
-    outfile = Path(outdir) / "tab_HeatCap.csv"
+    outfile = Path(outdir) / "tab_HeatProd.csv"
     df.to_csv(outfile)
 
 
 if __name__ == "__main__":
     scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
-    SCALE = 1 # MW/MW
+    SCALE = 1 # MWh/MWh
     main(scnParsFilePath)

@@ -45,6 +45,8 @@ class Scenario:
     def process_data(self) -> None:
         df = self.data
         # Rename fuels, aggregate, and calculate net change
+        df['F'] = df['G'].map(cfg.GenFuelMap)
+
         df = utils.rename_values(df, {"F": cfg.FUEL_NAMES})
         df = utils.aggregate(df, ["case", "F"], ["level"])
         df = utils.diff(df, "case", "reference", "level")
@@ -181,19 +183,19 @@ if __name__ == "__main__":
     show = False
 
     scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
-    var = "x_f"
-    SCALE = 1e-3  # GWh/MWh
+    var = "w_g"
+    SCALE = 1e-3  # ton/kg
 
 
     width = 8.5  # cm
     height = 10  # cm
     DPI = 900
 
-    y_range = (-50, 10)
-    y_step = 10
-    y_title = "Fuel consumption - annual change [GWh]"
+    y_range = (-2000, 1000)
+    y_step = 500
+    y_title = "Carbon emissions - annual change [ton]"
 
     out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots"
-    plot_name = "FuelChange"
+    plot_name = "EmissionsChange"
 
     main()

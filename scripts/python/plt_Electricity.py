@@ -45,6 +45,8 @@ class Scenario:
     def process_data(self) -> None:
         df = self.data
         # Rename fuels, aggregate, and calculate net change
+        df['F'] = df['G'].map(cfg.GenFuelMap)
+
         df = utils.rename_values(df, {"F": cfg.FUEL_NAMES})
         df = utils.aggregate(df, ["case", "F"], ["level"])
         df = utils.diff(df, "case", "reference", "level")
@@ -91,6 +93,7 @@ def format_yaxis(
     axes[0].set_ylabel(title, fontweight="bold")
     axes[0].set_ylim(y_range)
     y_ticks = np.arange(y_range[0], y_range[1] + y_step, y_step)
+    print(y_ticks)
     axes[0].set_yticks(y_ticks)
     for ax in axes:
         ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.5)
@@ -144,6 +147,7 @@ def main():
         data = data.pivot(index="policy", columns="F", values="level")
 
         data.plot(kind="bar", stacked=True, ax=ax, legend=False, color=cfg.FUEL_COLORS)
+        ax.minorticks_off()
         ax.set_title(f"{cfg.COUNTRIES[country]}", fontweight="bold")
         ax.set_xticklabels(data.index, rotation=90)
         ax.set_xlabel("")
@@ -181,7 +185,7 @@ if __name__ == "__main__":
     show = False
 
     scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
-    var = "x_f"
+    var = "x_e"
     SCALE = 1e-3  # GWh/MWh
 
 
@@ -189,11 +193,11 @@ if __name__ == "__main__":
     height = 10  # cm
     DPI = 900
 
-    y_range = (-50, 10)
-    y_step = 10
-    y_title = "Fuel consumption - annual change [GWh]"
+    y_range = (-15, 0)
+    y_step = 3
+    y_title = "Electricity cogeneration - annual change [GWh]"
 
     out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots"
-    plot_name = "FuelChange"
+    plot_name = "ElectricityProductionChange"
 
     main()

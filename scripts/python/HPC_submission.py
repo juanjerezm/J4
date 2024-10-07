@@ -149,7 +149,7 @@ def job_creation(scenario: ScenarioParams) -> None:
     Returns:
         None
     """
-    job_content = load_template().substitute(
+    job_content = load_template().safe_substitute(
         project=scenario.project,
         scenario=scenario.name,
         country=scenario.country,

@@ -184,9 +184,9 @@ def main():
 if __name__ == "__main__":
     # modify process_data() for specific plot
     # modify exclude_empty_category() for specific plot
-    save = True
+    save = False
     show = True
-    FORMAT_YAXIS = False
+    FORMAT_YAXIS = True
 
 
     PROJECT = "BASE"
@@ -199,7 +199,7 @@ if __name__ == "__main__":
     height = 10  # cm
     DPI = 900
 
-    y_range = (0, 0.25)
+    y_range = (0, 0.30)
     y_step = 0.05
     y_title = "Annual cost of policy [M€]"
 

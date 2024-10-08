@@ -136,7 +136,7 @@ def main():
         scenario.get_data(var)
         scenario.process_data()
 
-        Fuel_order = ['Mun. waste', 'Biomass', 'Coal', 'Electricity', 'Oil products', 'Other']
+        Fuel_order = ['Mun. waste', 'Biomass', 'Coal', 'Electricity', 'Oil products', 'Other', 'Natural gas']
         scenario.data['F'] = pd.Categorical(scenario.data['F'], categories=Fuel_order, ordered=True)
 
     for scenario in scenarios:

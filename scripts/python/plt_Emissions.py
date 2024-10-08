@@ -180,8 +180,8 @@ def main():
 if __name__ == "__main__":
     # modify process_data() for specific plot
     # modify exclude_empty_category() for specific plot
-    save = True
-    show = False
+    save = False
+    show = True
     FORMAT_YAXIS = True
 
     PROJECT = "BASE"
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     height = 10  # cm
     DPI = 900
 
-    y_range = (-2000, 1000)
+    y_range = (-3500, 1000)
     y_step = 500
     y_title = "Carbon emissions - annual change [ton]"
 

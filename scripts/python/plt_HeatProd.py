@@ -204,8 +204,8 @@ def main():
 if __name__ == "__main__":
     # modify process_data() for specific plot
     # modify exclude_empty_category() for specific plot
-    save = True
-    show = False
+    save = False
+    show = True
 
     PROJECT = "BASE"
     scnParsFilePath = f"data/{PROJECT}/{PROJECT}_scnpars.csv"

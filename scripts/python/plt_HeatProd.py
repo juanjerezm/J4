@@ -207,7 +207,8 @@ if __name__ == "__main__":
     save = True
     show = False
 
-    scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
+    PROJECT = "BASE"
+    scnParsFilePath = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
     var = "x_h"
     SCALE = 1e-3  # GWh/MWh
 
@@ -220,7 +221,7 @@ if __name__ == "__main__":
     y_step = 1500
     y_title = "Heat Production [GWh]"
 
-    out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots"
+    out_dir = f"C:/Users/jujmo/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/{PROJECT}"
     plot_name = "HeatProduction"
 
     main()

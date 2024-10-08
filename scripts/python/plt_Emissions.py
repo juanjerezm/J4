@@ -184,8 +184,10 @@ if __name__ == "__main__":
     show = False
     FORMAT_YAXIS = True
 
-    scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
-    var = "w_g"
+    PROJECT = "BASE"
+
+    scnParsFilePath = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
+    var = "w"
     SCALE = 1e-3  # ton/kg
 
 
@@ -197,7 +199,8 @@ if __name__ == "__main__":
     y_step = 500
     y_title = "Carbon emissions - annual change [ton]"
 
-    out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots"
+    out_dir = rf"C:/Users/jujmo/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/{PROJECT}"
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
     plot_name = "EmissionsChange"
 
     main()

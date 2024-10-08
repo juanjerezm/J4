@@ -95,12 +95,14 @@ def main(file_path_input):
     print(df.head(20))
 
     # save to csv
-    outdir = r"C:\Users\juanj\OneDrive - Danmarks Tekniske Universitet\Papers\J4 - article\diagrams\plots"
+    outdir = rf"C:\Users\jujmo\OneDrive - Danmarks Tekniske Universitet\Papers\J4 - article\diagrams\plots\{PROJECT}"
+    Path(outdir).mkdir(parents=True, exist_ok=True)
     outfile = Path(outdir) / "tab_HeatCap.csv"
     df.to_csv(outfile)
 
 
 if __name__ == "__main__":
-    scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
+    PROJECT = "BASE"
+    scnParsFilePath = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
     SCALE = 1 # MW/MW
     main(scnParsFilePath)

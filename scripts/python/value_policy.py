@@ -154,7 +154,8 @@ def main():
         ax.set_xticklabels(data.index, rotation=90)
         ax.set_xlabel("")
 
-    format_yaxis(axes, y_range, y_step, y_title)
+    if FORMAT_YAXIS:
+        format_yaxis(axes, y_range, y_step, y_title)
 
     (_, _, x_center), (y_down, _, _) = axes_coordinates(axes)
 
@@ -185,6 +186,7 @@ if __name__ == "__main__":
     # modify exclude_empty_category() for specific plot
     save = True
     show = True
+    FORMAT_YAXIS = False
 
     scnParsFilePath = "C:/Users/jujmo/GitHub/J4/results/B0/B0_scnpars.csv"
     var = "value_support"

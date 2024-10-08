@@ -153,7 +153,8 @@ def main():
         ax.set_xticklabels(data.index, rotation=90)
         ax.set_xlabel("")
 
-    format_yaxis(axes, y_range, y_step, y_title)
+    if FORMAT_YAXIS:
+        format_yaxis(axes, y_range, y_step, y_title)
 
     (_, _, x_center), (y_down, _, _) = axes_coordinates(axes)
 
@@ -184,6 +185,7 @@ if __name__ == "__main__":
     # modify exclude_empty_category() for specific plot
     save = False
     show = True
+    FORMAT_YAXIS = True
 
     scnParsFilePath = "C:/Users/juanj/GitHub/PhD/J4 - model/results/B0/B0_scnpars.csv"
     var = "NPV"

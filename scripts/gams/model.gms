@@ -20,7 +20,9 @@ $offInclude             !! Suppresses listing of include-files
 option solprint = off   !! Toggles solution listing
 option limRow = 0       !! Maximum number of rows listed in equation block
 option limCol = 0       !! Maximum number of columns listed in one variable block
-option optcr = 0.01;    !! Relative optimality tolerance
+option optcr = 1e-4     !! Relative optimality tolerance
+option EpsToZero = on   !! Outputs Eps values as zero
+;
 
 * ----- Control flags -----
 * --- "project" and "scenario" flags
@@ -313,7 +315,7 @@ eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,         
 
 eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
                                                             + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
-*                                                            + sum((T,S_DH),              C_s(S_DH)     * x_s(T,S_DH,'discharge'))
+                                                            + sum((T,S_DH),              C_s(S_DH)     * x_s(T,S_DH,'discharge'))
                                                             + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
                                                             - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
 $ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('DHN',F))

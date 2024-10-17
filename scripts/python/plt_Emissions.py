@@ -180,7 +180,7 @@ def main():
 if __name__ == "__main__":
     # modify process_data() for specific plot
     # modify exclude_empty_category() for specific plot
-    save = False
+    save = True
     show = True
     FORMAT_YAXIS = True
 

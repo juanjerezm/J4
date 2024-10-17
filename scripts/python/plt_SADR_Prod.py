@@ -141,6 +141,8 @@ def main(param_files):
     ax.legend(title='Country, Policy', bbox_to_anchor=(1.05, 1), loc='upper left', title_fontproperties={"weight": "bold"})
     plt.xticks(rotation=45)
     plt.tight_layout()
+    # make dir
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     if save:
         plt.savefig(f"{out_dir}/{plot_name}.png", dpi=DPI)
@@ -155,12 +157,13 @@ def main(param_files):
 if __name__ == "__main__":
     save = True
     show = False
+    folder = "SA-DR"
 
     # width = 8.5  # cm
     # height = 10  # cm
     DPI = 900
 
-    out_dir = "C:/Users/juanj/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots"
+    out_dir = f"C:/Users/jujmo/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/{folder}"
     plot_name = "SADR_Prod"
 
     projects = ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]

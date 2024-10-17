@@ -97,7 +97,11 @@ def main(file_path_input):
     df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
     # pivot table, country on rows and policy on columns
     df = df.pivot_table(index="country", columns="policy", values="level")
-    print(df.head(20))
+    df_show = df.copy()
+    # divide values by 1000 and round to one decimal
+    df_show = df_show / 1000
+    df_show = df_show.round(1)
+    print(df_show.head(20))
 
     # save to csv
     outdir = rf"C:\Users\jujmo\OneDrive - Danmarks Tekniske Universitet\Papers\J4 - article\diagrams\plots\{PROJECT}"

@@ -10,8 +10,8 @@ import utilities as utils
 
 
 cfg = {
-    # "base_path": Path(r"C:\Users\jujmo\Github\J4")              # DTU laptop
-    "base_path": Path("C:/Users/juanj/GitHub/PhD/J4 - model") # Home PC
+    "base_path": Path(r"C:\Users\jujmo\Github\J4")              # DTU laptop
+    # "base_path": Path("C:/Users/juanj/GitHub/PhD/J4 - model") # Home PC
     # "base_path": Path("/zhome/f0/5/124363/J4"),               # HPC (local)
     # "base_path": Path("//home.cc.dtu.dk/jujmo/J4")            # HPC (home)
 }
@@ -164,8 +164,8 @@ def main(path):
 
 if __name__ == "__main__":
 
-    projects = ["SAEP2018", "SAEP2019", "SAEP2020", "SAEP2021", "SAEP2022", "SAEP2023"]
-    # projects = ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]
+    # projects = ["SAEP2018", "SAEP2019", "SAEP2020", "SAEP2021", "SAEP2022", "SAEP2023"]
+    projects = ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]
 
     scn_pars = [f"data/{run}/{run}_scnpars.csv" for run in projects]
 

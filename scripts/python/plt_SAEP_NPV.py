@@ -1,18 +1,18 @@
-
-
-
 import csv
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-import sys
 from typing import Dict, List
 
+import pandas as pd
+import plt_config as cfg
+import utilities as utils
+import utilities_plotting as utils_plot
 from matplotlib import pyplot as plt
 
-import utilities as utils
-import plt_config as cfg
-
-import pandas as pd
+# ----- Matplotlib settings -----
+plt.rcParams["font.family"] = "Times New Roman"
+plt.rcParams["font.size"] = 8
 
 
 @dataclass
@@ -47,22 +47,22 @@ class ScenarioParams:
 
     def process_data(self) -> None:
         df = self.data
-        df["level"] = df["level"] * SCALE
+        df["level"] = df["level"] * VALUE_SCALING
+        df["level"] = df["level"].round(2)
 
         # Assign country and policy data
         df = df.assign(project=self.project, country=self.country, policy=self.policy)
         df = utils.rename_values(df, {"policy": cfg.POLICIES})
         df["policy"] = pd.Categorical(
-            df["policy"], categories=cfg.POLICIES.values(), ordered=True # type: ignore
+            df["policy"], categories=cfg.POLICIES.values(), ordered=True  # type: ignore
         )  # .values() if renamed, .keys() if not
-
-        df["project"] = df["project"].str[-4:].astype(str)        
 
         # Clean up
         df = df.drop(columns=["case"])
         df = df[["project", "country", "policy", "level"]]
         self.data = df
         return
+
 
 def load_scenario_params(file_path: Path) -> List[ScenarioParams]:
     """Read scenario parameters from a csv-file and return a list of ScenarioParams objects."""
@@ -79,6 +79,7 @@ def load_scenario_params(file_path: Path) -> List[ScenarioParams]:
             scenarios.append(scenario)
     return scenarios
 
+
 def validate_row(row: Dict[str, str], row_number: int) -> None:
     """Validate that rows are not empty and do not contain missing values."""
     if not any(row.values()):
@@ -86,84 +87,118 @@ def validate_row(row: Dict[str, str], row_number: int) -> None:
     if not all(row.values()):
         raise ValueError(f"Missing value in row {row_number}: {row}")
 
+
 def check_file_exist(file_path: Path) -> None:
     """Check if the input csv-file exists."""
     if not file_path.is_file():
         sys.exit("ERROR: Input csv-file not found, script has stopped.")
-        
 
 
-def main(param_files):
-    var = "NPV_all"
-
+def main(param_files, var):
     scenarios = []
 
+    # collecting data
     for project in param_files:
         check_file_exist(Path(project))
-        scenarios += load_scenario_params(Path(project))   
-
+        scenarios += load_scenario_params(Path(project))
 
         for scenario in scenarios:
             scenario.get_data(var)
             scenario.process_data()
-    
+
     df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
-    
     df = utils.rename_values(df, {"country": cfg.COUNTRIES})
 
-    country_colors = {
-        "Germany": "red",
-        "Denmark": "green",
-        "France": "blue"
-    }
+    # creating figure
+    fig, axes = plt.subplots(
+        1,
+        3,
+        figsize=(FIGSIZE["width"] / 2.54, FIGSIZE["height"] / 2.54),
+        sharey=True,
+        sharex=True,
+    )
 
-    policy_markers = {
-        "Technical": "o",  # Circle
-        "Taxation": "s",   # Square
-        "Support": "^"     # Triangle
-    }
+    # drawing subplots
+    for ax, country in zip(axes, cfg.COUNTRIES.values()):
+        data = df[(df["country"] == country)]
+        data = data.pivot(index="project", columns="policy", values="level")
+        for policy in data.columns:
+            data[policy].plot(ax=ax, linewidth=0.75, marker=MARKERS[policy][0], markersize=MARKERS[policy][1], legend=False)
+        ax.set_title(country, fontweight="bold")
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    # x-axis formatting
+    xticks = df["project"].unique()
+    ax.set_xticks(range(len(xticks)))
+    ax.set_xticklabels([f"{int(x[4:])}" for x in xticks])
+    ax.set_xlim([0, len(xticks) - 1])
+    for ax in axes:
+        ax.set_xlabel(X_LABEL)
+        ax.grid(axis="x", linestyle="--", linewidth=0.5, alpha=0.5)
 
-    for (country, policy), group in df.groupby(["country", "policy"]):
-        ax.plot(group["project"], group["level"], marker=policy_markers[policy], color=country_colors[country],
-                linestyle='-', label=f'{country}, {policy}')
+    # y-axis formatting
+    if FORMATTED_YAXIS:
+        ax.set_yticks(
+            range(Y_VALUES["min"], Y_VALUES["max"] + Y_VALUES["step"], Y_VALUES["step"])
+        )
+        ax.set_ylim([Y_VALUES["min"] - Y_VALUES["pad"], Y_VALUES["max"] + Y_VALUES["pad"]])
+    for ax in axes:
+        ax.set_ylabel(Y_LABEL)
+        ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.5)
 
-    ax.set_xlabel('Year (electricity price)')
-    ax.set_ylabel('NPV [€]')
-    # ax.set_title('Level by Project for Each Country-Policy Pair')
-    # make legend title bold
-    ax.legend(title='Country, Policy', bbox_to_anchor=(1.05, 1), loc='upper left', title_fontproperties={"weight": "bold"})
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    # make dir
-    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    # legend formatting
+    (_, _, x_center), (y_down, _, _) = utils_plot.axes_coordinates(axes)
+    handles, labels = utils_plot.get_legend_elements(axes)
 
-    if save:
-        plt.savefig(f"{out_dir}/{plot_name}.png", dpi=DPI)
-    if show:
-        plt.show()
+    legend = fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(x_center, 0),
+        bbox_transform=fig.transFigure,
+        ncol=3,
+        title="Scenario",
+        title_fontproperties={"weight": "bold"},
+    )
 
+    # space adjustment
+    _, legend_height = utils_plot.legend_dimensions(fig, legend)
+    plt.subplots_adjust(wspace=0.125, bottom=(y_down + legend_height))
 
-    # print(df.head(50))
-    # to csv
-    # df.to_csv("results.csv")
+    # output
+    utils_plot.render_plot(
+        show=SHOW, save=SAVE, outdir=OUTDIR, plotname=PLOTNAME, dpi=DPI
+    )
 
 
 if __name__ == "__main__":
-    save = True
-    show = False
-    folder = "SA-EP"
+    SAVE = True
+    SHOW = False
 
-    # width = 8.5  # cm
-    # height = 10  # cm
+    PLOTNAME = "SensitivityEP_NPV"
+    OUTDIR = (
+        Path.home()
+        / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
+        / "diagrams"
+        / "plots"
+    )
+
+    FIGSIZE = {"width": 16, "height": 7}  # cm
     DPI = 900
 
-    out_dir = f"C:/Users/jujmo/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/{folder}"
-    plot_name = "SAEP_NPV"
+    VALUE_SCALING = 1e-6  # M€/€
 
+    FORMATTED_YAXIS = True
+    Y_VALUES = {"min": 0, "max": 40, "step": 10, "pad": 2}
+    Y_LABEL = "NPV [M€]"
+    X_LABEL = "Year (electricity price)"
 
-    projects = ["SAEP2018", "SAEP2019", "SAEP2020", "SAEP2021", "SAEP2022", "SAEP2023"]
-    param_files = [f"data/{run}/{run}_scnpars.csv" for run in projects]
-    SCALE = 1e-6 # M€/€
-    main(param_files)
+    MARKERS = {
+        "Technical": ("o", 4),    # Circle
+        "Taxation": ("^", 4),     # Triangle
+        "Support": ("s", 4)       # Square
+    }
+
+    runs = ["SAEP2018", "SAEP2019", "SAEP2020", "SAEP2021", "SAEP2022", "SAEP2023"]
+    param_files = [f"data/{run}/{run}_scnpars.csv" for run in runs]
+
+    main(param_files, "NPV_all")

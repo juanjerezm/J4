@@ -129,7 +129,7 @@ def main(param_files, var):
     # x-axis formatting
     xticks = df["project"].unique()
     ax.set_xticks(range(len(xticks)))
-    ax.set_xticklabels([f"{int(x[4:])}%" for x in xticks])
+    ax.set_xticklabels([f"{int(x[4:])}" for x in xticks])
     ax.set_xlim([0, len(xticks) - 1])
     for ax in axes:
         ax.set_xlabel(X_LABEL)
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     SAVE = True
     SHOW = False
 
-    PLOTNAME = "SensitivityDR_NPV"
+    PLOTNAME = "SensitivityEP_Capacity"
     OUTDIR = (
         Path.home()
         / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
@@ -185,12 +185,12 @@ if __name__ == "__main__":
     FIGSIZE = {"width": 16, "height": 7}  # cm
     DPI = 900
 
-    VALUE_SCALING = 1e-6  # M€/€
+    VALUE_SCALING = 1e0  # MW/MW
 
     FORMATTED_YAXIS = True
-    Y_VALUES = {"min": 0, "max": 50, "step": 10, "pad": 2.5}
-    Y_LABEL = "NPV [M€]"
-    X_LABEL = "Discount rate [%]"
+    Y_VALUES = {"min": 0, "max": 6, "step": 1, "pad": 0.3}
+    Y_LABEL = "Heat-recovery capacity [MW]"
+    X_LABEL = "Year (electricity price)"
 
     MARKERS = {
         "Technical": ("o", 4),    # Circle
@@ -198,7 +198,7 @@ if __name__ == "__main__":
         "Support": ("s", 4)       # Square
     }
 
-    runs = ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]
+    runs = ["SAEP2018", "SAEP2019", "SAEP2020", "SAEP2021", "SAEP2022", "SAEP2023"]
     param_files = [f"data/{run}/{run}_scnpars.csv" for run in runs]
 
-    main(param_files, "NPV_all")
+    main(param_files, 'y_hr')

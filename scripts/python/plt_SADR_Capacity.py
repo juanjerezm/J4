@@ -174,7 +174,7 @@ if __name__ == "__main__":
     SAVE = True
     SHOW = False
 
-    PLOTNAME = "SensitivityDR_NPV"
+    PLOTNAME = "SensitivityDR_Capacity"
     OUTDIR = (
         Path.home()
         / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
@@ -185,11 +185,11 @@ if __name__ == "__main__":
     FIGSIZE = {"width": 16, "height": 7}  # cm
     DPI = 900
 
-    VALUE_SCALING = 1e-6  # M€/€
+    VALUE_SCALING = 1e0  # MW/MW
 
     FORMATTED_YAXIS = True
-    Y_VALUES = {"min": 0, "max": 50, "step": 10, "pad": 2.5}
-    Y_LABEL = "NPV [M€]"
+    Y_VALUES = {"min": 0, "max": 6, "step": 1, "pad": 0.3}
+    Y_LABEL = "Heat-recovery capacity [MW]"
     X_LABEL = "Discount rate [%]"
 
     MARKERS = {
@@ -201,4 +201,4 @@ if __name__ == "__main__":
     runs = ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]
     param_files = [f"data/{run}/{run}_scnpars.csv" for run in runs]
 
-    main(param_files, "NPV_all")
+    main(param_files, 'y_hr')

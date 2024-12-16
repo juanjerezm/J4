@@ -98,19 +98,23 @@ def check_file_exist(file_path: Path) -> None:
 
 
 def main(param_files, var):
-    scenarios = []
+    # scenarios = []
+    # # collecting data
+    # for project in param_files:
+    #     check_file_exist(Path(project))
+    #     scenarios += load_scenario_params(Path(project))
 
-    # collecting data
-    for project in param_files:
-        check_file_exist(Path(project))
-        scenarios += load_scenario_params(Path(project))
+    #     for scenario in scenarios:
+    #         scenario.get_data(var)
+    #         scenario.process_data()
 
-        for scenario in scenarios:
-            scenario.get_data(var)
-            scenario.process_data()
+    # df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
+    # df = utils.rename_values(df, {"country": cfg.COUNTRIES})
+    # # save to csv
+    # df.to_csv(f"{PLOTNAME}.csv", index=False)
 
-    df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
-    df = utils.rename_values(df, {"country": cfg.COUNTRIES})
+    # read csv
+    df = pd.read_csv(f"{PLOTNAME}.csv")
 
     # creating figure
     fig, axes = plt.subplots(
@@ -125,15 +129,28 @@ def main(param_files, var):
     for ax, country in zip(axes, cfg.COUNTRIES.values()):
         data = df[(df["country"] == country)]
         data = data.pivot(index="project", columns="policy", values="level")
-        for policy in data.columns:
-            data[policy].plot(ax=ax, linewidth=0.75, marker=MARKERS[policy][0], markersize=MARKERS[policy][1], markerfacecolor='none', legend=False)
+
+        bar_width = 0.25  # Width of each bar
+        x_indices = range(len(data.index))  # Indices for each project
+        # order columns, first technical, then taxation, then support
+        data = data[["Technical", "Taxation", "Support"]]
+
+        # Plotting each policy as a separate bar
+        for i, policy in enumerate(data.columns):
+            ax.bar(
+                [x + i * bar_width for x in x_indices],  # Bar positions
+                data[policy],  # Bar heights
+                width=bar_width,  # Bar width
+                label=policy,  # Label for legend
+            )
+
         ax.set_title(country, fontweight="bold")
 
     # x-axis formatting
     xticks = df["project"].unique()
-    ax.set_xticks(range(len(xticks)))
+    x_indices = range(len(xticks))
+    ax.set_xticks([x + (len(data.columns) - 1) * bar_width / 2 for x in x_indices])
     ax.set_xticklabels([f"{int(x[4:])}" for x in xticks])
-    ax.set_xlim([0, len(xticks) - 1])
     for ax in axes:
         ax.set_xlabel(X_LABEL)
         ax.grid(axis="x", linestyle="--", linewidth=0.5, alpha=0.5)
@@ -145,12 +162,13 @@ def main(param_files, var):
         )
         ax.set_ylim([Y_VALUES["min"] - Y_VALUES["pad"], Y_VALUES["max"] + Y_VALUES["pad"]])
     for ax in axes:
-        ax.set_ylabel(Y_LABEL)
+        # ax.set_ylabel(Y_LABEL)
         ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.5)
+    axes[0].set_ylabel(Y_LABEL)
 
     # legend formatting
     (_, _, x_center), (y_down, _, _) = utils_plot.axes_coordinates(axes)
-    handles, labels = utils_plot.get_legend_elements(axes)
+    handles, labels = axes[0].get_legend_handles_labels()
 
     legend = fig.legend(
         handles,
@@ -158,7 +176,7 @@ def main(param_files, var):
         loc="lower center",
         bbox_to_anchor=(x_center, 0),
         bbox_transform=fig.transFigure,
-        ncol=3,
+        ncol=len(handles),
         title="Scenario",
         title_fontproperties={"weight": "bold"},
     )
@@ -166,6 +184,7 @@ def main(param_files, var):
     # space adjustment
     _, legend_height = utils_plot.legend_dimensions(fig, legend)
     plt.subplots_adjust(wspace=0.125, bottom=(y_down + legend_height))
+
 
     # output
     utils_plot.render_plot(
@@ -191,7 +210,7 @@ if __name__ == "__main__":
     VALUE_SCALING = 1e-3  # MWh/GWh
 
     FORMATTED_YAXIS = True
-    Y_VALUES = {"min": 0, "max": 35, "step": 5, "pad": 1.75}
+    Y_VALUES = {"min": 0, "max": 35, "step": 5, "pad":0}
     Y_LABEL = "Heat-recovery output [GWh/year]"
     X_LABEL = "Year (electricity price)"
 

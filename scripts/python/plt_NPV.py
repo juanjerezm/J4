@@ -176,6 +176,7 @@ def main():
 
     if save:
         plt.savefig(f"{out_dir}/{plot_name}.png", dpi=DPI)
+        print(f"Plot saved as {out_dir}/{plot_name}.png")
     if show:
         plt.show()
 
@@ -194,7 +195,7 @@ if __name__ == "__main__":
 
 
     width = 8.5  # cm
-    height = 10  # cm
+    height = 9  # cm
     DPI = 900
 
     y_range = (0, 15)

@@ -163,7 +163,7 @@ def main():
         loc="lower center",
         bbox_to_anchor=(x_center, 0),
         bbox_transform=fig.transFigure,
-        ncol=3,
+        ncol=2,
         title="Fuel",
         title_fontproperties={"weight": "bold"},
     )
@@ -173,6 +173,7 @@ def main():
 
     if save:
         plt.savefig(f"{out_dir}/{plot_name}.png", dpi=DPI)
+        print(f"Plot saved as {out_dir}/{plot_name}.png")
     if show:
         plt.show()
 
@@ -181,23 +182,23 @@ if __name__ == "__main__":
     # modify process_data() for specific plot
     # modify exclude_empty_category() for specific plot
     save = True
-    show = True
+    show = False
     FORMAT_YAXIS = True
 
     PROJECT = "BASE"
 
     scnParsFilePath = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
     var = "w"
-    SCALE = 1e-3  # ton/kg
+    SCALE = 1e-6  # kton/kg
 
 
     width = 8.5  # cm
-    height = 10  # cm
+    height = 9  # cm
     DPI = 900
 
-    y_range = (-3500, 1000)
-    y_step = 500
-    y_title = "Carbon emissions - annual change [ton]"
+    y_range = (-3, 0.5)
+    y_step = 0.5
+    y_title = "Carbon emissions - annual change [kton]"
 
     out_dir = rf"C:/Users/jujmo/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/{PROJECT}"
     Path(out_dir).mkdir(parents=True, exist_ok=True)

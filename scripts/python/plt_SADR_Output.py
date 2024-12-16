@@ -111,6 +111,8 @@ def main(param_files, var):
 
     df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
     df = utils.rename_values(df, {"country": cfg.COUNTRIES})
+    # save to csv
+    df.to_csv(f"data/{PLOTNAME}.csv", index=False)
 
     # creating figure
     fig, axes = plt.subplots(

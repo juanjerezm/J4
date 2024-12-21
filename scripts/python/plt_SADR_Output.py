@@ -97,22 +97,49 @@ def check_file_exist(file_path: Path) -> None:
         sys.exit("ERROR: Input csv-file not found, script has stopped.")
 
 
+def summary_csv(df: pd.DataFrame, save: bool = False, outdir: Path = Path.cwd(), filename: str = '') -> None:
+    df = df.copy()
+    df['level'] = df['level'].round(3)
+    df["project"] = df["project"].apply(lambda x: f"{int(x[4:]):02d}%")
+    df = df.pivot(index=["country", "project"], columns="policy", values="level")
+    df.rename_axis(index={"project": "discount rate"}, inplace=True)
+
+    print(df)
+
+    if save:
+        if not filename:
+            raise ValueError("The 'filename' parameter is required when save=True.")
+        
+        outdir.mkdir(parents=True, exist_ok=True)
+        output_path = outdir / f"{filename}.csv"
+        df.to_csv(output_path)
+        print(f"-> File saved to {output_path}")
+
+    return
+
+
 def main(param_files, var):
-    scenarios = []
+    # scenarios = []
 
-    # collecting data
-    for project in param_files:
-        check_file_exist(Path(project))
-        scenarios += load_scenario_params(Path(project))
+    # # collecting data
+    # for project in param_files:
+    #     check_file_exist(Path(project))
+    #     scenarios += load_scenario_params(Path(project))
 
-        for scenario in scenarios:
-            scenario.get_data(var)
-            scenario.process_data()
+    #     for scenario in scenarios:
+    #         scenario.get_data(var)
+    #         scenario.process_data()
 
-    df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
-    df = utils.rename_values(df, {"country": cfg.COUNTRIES})
-    # save to csv
-    df.to_csv(f"data/{PLOTNAME}.csv", index=False)
+    # df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
+    # df = utils.rename_values(df, {"country": cfg.COUNTRIES})
+    # # save to csv
+    # df.to_csv(f"data/{PLOTNAME}.csv", index=False)
+
+    # read
+    df = pd.read_csv(f"data/{PLOTNAME}.csv")
+
+    summary_csv(df, save=True, outdir=OUTDIR / "plot-tables", filename="table-SADR-Output")
+
 
     # creating figure
     fig, axes = plt.subplots(

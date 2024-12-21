@@ -134,6 +134,8 @@ def main():
     df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
     df = exclude_empty_category(df, "E")
 
+    summary_csv(df, save=True, outdir=table_dir, filename=table_name)
+
     fig, axes = plt.subplots(1, 3, figsize=(width / 2.54, height / 2.54), sharey=True)
 
     bar_width = 0.35
@@ -203,6 +205,16 @@ if __name__ == "__main__":
     y_title = "NPV [M€]"
 
     out_dir = rf"C:/Users/jujmo/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/{PROJECT}"
+    table_dir = (
+        Path.home()
+        / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
+        / "diagrams"
+        / "plots"
+        / "plot-tables"
+    )
+    table_name = f'table-NPV'
+
+
     Path(out_dir).mkdir(parents=True, exist_ok=True)
     plot_name = "NPV"
 

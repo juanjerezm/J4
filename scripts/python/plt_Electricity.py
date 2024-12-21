@@ -130,6 +130,23 @@ def legend_dimensions(fig: Figure, legend: Legend) -> Tuple[float, float]:
     return legend_dimensions.width, legend_dimensions.height
 
 
+def summary_csv(df: pd.DataFrame, save: bool = False, outdir: Path = Path.cwd(), filename: str = ''):
+    df['level'] = df['level'].round(3)
+    df = df.pivot(index=["country", "F"], columns="policy", values="level")
+
+    print(df)
+
+    if save:
+        if not filename:
+            raise ValueError("The 'filename' parameter is required when save=True.")
+        
+        outdir.mkdir(parents=True, exist_ok=True)
+        output_path = outdir / f"{filename}.csv"
+        df.to_csv(output_path)
+        print(f"-> File saved to {output_path}")
+
+    return
+
 # ----- Main -----
 def main():
     scenarios = read_scenarios(scnParsFilePath)
@@ -138,7 +155,18 @@ def main():
         scenario.process_data()
 
     df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
+    df['level'] = df['level'].round(6) # just to remove very minor differences
     df = exclude_empty_category(df, "F")
+
+    table_dir = (
+        Path.home()
+        / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
+        / "diagrams"
+        / "plots"
+        / "plot-tables"
+    )
+    table_name = plot_name
+    summary_csv(df, save=False, outdir=table_dir, filename=table_name)
 
     fig, axes = plt.subplots(1, 3, figsize=(width / 2.54, height / 2.54), sharey=True)
 

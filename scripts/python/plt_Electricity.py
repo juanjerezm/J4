@@ -225,8 +225,8 @@ if __name__ == "__main__":
     height = 9  # cm
     DPI = 900
 
-    y_range = (-15, 0)
-    y_step = 3
+    y_range = (-10, 0)
+    y_step = 2
     y_title = "Electricity cogeneration - annual change [GWh]"
 
     out_dir = rf"C:/Users/jujmo/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/{PROJECT}"

@@ -200,7 +200,7 @@ if __name__ == "__main__":
     height = 9  # cm
     DPI = 900
 
-    y_range = (0, 15)
+    y_range = (0, 12)
     y_step = 3
     y_title = "NPV [M€]"
 

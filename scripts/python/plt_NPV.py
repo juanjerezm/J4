@@ -123,6 +123,24 @@ def legend_dimensions(fig: Figure, legend: Legend) -> Tuple[float, float]:
     ).transformed(fig.transFigure.inverted())
     return legend_dimensions.width, legend_dimensions.height
 
+def summary_csv(df: pd.DataFrame, save: bool = False, outdir: Path = Path.cwd(), filename: str = '') -> None:
+    df = df.copy()
+    df['level'] = df['level'].round(3)
+    df = df.pivot(index=["country", "E"], columns="policy", values="level")
+
+    print(df)
+
+    if save:
+        if not filename:
+            raise ValueError("The 'filename' parameter is required when save=True.")
+        
+        outdir.mkdir(parents=True, exist_ok=True)
+        output_path = outdir / f"{filename}.csv"
+        df.to_csv(output_path)
+        print(f"-> File saved to {output_path}")
+
+    return
+
 
 # ----- Main -----
 def main():

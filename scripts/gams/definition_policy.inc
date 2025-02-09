@@ -1,7 +1,11 @@
 $ifi %country% == 'DE' k_inv_p          = 0.5;
+$ifi %country% == 'DE' k_inv_g(G_HR)    = 0.0;
 
 $ifi %country% == 'FR' k_inv_p          = 0.6;
 $ifi %country% == 'FR' k_inv_g(G_HR)    = 0.3;
+
+$ifi %country% == 'DK' k_inv_p          = 0.0;
+$ifi %country% == 'DK' k_inv_g(G_HR)    = 0.0;
 
 $ifi %country% == 'DK'  PARAMETER AF_og(E);
 $ifi %country% == 'DK'  AF_og(E)        = AF(E); 

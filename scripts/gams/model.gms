@@ -201,7 +201,7 @@ $gdxin
 $ifi NOT %policytype% == 'support'  k_inv_g(G) = 0;     !! default value w/o support policy
 $ifi NOT %policytype% == 'support'  k_inv_p    = 0;     !! default value w/o support policy
 $ifi NOT %policytype% == 'support'  pi_h_ceil(G) = 0;   !! default value w/o support policy
-$ifi     %policytype% == 'support'  $include './scripts/gams/policy_definition.inc';
+$ifi     %policytype% == 'support'  $include './scripts/gams/definition_policy.inc';
 
 * ----- Parameter operations -----
 N(G_HR)         = 8760;     !! Initial estimation of full load hours for HR units
@@ -224,8 +224,8 @@ loop(T,
 );
 
 * Define initial mark-ups from investement costs, and availability factor from it
-MU_DH(G_HR)     = (L_p(G_HR) * C_p_inv(G_HR) * AF('DHN')                )/(N(G_HR) + D6) * k_inv_p;         !! Adjusted by the subsidy factor
-MU_HR(G_HR)     = (            C_g_inv(G_HR) * AF('WHS') + C_g_fix(G_HR))/(N(G_HR) + D6) * k_inv_g(G_HR);   !! Adjusted by the subsidy factor
+MU_DH(G_HR)     = (L_p(G_HR) * C_p_inv(G_HR) * AF('DHN')                )/(N(G_HR) + D6) * (1 - k_inv_p);         !! Adjusted by the subsidy factor
+MU_HR(G_HR)     = (            C_g_inv(G_HR) * AF('WHS') + C_g_fix(G_HR))/(N(G_HR) + D6) * (1 - k_inv_g(G_HR));   !! Adjusted by the subsidy factor
 
 BidPrice(T,G_HR)    = MC_DH(T)      - MU_DH(G_HR);   
 AskPrice(T,G_HR)    = MC_HR(T,G_HR) + MU_HR(G_HR);
@@ -235,8 +235,6 @@ F_a(T,G_HR)$( AskPrice(T,G_HR) GE BidPrice(T,G_HR) ) = 0;
 
 * Apply price-ceiling for waste-heat (DK - support)
 $ifi %country% == 'DK' $ifi %policytype% == 'support' pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-MU_DH(G_HR))) = pi_h_ceil(G_HR)-MU_DH(G_HR);
-
-
 
 
 * ----- Temporary or auxiliary assignments -----

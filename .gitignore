@@ -1,6 +1,7 @@
 ## ----- Project specific ----- ##
 # Result files
 /results/*
+/results_done/*
 !/results/.gitkeep
 
 # Gams files

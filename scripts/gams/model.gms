@@ -138,6 +138,8 @@ MC_HR(T,G)              'Marginal cost of HR units (EUR/MWh)'
 MC_HR_month(M,G)        'Marginal cost of HR units - monthly average (EUR/MWh)'
 MU_DH(G)                'Markup from DH investments (EUR/MWh)'
 MU_HR(G)                'Markup from HR investments (EUR/MWh)'
+BidPrice(T,G_HR)        'Maximum feasible price for DHU (EUR/MWh)'
+AskPrice(T,G_HR)        'Minimum feasible price for WHS (EUR/MWh)'
 N(G)                    'Full load hours of HR units (h)'
 
 pi_h(T,G)               'Price of recovered heat (EUR/MWh)'
@@ -170,6 +172,10 @@ F_s_min(S)              'Minimum storage state-of-charge factor (-)'
 F_s_max(S)              'Maximum storage state-of-charge factor (-)'
 rho_s(S)                'Storage self-discharge factor (-)'
 eta_s(S)                'Storage throughput efficiency (-)'
+
+k_inv_g(G)      'Investment subsidy fraction for HR units (-)'
+k_inv_p         'Investment subsidy fraction for connection pipe (-)'
+pi_h_ceil(G)    'Waste-heat ceiling price (EUR/MWh)'
 ;
 
 * ----- Parameter definition -----
@@ -190,6 +196,12 @@ $gdxin
 $gdxin './results/%project%/%scenario%/results-%scenario%-reference.gdx'
 $load MC_DH, OPX_REF, CO2_REF, XH_ref, XF_ref                                   !! Load data from reference case
 $gdxin
+
+* - Policy parameters -
+$ifi NOT %policytype% == 'support'  k_inv_g(G) = 0;     !! default value w/o support policy
+$ifi NOT %policytype% == 'support'  k_inv_p    = 0;     !! default value w/o support policy
+$ifi NOT %policytype% == 'support'  pi_h_ceil(G) = 0;   !! default value w/o support policy
+$ifi     %policytype% == 'support'  $include './scripts/gams/policy_definition.inc';
 
 * ----- Parameter operations -----
 N(G_HR)         = 8760;     !! Initial estimation of full load hours for HR units
@@ -212,31 +224,24 @@ loop(T,
 );
 
 * Define initial mark-ups from investement costs, and availability factor from it
-MU_DH(G_HR)     = (L_p(G_HR) * C_p_inv(G_HR) * AF('DHN')                )/(N(G_HR) + D6);
-MU_HR(G_HR)     = (            C_g_inv(G_HR) * AF('WHS') + C_g_fix(G_HR))/(N(G_HR) + D6);
-pi_h(T,G_HR)    = ((MC_DH(T) - MU_DH(G_HR)) + (MC_HR(T,G_HR) + MU_HR(G_HR)))/2;
-F_a(T,G_HR)$((MC_HR(T,G_HR) + MU_HR(G_HR)) GE (MC_DH(T) - MU_DH(G_HR))) = 0;
+MU_DH(G_HR)     = (L_p(G_HR) * C_p_inv(G_HR) * AF('DHN')                )/(N(G_HR) + D6) * k_inv_p;         !! Adjusted by the subsidy factor
+MU_HR(G_HR)     = (            C_g_inv(G_HR) * AF('WHS') + C_g_fix(G_HR))/(N(G_HR) + D6) * k_inv_g(G_HR);   !! Adjusted by the subsidy factor
 
-* add a small tolerance value so the MIP solver doesn't complain
-OPX_REF(E) = 1  + OPX_REF(E);
+BidPrice(T,G_HR)    = MC_DH(T)      - MU_DH(G_HR);   
+AskPrice(T,G_HR)    = MC_HR(T,G_HR) + MU_HR(G_HR);
+pi_h(T,G_HR)        = (BidPrice(T,G_HR) + AskPrice(T,G_HR))/2;  !! Price for recovered waste heat
+
+F_a(T,G_HR)$( AskPrice(T,G_HR) GE BidPrice(T,G_HR) ) = 0;
+
+* Apply price-ceiling for waste-heat (DK - support)
+$ifi %country% == 'DK' $ifi %policytype% == 'support' pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-MU_DH(G_HR))) = pi_h_ceil(G_HR)-MU_DH(G_HR);
 
 
-* ----- Support policy section -----
-PARAMETERS
-k_inv_g(G)      'Investment subsidy fraction for HR units (-)'
-k_inv_p         'Investment subsidy fraction for connection pipe (-)'
-pi_h_ceil(G)    'Waste-heat ceiling price (EUR/MWh)'
-;
 
-* Default values without support policy
-k_inv_g(G)      = 0;
-k_inv_p         = 0;
-pi_h_ceil(G)    = 0;
-
-$ifi %policytype% == 'support' $include './scripts/gams/definition_policy.inc';
 
 * ----- Temporary or auxiliary assignments -----
-
+* We add a small tolerance value so the MIP solver doesn't complain
+OPX_REF(E) = 1  + OPX_REF(E);
 
 * ======================================================================
 * VARIABLES

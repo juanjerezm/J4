@@ -1,7 +1,9 @@
 $eolCom !!
 
-$ifi not setglobal project $SetGlobal project 'B0'
-$ifi not setglobal scenario $SetGlobal scenario 'DKsup'
+$ifi not setglobal project $SetGlobal project 'BASE'
+$ifi not setglobal scenario $SetGlobal scenario 'DEsup'
+$SetGlobal policytype 'support' !! Pay attention to this!!
+$SetGlobal country 'DE' !! Pay attention to this!!
 
 
 SETS
@@ -27,10 +29,28 @@ WH_trnsctn
 y_hr(G_HR)
 ;
 
+$gdxin './results/%project%/%scenario%/params.gdx'
+$load E, G_HR
+$load AF, r, lifetime, L_p, C_p_inv, C_g_inv
+$gdxin
+
+$gdxin './results/%project%/%scenario%/results-%scenario%-reference.gdx'
+$load OPX_REF
+$gdxin
 
 $gdxin './results/%project%/%scenario%/results-%scenario%-integrated.gdx'
-$load E, G_HR
-$load AF, r, OPX, OPX_REF, WH_trnsctn, lifetime, L_p, C_p_inv, C_g_inv, k_inv_p, k_inv_g, y_hr
+$load OPX, WH_trnsctn, y_hr
+$gdxin
+
+$ifi NOT %policytype% == 'support'                        k_inv_g(G_HR)    = 0;
+$ifi NOT %policytype% == 'support'                        k_inv_p          = 0;
+$ifi     %policytype% == 'support' $ifi %country% == 'DE' k_inv_p          = 0.5;
+$ifi     %policytype% == 'support' $ifi %country% == 'DE' k_inv_g(G_HR)    = 0.0;
+$ifi     %policytype% == 'support' $ifi %country% == 'FR' k_inv_p          = 0.6;
+$ifi     %policytype% == 'support' $ifi %country% == 'FR' k_inv_g(G_HR)    = 0.3;
+$ifi     %policytype% == 'support' $ifi %country% == 'DK' k_inv_p          = 0.0;
+$ifi     %policytype% == 'support' $ifi %country% == 'DK' k_inv_g(G_HR)    = 0.0;
+
 
 PARAMETER
 I(E)                    'Investment'

@@ -35,7 +35,7 @@ $ifi not set country    $setlocal country       'DK'
 $ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
 $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
 
-* $call gams ./scripts/gams/params.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/params.lst
+$call gams ./scripts/gams/params.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/params.lst
 
 * ----- Global scalars -----
 SCALARS
@@ -271,7 +271,7 @@ MarginalCostWHS_Ref(T)      'Reference marginal cost of WHS (EUR/MWh)'
 OperationalCost_Ref(E)      'Reference operating cost of each entity (EUR/year)'
 Emissions_Ref(T)            'Reference CO2 emissions per heat production (kg/MWh)'
 HeatProd_Ref(T,G_DH)        'Reference heat production (MWh)'
-ColdProd_Ref(T,G_CO)        'Reference cold production (MWh)'
+ColdProd_Ref(T,G_WH)        'Reference cold production (MWh)'
 ;
 
 MarginalCostDHN_Ref(T)      = EPS + eq_load_heat.m(T);
@@ -279,7 +279,7 @@ MarginalCostWHS_Ref(T)      = EPS + sum((G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f
 OperationalCost_Ref(E)      = EPS + OPX.l(E);
 Emissions_Ref(T)            = EPS + sum((G,F)$GF(G,F), w.l(T,G,F))/D_h(T);
 HeatProd_Ref(T,G_DH)        = EPS + x_h.l(T,G_DH);
-ColdProd_Ref(T,G_CO)        = EPS + x_c.l(T,G_CO);
+ColdProd_Ref(T,G_WH)        = EPS + x_c.l(T,G_WH);
 
 execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx'
 ,

@@ -1,36 +1,111 @@
+from dataclasses import dataclass, field
 import pandas as pd
 import gams.transfer as gt
 from pathlib import Path
 from typing import List, Union, Dict, Optional
 
-def print_line(length: int = 50) -> None:
+
+# ========== GAMS utilities ==========
+def gdxdf_var(
+    paths: Union[List[str], List[Path]],
+    variables: Optional[List[str]] = None,
+    attributes: List[str] = ["level"],
+) -> Dict[str, pd.DataFrame]:
     """
-    Prints a horizontal line of a given length.
+    Reads GDX files from the given paths and returns all or some variables in a dictionary of pandas DataFrames.
 
     Args:
-        length (int): The length of the line. Default is 50.
+        paths (Union[List[str], List[Path]]): A list of file paths to the GDX files.
+        variables (List[str], optional): A list of variable names to read from the GDX files. If None, all variables will be read.
+        attributes (List[str], optional): A list of attribute names to include in the resulting DataFrames. Defaults to ['level'].
 
     Returns:
-        None
+        dict: A dictionary where the keys are variable names and the values are pandas DataFrames containing the data.
+
     """
-    print("-" * length)
+    gams_attrs = ["level", "marginal", "lower", "upper", "scale"]
+
+    paths = [Path(path) for path in paths]
+
+    # case names are the last part of the file name after the last hyphen
+    cases = [path.stem.split("-")[-1] for path in paths]
+
+    # read gdx files into containers
+    containers = [gt.Container(str(path)) for path in paths]
+
+    data_all = dict()
+    for case, container in zip(cases, containers):
+        if variables is None:
+            spec_var = container.listVariables()
+        else:
+            spec_var = variables
+
+        for var in spec_var:
+            df_temp = container[var].records  # type: ignore
+            if df_temp is None:
+                print(f"Empty DataFrame for {var} in {case}")
+                continue
+
+            df_temp.insert(0, "case", case)
+            df_temp.drop(
+                columns=[col for col in gams_attrs if col not in attributes],
+                inplace=True,
+            )
+
+            if var not in data_all:
+                data_all[var] = pd.DataFrame()
+            data_all[var] = pd.concat([data_all[var], df_temp])
+
+    return data_all
 
 
-def print_title(title: str) -> None:
+def gdxdf_par(
+    paths: Union[List[str], List[Path]], parameters: List[str]
+) -> Dict[str, pd.DataFrame]:
     """
-    Prints a title surrounded by lines.
+    Reads GDX files from the given paths and returns the specified parameters in a dictionary of DataFrames.
+
+    Note:
+    - If a parameter is not found in a GDX file, an empty DataFrame will be returned for that parameter.
 
     Args:
-        title (str): The title to be printed.
+        paths ([List[str], List[Path]]): A list of file paths to the GDX files.
+        parameters (List[str]): A list of parameters names to read from the GDX files.
 
     Returns:
-        None
+        Dict[str, pd.DataFrame]: A dictionary where the keys are parameter names and the values are pandas DataFrames containing the data.
+
     """
-    print_line()
-    print(title)
-    print_line()
+
+    paths = [Path(path) for path in paths]
+
+    # case names are the last part of the file name after the last hyphen
+    cases = [path.stem.split("-")[-1] for path in paths]
+
+    # read gdx files into containers
+    containers = [gt.Container(str(path)) for path in paths]
+
+    data_all = dict()
+    for case, container in zip(cases, containers):
+        for par in parameters:
+            try:
+                df_temp = container[par].records  # type: ignore
+            except KeyError:
+                print(f"KeyError: {par} not found in {case}")
+                continue
+            if df_temp is None:
+                print(f"Empty DataFrame for {par} in {case}")
+                continue
+
+            df_temp.insert(0, "case", case)
+            if par not in data_all:
+                data_all[par] = pd.DataFrame()
+            data_all[par] = pd.concat([data_all[par], df_temp])
+
+    return data_all
 
 
+# ========== data processing utilities ==========
 def filter(df: pd.DataFrame, include: dict = {}, exclude: dict = {}) -> pd.DataFrame:
     """
     Filters a DataFrame based on inclusion (whitelist) and exclusion (blacklist) criteria.
@@ -217,100 +292,111 @@ def diff(df, reference_col: str, reference_item: str, value_col: str) -> pd.Data
     return df
 
 
-def gdxdf_var(
-    paths: Union[List[str], List[Path]],
-    variables: Optional[List[str]] = None,
-    attributes: List[str] = ["level"],
-) -> Dict[str, pd.DataFrame]:
+def exclude_empty_category(df: pd.DataFrame, category: str) -> pd.DataFrame:
+    exist_category = df.groupby(category)["level"].sum()
+    idx_exist = exist_category[exist_category != 0].index
+    df = df[df[category].isin(idx_exist)]
+    return df
+
+
+# ========== other utilities ==========
+def output_table(
+    df: pd.DataFrame,
+    show: bool = True,
+    save: bool = False,
+    outdir: Path | str = Path(),
+    filename: str = "",
+    index: List[str] = ["country", "F"],
+    columns: List[str] = ["policy"],
+    values: str = "level",
+) -> None:
+
+    df[values] = df[values].round(6)
+    df = df.pivot(index=index, columns=columns, values=values)
+
+    if save:
+        if not filename:
+            raise ValueError("The 'filename' parameter is required when save=True.")
+
+        outdir = Path(outdir)
+        outdir.mkdir(parents=True, exist_ok=True)
+        output_path = outdir / f"{filename}.csv"
+        df.to_csv(output_path)
+        print(f"-> File saved to {output_path}")
+
+    if show:
+        print(df)
+
+
+def print_line(length: int = 50) -> None:
     """
-    Reads GDX files from the given paths and returns all or some variables in a dictionary of pandas DataFrames.
+    Prints a horizontal line of a given length.
 
     Args:
-        paths (Union[List[str], List[Path]]): A list of file paths to the GDX files.
-        variables (List[str], optional): A list of variable names to read from the GDX files. If None, all variables will be read.
-        attributes (List[str], optional): A list of attribute names to include in the resulting DataFrames. Defaults to ['level'].
+        length (int): The length of the line. Default is 50.
 
     Returns:
-        dict: A dictionary where the keys are variable names and the values are pandas DataFrames containing the data.
-
+        None
     """
-    gams_attrs = ["level", "marginal", "lower", "upper", "scale"]
+    print("-" * length)
 
-    paths = [Path(path) for path in paths]
 
-    # case names are the last part of the file name after the last hyphen
-    cases = [path.stem.split("-")[-1] for path in paths]
+def print_title(title: str) -> None:
+    """
+    Prints a title surrounded by lines.
 
-    # read gdx files into containers
-    containers = [gt.Container(str(path)) for path in paths]
+    Args:
+        title (str): The title to be printed.
 
-    data_all = dict()
-    for case, container in zip(cases, containers):
-        if variables is None:
-            spec_var = container.listVariables()
+    Returns:
+        None
+    """
+    print_line()
+    print(title)
+    print_line()
+
+
+# ========== Scenario class ==========
+@dataclass
+class Scenario:
+    project: str
+    name: str
+    country: str
+    policy: str
+    outdir: Path = field(init=False)
+    results: pd.DataFrame = field(init=False)
+
+    def __post_init__(self):
+        self.outdir = Path("results") / self.project / self.name
+
+    def __str__(self) -> str:
+        return f"- Scenario {self.name}: country={self.country}, policy={self.policy}"
+
+    def load_results(self, var: str) -> None:
+        file: Path = self.outdir / "csv" / f"{var}.csv"
+        if file.exists():
+            self.results = pd.read_csv(file)
         else:
-            spec_var = variables
-
-        for var in spec_var:
-            df_temp = container[var].records  # type: ignore
-            if df_temp is None:
-                print(f"Empty DataFrame for {var} in {case}")
-                continue
-
-            df_temp.insert(0, "case", case)
-            df_temp.drop(
-                columns=[col for col in gams_attrs if col not in attributes],
-                inplace=True,
+            self.results = pd.DataFrame()
+            print(
+                f"File {file} does not exist. Skipping loading results for {self.name}, {var}."
             )
 
-            if var not in data_all:
-                data_all[var] = pd.DataFrame()
-            data_all[var] = pd.concat([data_all[var], df_temp])
 
-    return data_all
-
-
-def gdxdf_par(
-    paths: Union[List[str], List[Path]], parameters: List[str]
-) -> Dict[str, pd.DataFrame]:
-    """
-    Reads GDX files from the given paths and returns the specified parameters in a dictionary of DataFrames.
-
-    Note:
-    - If a parameter is not found in a GDX file, an empty DataFrame will be returned for that parameter.
-
-    Args:
-        paths ([List[str], List[Path]]): A list of file paths to the GDX files.
-        parameters (List[str]): A list of parameters names to read from the GDX files.
-
-    Returns:
-        Dict[str, pd.DataFrame]: A dictionary where the keys are parameter names and the values are pandas DataFrames containing the data.
-
-    """
-
-    paths = [Path(path) for path in paths]
-
-    # case names are the last part of the file name after the last hyphen
-    cases = [path.stem.split("-")[-1] for path in paths]
-
-    # read gdx files into containers
-    containers = [gt.Container(str(path)) for path in paths]
-
-    data_all = dict()
-    for case, container in zip(cases, containers):
-        for par in parameters:
-            try:
-                df_temp = container[par].records  # type: ignore
-            except KeyError:
-                print(f"KeyError: {par} not found in {case}")
-                continue
-            if df_temp is None:
-                print(f"Empty DataFrame for {par} in {case}")
-                continue
-
-            df_temp.insert(0, "case", case)
-            if par not in data_all:
-                data_all[par] = pd.DataFrame()
-            data_all[par] = pd.concat([data_all[par], df_temp])
-
-    return data_all
+def read_scenarios(specification_file: Union[str, Path]) -> List[Scenario]:
+    path = Path(specification_file)
+    df = pd.read_csv(path)
+    if df.empty:
+        raise ValueError("The CSV file is empty")
+    if df.isna().any().any():
+        missing_info = df[df.isna().any(axis=1)]
+        raise ValueError(
+            f"Missing values detected in the following rows:\n{missing_info}"
+        )
+    scenarios = [Scenario(**row.to_dict()) for _, row in df.iterrows()]
+    print(f"-> Loaded {len(scenarios)} runs from {path}")
+    print_line()
+    for scenario in scenarios:
+        print(str(scenario))
+    print_line()
+    return scenarios

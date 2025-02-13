@@ -29,23 +29,12 @@ def get_legend_elements(axes: List[Axes]) -> Tuple[List, List]:
     print("-> Labels of subplots are identical across subplots. Building legend...")
     return handles, labels
 
+
 def legend_dimensions(fig: Figure, legend: Legend) -> Tuple[float, float]:
     legend_dimensions = legend.get_window_extent(
         renderer=fig.canvas.get_renderer()  # type: ignore
     ).transformed(fig.transFigure.inverted())
     return legend_dimensions.width, legend_dimensions.height
-
-# def axes_coordinates(
-#     axes: List[Axes],
-# ) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
-#     plt.tight_layout()
-#     left = axes[0].get_position().x0
-#     right = axes[-1].get_position().x1
-#     bottom = axes[0].get_position().y0
-#     top = axes[0].get_position().y1
-#     center_x = (right + left) / 2
-#     center_y = (top + bottom) / 2
-#     return (left, right, center_x), (bottom, top, center_y)
 
 
 def standardize_axes_type(axes) -> List[Axes]:
@@ -59,6 +48,7 @@ def standardize_axes_type(axes) -> List[Axes]:
         raise TypeError(
             "axes must be an Axes object, a NumPy array, or a list of Axes objects."
         )
+
 
 def axes_coordinates(
     axes,
@@ -81,30 +71,38 @@ def axes_coordinates(
     return (left, right, center_x), (bottom, top, center_y)
 
 
-def render_plot(
-        show: bool = True,
-        save: bool = False,
-        outdir: Path = Path(),
-        plotname: str = "defaultPlot",
-        dpi: int = 300
-    ) -> None:
+def output_plot(
+    show: bool = True,
+    save: bool = False,
+    outdir: Path | str = Path(),
+    plotname: str = "defaultPlot",
+    dpi: int = 600,
+) -> None:
     """
-    Save and/or display the current matplotlib plot.
-    
+    Saves and/or displays the current matplotlib plot.
+
     Args:
-        show (bool, optional): Whether to display the plot. Default is True.
-        save (bool, optional): Whether to save the plot to file. Default is False
-        outdir (Path, optional): Directory where the plot should be saved, required if save=True. Default is current directory.
-        plotname (str, optional): Name of the plot file (without extension), required if save=True. Default is "defaultPlot".
-        dpi (int, optional): Resolution in DPI for the saved plot, required if save=True. Default is 300.
-    
+        show (bool, optional): Whether to display the plot. Defaults to True.
+        save (bool, optional): Whether to save the plot to file. Defaults to False.
+        outdir (Path | str, optional): Directory where the plot should be saved.
+            Defaults to the current working directory.
+        plotname (str, optional): Name of the plot file (without extension).
+            Defaults to "defaultPlot".
+        dpi (int, optional): Resolution in DPI for the saved plot. Defaults to 600.
+
     Raises:
         ValueError: If save=True but outdir or plotname are missing.
+
+    Returns:
+        None
     """
     if save:
         if not outdir or not plotname:
-            raise ValueError("Both 'outdir' and 'plotname' are required when save=True.")
-        Path(outdir).mkdir(parents=True, exist_ok=True)
+            raise ValueError(
+                "Both 'outdir' and 'plotname' are required when save=True."
+            )
+        outdir = Path(outdir)
+        outdir.mkdir(parents=True, exist_ok=True)
         plt.savefig(outdir / f"{plotname}.png", dpi=dpi)
         print(f"-> Plot saved to {outdir}/{plotname}.png")
     if show:

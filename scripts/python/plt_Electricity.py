@@ -1,20 +1,15 @@
 # Standard library imports
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Tuple
 
 # Third-party library imports
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-from matplotlib.legend import Legend
 
 # Local/custom module imports
-import utilities as utils
 import plt_config as cfg
-
+import utilities as utils
+import utilities_plotting as utils_plot
+from utilities import Scenario
 
 # ----- Matplotlib settings -----
 plt.rcParams["font.family"] = "Times New Roman"
@@ -22,153 +17,60 @@ plt.rcParams["font.size"] = 8
 
 
 # ----- Functions -----
-@dataclass
-class Scenario:
-    project: str
-    name: str
-    country: str
-    policy: str
-    dir: Path = field(init=False)
-    data: pd.DataFrame = field(init=False)
+def summarize_results(scenario: Scenario) -> pd.DataFrame:
+    """
+    Summarize the 'results' DataFrame in a Scenario by:
+    1. Mapping and renaming fuels.
+    2. Aggregating results.
+    3. Computing differences from a reference scenario.
+    4. Scaling the 'level' column.
+    5. Assigning country and policy metadata.
+    6. Returning the final summarized DataFrame.
 
-    def __post_init__(self):
-        self.dir = Path("results") / self.project / self.name / "csv"
+    Args:
+        scenario (Scenario): An object containing 'results' (pandas DataFrame)
+            and attributes 'country' and 'policy'.
 
-    def __str__(self) -> str:
-        return f"- Scenario {self.name}: country={self.country}, policy={self.policy}"
+    Returns:
+        pd.DataFrame: The summarized results.
+    """
+    df = scenario.results
 
-    def get_data(self, var: str) -> None:
-        file = self.dir / f"{var}.csv"
-        self.data = pd.read_csv(file)
-        return
+    # Map and rename fuels, aggregate and compute scaled differences
+    df['F'] = df['G'].map(cfg.GenFuelMap)
+    df = utils.rename_values(df, {"F": cfg.FUEL_NAMES})
+    df = utils.aggregate(df, ["case", "F"], ["level"])
+    df = utils.diff(df, "case", "reference", "level")
+    df["level"] = df["level"] * SCALE
+    df['level'] = df['level'].round(6) # just to remove any negligible difference
 
-    def process_data(self) -> None:
-        df = self.data
-        # Rename fuels, aggregate, and calculate net change
-        df['F'] = df['G'].map(cfg.GenFuelMap)
+    # Assign country and policy to summarised results
+    df = df.assign(country=scenario.country, policy=scenario.policy)
+    df = utils.rename_values(df, {"policy": cfg.POLICIES})
+    df["policy"] = pd.Categorical(df["policy"], categories=cfg.POLICIES.values(), ordered=True)  # .values() if renamed, .keys() if not
 
-        df = utils.rename_values(df, {"F": cfg.FUEL_NAMES})
-        df = utils.aggregate(df, ["case", "F"], ["level"])
-        df = utils.diff(df, "case", "reference", "level")
-        df["level"] = df["level"] * SCALE
+    # Clean up
+    df = df.drop(columns=["case"])
+    df = df[["country", "policy", "F", "level"]]
 
-        # Assign country and policy data
-        df = df.assign(country=self.country, policy=self.policy)
-        df = utils.rename_values(df, {"policy": cfg.POLICIES})
-        df["policy"] = pd.Categorical(
-            df["policy"], categories=cfg.POLICIES.values(), ordered=True
-        )  # .values() if renamed, .keys() if not
-
-        # Clean up
-        df = df.drop(columns=["case"])
-        df = df[["country", "policy", "F", "level"]]
-        self.data = df
-        return
-
-
-def read_scenarios(filepath: str) -> List[Scenario]:
-    df = pd.read_csv(filepath)
-    scenarios = []
-    for _, row in df.iterrows():
-        scenario = Scenario(
-            project=row["project"],
-            name=row["name"],
-            country=row["country"],
-            policy=row["policy"],
-        )
-        scenarios.append(scenario)
-    return scenarios
-
-
-def exclude_empty_category(df: pd.DataFrame, category: str) -> pd.DataFrame:
-    exist_category = df.groupby(category)["level"].sum()
-    idx_exist = exist_category[exist_category != 0].index
-    df = df[df[category].isin(idx_exist)]
+    scenario.results = df
     return df
 
 
-def format_yaxis(
-    axes: List[Axes], y_range: Tuple[float, float], y_step: float, title: str
-) -> None:
-    axes[0].set_ylabel(title, fontweight="bold")
-    axes[0].set_ylim(y_range)
-    y_ticks = np.arange(y_range[0], y_range[1] + y_step, y_step)
-    print(y_ticks)
-    axes[0].set_yticks(y_ticks)
-    for ax in axes:
-        ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.5)
-
-
-def get_legend_elements(axes: List[Axes]) -> Tuple[List, List]:
-    handles, labels = axes[0].get_legend_handles_labels()
-    for ax in axes[1:]:
-        ax_handles, ax_labels = ax.get_legend_handles_labels()
-        if labels != ax_labels:
-            print("Labels of subplots are not identical. Exiting...")
-            break
-    print("Labels of subplots are identical across subplots.")
-    return handles, labels
-
-
-def axes_coordinates(
-    axes: List[Axes],
-) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
-    plt.tight_layout()
-    left = axes[0].get_position().x0
-    right = axes[-1].get_position().x1
-    bottom = axes[0].get_position().y0
-    top = axes[0].get_position().y1
-    center_x = (right + left) / 2
-    center_y = (top + bottom) / 2
-    return (left, right, center_x), (bottom, top, center_y)
-
-
-def legend_dimensions(fig: Figure, legend: Legend) -> Tuple[float, float]:
-    legend_dimensions = legend.get_window_extent(
-        renderer=fig.canvas.get_renderer()  # type: ignore
-    ).transformed(fig.transFigure.inverted())
-    return legend_dimensions.width, legend_dimensions.height
-
-
-def summary_csv(df: pd.DataFrame, save: bool = False, outdir: Path = Path.cwd(), filename: str = ''):
-    df['level'] = df['level'].round(3)
-    df = df.pivot(index=["country", "F"], columns="policy", values="level")
-
-    print(df)
-
-    if save:
-        if not filename:
-            raise ValueError("The 'filename' parameter is required when save=True.")
-        
-        outdir.mkdir(parents=True, exist_ok=True)
-        output_path = outdir / f"{filename}.csv"
-        df.to_csv(output_path)
-        print(f"-> File saved to {output_path}")
-
-    return
-
 # ----- Main -----
 def main():
-    scenarios = read_scenarios(scnParsFilePath)
+
+    scenarios = utils.read_scenarios(SCENARIO_PARAMETERS)
     for scenario in scenarios:
-        scenario.get_data(var)
-        scenario.process_data()
+        scenario.load_results(VAR)
+        summarize_results(scenario)
 
-    df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
-    df['level'] = df['level'].round(6) # just to remove very minor differences
-    df = exclude_empty_category(df, "F")
+    # Consolidate results across scenarios
+    df = pd.concat([scenario.results for scenario in scenarios], ignore_index=True)
+    utils.output_table(df, show=SHOW, save=SAVE, outdir=OUTDIR, filename=NAME)
+    df = utils.exclude_empty_category(df, "F")
 
-    table_dir = (
-        Path.home()
-        / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
-        / "diagrams"
-        / "plots"
-        / "plot-tables"
-    )
-    table_name = plot_name
-    summary_csv(df, save=False, outdir=table_dir, filename=table_name)
-
-    fig, axes = plt.subplots(1, 3, figsize=(width / 2.54, height / 2.54), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(FIGSIZE[0] / 2.54, FIGSIZE[1] / 2.54), sharey=True)
 
     for ax, country in zip(axes, cfg.COUNTRIES):
         data = df[df["country"] == country]
@@ -181,11 +83,11 @@ def main():
         ax.set_xlabel("")
 
     if FORMAT_YAXIS:
-        format_yaxis(axes, y_range, y_step, y_title)
+        utils_plot.format_yaxis(axes, Y_RANGE, Y_STEP, Y_TITLE)
 
-    (_, _, x_center), (y_down, _, _) = axes_coordinates(axes)
+    (_, _, x_center), (y_down, _, _) = utils_plot.axes_coordinates(axes)
 
-    handles, labels = get_legend_elements(axes)
+    handles, labels = utils_plot.get_legend_elements(axes)
 
     legend = fig.legend(
         handles,
@@ -193,44 +95,46 @@ def main():
         loc="lower center",
         bbox_to_anchor=(x_center, 0),
         bbox_transform=fig.transFigure,
-        ncol=2,
+        ncol=3,
         title="Fuel",
         title_fontproperties={"weight": "bold"},
     )
 
-    _, legend_height = legend_dimensions(fig, legend)
+    _, legend_height = utils_plot.legend_dimensions(fig, legend)
     plt.subplots_adjust(wspace=0.1, bottom=(y_down + legend_height))
 
-    if save:
-        plt.savefig(f"{out_dir}/{plot_name}.png", dpi=DPI)
-        print(f"Plot saved as {out_dir}/{plot_name}.png")
-    if show:
-        plt.show()
+    utils_plot.output_plot(
+        show=SHOW, save=SAVE, outdir=OUTDIR, plotname=NAME, dpi=DPI
+    )
 
 
 if __name__ == "__main__":
-    # modify process_data() for specific plot
-    # modify exclude_empty_category() for specific plot
-    save = True
-    show = False
-    FORMAT_YAXIS = True
 
     PROJECT = "BASE"
-    scnParsFilePath = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
-    var = "x_e"
+    SCENARIO_PARAMETERS = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
+
+    SAVE = True
+    SHOW = False
+
+    VAR = "x_e"
     SCALE = 1e-3  # GWh/MWh
 
-
-    width = 8.5  # cm
-    height = 9  # cm
+    FIGSIZE = (8.5, 9) # width, heigth in cm
     DPI = 900
 
-    y_range = (-10, 0)
-    y_step = 2
-    y_title = "Electricity cogeneration - annual change [GWh]"
+    FORMAT_YAXIS = True
+    Y_RANGE = (-10, 0)
+    Y_STEP = 2
+    Y_TITLE = "Change in electricity cogeneration\n[GWh/year]"
 
-    out_dir = rf"C:/Users/jujmo/OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/diagrams/plots/{PROJECT}"
-    Path(out_dir).mkdir(parents=True, exist_ok=True)
-    plot_name = "ElectricityProductionChange"
+    NAME = "ElectricityProductionChange"
+    OUTDIR = (
+        Path.home()
+        / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
+        / "diagrams"
+        / "plots"
+        / PROJECT
+    )
+
 
     main()

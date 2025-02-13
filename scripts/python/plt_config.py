@@ -1,7 +1,7 @@
 COUNTRIES = {"DK": "Denmark", "DE": "Germany", "FR": "France"}
-POLICIES = {"socioeconomic": "Technical", "taxation": "Taxation", "support": "Support"}
+POLICIES = {"socioeconomic": "Technical", "taxation": "Taxation", "support": "Policy"}
 
-# ----- Set mapping -----
+# ----- Mapping -----
 GenFuelMap = {
     "AMV3": "coal",
     "AVV1": "wood pellets",
@@ -34,7 +34,6 @@ GenFuelMap = {
 
 # ----- Color palettes -----
 # Entities
-
 EntityPallete = {
     "DHN": '#e56b6f',
     "WHS": '#177e89',
@@ -60,75 +59,7 @@ GeneratorData = [
         "color_name": "orange",
     },
 ]
-# muted palette
-# fuels_data = [
-#     {
-#         "fuel": "electricity",
-#         "plot_name": "Electricity",
-#         "color": "#88CCEE",
-#         "color_name": "cyan",
-#     },
-#     {
-#         "fuel": "wood chips",
-#         "plot_name": "Biomass",
-#         "color": "#117733",
-#         "color_name": "green",
-#     },
-#     {
-#         "fuel": "wood pellets",
-#         "plot_name": "Biomass",
-#         "color": "#117733",
-#         "color_name": "green",
-#     },
-#     {
-#         "fuel": "wood waste",
-#         "plot_name": "Biomass",
-#         "color": "#117733",
-#         "color_name": "green",
-#     },
-#     {
-#         "fuel": "coal",
-#         "plot_name": "Coal",
-#         "color": "#332288",
-#         "color_name": "indigo",
-#         },
-#     {
-#         "fuel": "municipal waste",
-#         "plot_name": "Mun. waste",
-#         "color": "#DDCC77",
-#         "color_name": "sand",
-#     },
-#     {
-#         "fuel": "natural gas",
-#         "plot_name": "Natural gas",
-#         "color": "#EE8866",
-#         "color_name": "rose",
-#     },
-#     {
-#         "fuel": "fuel oil",
-#         "plot_name": "Oil products",
-#         "color": "#882255",
-#         "color_name": "wine",
-#     },
-#     {
-#         "fuel": "gas oil",
-#         "plot_name": "Oil products",
-#         "color": "#882255",
-#         "color_name": "wine",
-#     },
-#     {
-#         "fuel": "biogas",
-#         "plot_name": "Other",
-#         "color": "#C7C7C7",
-#         "color_name": "grey",
-#     },
-#     {
-#         "fuel": "excess heat",
-#         "plot_name": "Other",
-#         "color": "#C7C7C7",
-#         "color_name": "grey",
-#     },
-# ]
+
 
 # pale palette
 fuels_data = [

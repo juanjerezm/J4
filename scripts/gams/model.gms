@@ -269,7 +269,8 @@ x_s(T,S,SS)                 'Storage charge/discharge flow (MWh)'
 ;
 
 * ----- Variable attributes -----
-
+x_h.l(T,G_DH) = XH_ref(T,G_DH);
+x_c.l(T,G_WH) = XC_ref(T,G_WH);
 
 * ======================================================================
 * EQUATIONS

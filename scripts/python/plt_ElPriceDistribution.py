@@ -103,7 +103,7 @@ def plot_histograms(data, bin_size=10, min_price=0, max_price=500):
     plt.tight_layout()
 
     # output
-    utils_plot.render_plot(
+    utils_plot.output_plot(
         show=SHOW, save=SAVE, outdir=OUTDIR, plotname=PLOTNAME, dpi=DPI
     )
 

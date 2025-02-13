@@ -210,7 +210,7 @@ def main(param_files, var):
 
 
     # output
-    utils_plot.render_plot(
+    utils_plot.output_plot(
         show=SHOW, save=SAVE, outdir=OUTDIR, plotname=PLOTNAME, dpi=DPI
     )
 

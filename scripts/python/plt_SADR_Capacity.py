@@ -165,7 +165,7 @@ def main(param_files, var):
     plt.subplots_adjust(wspace=0.125, bottom=(y_down + legend_height))
 
     # output
-    utils_plot.render_plot(
+    utils_plot.output_plot(
         show=SHOW, save=SAVE, outdir=OUTDIR, plotname=PLOTNAME, dpi=DPI
     )
 

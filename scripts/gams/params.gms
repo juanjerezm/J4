@@ -368,12 +368,12 @@ Y_c(G_CO)           = smax(T, D_c(T));                                          
 tariff_v(T)         = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M)); !! mapping hour-month schedule to timesteps
 
 *  Calculate fuel cost from fuel price, taxes (per fuel and generator), electricity tariffs and ETS quotas
-C_f(T,G,F)$G_DH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
+C_f(T,G,F)$(GF(G,F) AND G_DH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
 
 * Fuel costs for WHS depend on the policy type
-$ifi %policytype% == 'socioeconomic'    C_f(T,G,F)$G_WH(G)  = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,G,F)$G_WH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
-$ifi %policytype% == 'support'          C_f(T,G,F)$G_WH(G)  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
+$ifi %policytype% == 'socioeconomic'    C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F);
+$ifi %policytype% == 'taxation'         C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
+$ifi %policytype% == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
 
 * ======================================================================
 *  Output

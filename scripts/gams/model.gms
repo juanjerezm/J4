@@ -131,7 +131,8 @@ MC_DH(T)                'Marginal cost of DH (EUR/MWh)'
 OPX_REF(E)              'Operating cost for entity (stakeholder) - reference case (EUR)'
 CO2_REF(T)              'Mean carbon footprint of heat in reference case (kg/MWh)'
 XH_ref(T,G)             'Reference heat production (MWh)'
-XF_ref(T,G,F)           'Reference fuel consumption (MWh)'
+XC_ref(T,G)             'Reference cold production (MWh)'
+* XF_ref(T,G,F)           'Reference fuel consumption (MWh)'
 
 MC_DH_month(M)          'Marginal cost of DH - monthly average (EUR/MWh)'
 MC_HR(T,G)              'Marginal cost of HR units (EUR/MWh)'
@@ -173,9 +174,9 @@ F_s_max(S)              'Maximum storage state-of-charge factor (-)'
 rho_s(S)                'Storage self-discharge factor (-)'
 eta_s(S)                'Storage throughput efficiency (-)'
 
-k_inv_g(G)      'Investment subsidy fraction for HR units (-)'
-k_inv_p         'Investment subsidy fraction for connection pipe (-)'
-pi_h_ceil(G)    'Waste-heat ceiling price (EUR/MWh)'
+k_inv_g(G)              'Investment subsidy fraction for HR units (-)'
+k_inv_p                 'Investment subsidy fraction for connection pipe (-)'
+pi_h_ceil(G)            'Waste-heat ceiling price (EUR/MWh)'
 ;
 
 * ----- Parameter definition -----
@@ -193,8 +194,8 @@ $load C_s, Y_s, eta_s, rho_s, F_s_flo, F_s_end, F_s_min, F_s_max                
 $gdxin
 
 * - Parameters from the reference case -
-$gdxin './results/%project%/%scenario%/results-%scenario%-reference.gdx'
-$load MC_DH, OPX_REF, CO2_REF, XH_ref, XF_ref                                   !! Load data from reference case
+$gdxin './results/%project%/%scenario%/transfer-%scenario%-reference.gdx'
+$load MC_DH=MarginalCostDHN_Ref, OPX_REF=OperationalCost_Ref, CO2_REF=Emissions_Ref, XH_REF=HeatProd_Ref, XC_REF=ColdProd_Ref                                  !! Load data from reference case
 $gdxin
 
 * - Policy parameters -

@@ -247,19 +247,6 @@ mdl_all             'DHN and WHS'       !! Each entity is independent of the oth
 * ======================================================================
 solve mdl_all using mip minimizing obj;
 
-* Following parameters are inputs to the integrated model
-PARAMETERS
-MC_DH(T)        'Reference marginal cost of DHN (EUR/MWh)'
-OPX_ref(E)      'Reference operating cost (EUR/year)'
-CO2_ref(T)      'Reference CO2 emissions per heat production (kg/MWh)'
-XH_ref(T,G)     'Reference heat production (MWh)'
-XF_ref(T,G,F)   'Reference fuel consumption (MWh)'
-;
-MC_DH(T)                    = EPS + eq_load_heat.m(T);
-OPX_ref(E)                  = EPS + OPX.l(E);
-CO2_ref(T)                  = EPS + sum((G,F)$GF(G,F), w.l(T,G,F))/D_h(T);
-XH_ref(T,G_DH)              = EPS + x_h.l(T,G_DH);
-XF_ref(T,G_DH,F)$GF(G_DH,F) = EPS + x_f.l(T,G_DH,F);
 
 PARAMETERS
 value_taxes(E)     'Value of energy taxes and ETS (EUR/year)'
@@ -277,13 +264,32 @@ $ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = EPS + sum((T,G
 
 value_support(E)       = EPS;
 
+* The following is transfered to the integrated model
+PARAMETERS
+MarginalCostDHN_Ref(T)      'Reference marginal cost of DHN (EUR/MWh)'
+MarginalCostWHS_Ref(T)      'Reference marginal cost of WHS (EUR/MWh)'
+OperationalCost_Ref(E)      'Reference operating cost of each entity (EUR/year)'
+Emissions_Ref(T)            'Reference CO2 emissions per heat production (kg/MWh)'
+HeatProd_Ref(T,G_DH)        'Reference heat production (MWh)'
+ColdProd_Ref(T,G_CO)        'Reference cold production (MWh)'
+;
+
+MarginalCostDHN_Ref(T)      = EPS + eq_load_heat.m(T);
+MarginalCostWHS_Ref(T)      = EPS + sum((G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f.L(T,G_CO,F) + C_c(G_CO) * x_c.L(T,G_CO))/D_c(T);
+OperationalCost_Ref(E)      = EPS + OPX.l(E);
+Emissions_Ref(T)            = EPS + sum((G,F)$GF(G,F), w.l(T,G,F))/D_h(T);
+HeatProd_Ref(T,G_DH)        = EPS + x_h.l(T,G_DH);
+ColdProd_Ref(T,G_CO)        = EPS + x_c.l(T,G_CO);
+
 execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx'
 ,
 obj, OPX, x_f, x_h, x_e, x_c, w, z, y_f_used, x_s,
-MC_DH, OPX_ref, CO2_ref, XH_ref, XF_ref, 
 value_taxes, value_tariffs, value_support
 ;
 
+execute_unload  './results/%project%/%scenario%/transfer-%scenario%-reference.gdx',
+MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, Emissions_Ref, HeatProd_Ref, ColdProd_Ref
+;
 
 
 

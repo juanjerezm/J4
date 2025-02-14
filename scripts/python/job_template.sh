@@ -20,5 +20,5 @@
     export PATH=/appl/gams/37.1.0:$PATH
     export LD_LIBRARY_PATH=/appl/gams/37.1.0:$LD_LIBRARY_PATH
 
-    gams ${base_dir}/scripts/gams/model --project=${project} --scenario=${scenario} --country=${country} --policytype=${policytype} o=${base_dir}/results/${project}/${scenario}/model.lst
+    gams ${base_dir}/run --project=${project} --scenario=${scenario} --country=${country} --policytype=${policytype} o=${base_dir}/results/${project}/${scenario}/run.lst
     

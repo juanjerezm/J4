@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # ===== Control Flags and Variables =====
-# Define HPC directory
-base_dir="/zhome/f0/5/124363/J4-test"
 
 # Run-specific control flags
 project="defproj"
@@ -11,7 +9,7 @@ policytype="support"
 country="DK"
 
 # Create output directory
-output_dir="${base_dir}/results/${project}/${scenario}"
+output_dir="results/${project}/${scenario}"
 mkdir -p ${output_dir}
 
 # LSF Job parameters
@@ -53,7 +51,7 @@ cat > "$temp_script" << EOF
     #BSUB -eo ${output_dir}/Error_%J.err
 
     # Run GAMS model
-    gams ${base_dir}/scripts/gams/model --project=${project} --scenario=${scenario} --policytype=${policytype} --country=${country} o=${output_dir}/model.lst
+    gams run --project=${project} --scenario=${scenario} --policytype=${policytype} --country=${country} o=${output_dir}/run.lst
 EOF
 
 # ===== Submit Job =====

@@ -131,6 +131,7 @@ OPX_REF(E)              'Operating cost for entity (stakeholder) - reference cas
 CO2_REF(T)              'Mean carbon footprint of heat in reference case (kg/MWh)'
 XH_ref(T,G)             'Reference heat production (MWh)'
 XC_ref(T,G)             'Reference cold production (MWh)'
+XS_ref(T,S,ss)          'Reference storage operation (MWh)'
 * XF_ref(T,G,F)           'Reference fuel consumption (MWh)'
 
 MC_DH_month(M)          'Marginal cost of DH - monthly average (EUR/MWh)'
@@ -194,7 +195,7 @@ $gdxin
 
 * - Parameters from the reference case -
 $gdxin './results/%project%/%scenario%/transfer-%scenario%-reference.gdx'
-$load MC_DH=MarginalCostDHN_Ref, OPX_REF=OperationalCost_Ref, CO2_REF=Emissions_Ref, XH_REF=HeatProd_Ref, XC_REF=ColdProd_Ref                                  !! Load data from reference case
+$load MC_DH=MarginalCostDHN_Ref, OPX_REF=OperationalCost_Ref, CO2_REF=Emissions_Ref, XH_REF=HeatProd_Ref, XC_REF=ColdProd_Ref, XS_ref=StorageProd_Ref   !! Load data from reference case
 $gdxin
 
 * - Policy parameters -
@@ -268,6 +269,7 @@ x_s(T,S,SS)                 'Storage charge/discharge flow (MWh)'
 ;
 
 * ----- Variable attributes -----
+* Warm-starting the model
 x_h.l(T,G_DH) = XH_ref(T,G_DH);
 x_c.l(T,G_WH) = XC_ref(T,G_WH);
 

@@ -281,6 +281,7 @@ OperationalCost_Ref(E)      'Reference operating cost of each entity (EUR/year)'
 Emissions_Ref(T)            'Reference CO2 emissions per heat production (kg/MWh)'
 HeatProd_Ref(T,G_DH)        'Reference heat production (MWh)'
 ColdProd_Ref(T,G_WH)        'Reference cold production (MWh)'
+StorageProd_Ref(T,S,SS)     'Reference storage operation (MWh)'
 ;
 
 MarginalCostDHN_Ref(T)      = EPS + eq_load_heat.m(T);
@@ -289,6 +290,7 @@ OperationalCost_Ref(E)      = EPS + OPX.l(E);
 Emissions_Ref(T)            = EPS + sum((G,F)$GF(G,F), w.l(T,G,F))/D_h(T);
 HeatProd_Ref(T,G_DH)        = EPS + x_h.l(T,G_DH);
 ColdProd_Ref(T,G_WH)        = EPS + x_c.l(T,G_WH);
+StorageProd_Ref(T,S,SS)     = EPS + x_s.l(T,S,SS);
 
 execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx'
 ,
@@ -297,7 +299,7 @@ value_taxes, value_tariffs, value_support
 ;
 
 execute_unload  './results/%project%/%scenario%/transfer-%scenario%-reference.gdx',
-MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, Emissions_Ref, HeatProd_Ref, ColdProd_Ref
+MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, Emissions_Ref, HeatProd_Ref, ColdProd_Ref, StorageProd_Ref
 ;
 
 

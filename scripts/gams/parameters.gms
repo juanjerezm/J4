@@ -11,17 +11,33 @@ option solprint = off   !! Toggles solution listing
 option limRow = 0       !! Maximum number of rows listed in equation block
 option limCol = 0       !! Maximum number of columns listed in one variable block
 
-* ----- Control flags -----
-* Set default values if script not called from integrated model nor command line
-$ifi not set project    $setlocal project       'default_prj'
-$ifi not set scenario   $setlocal scenario      'default_scn'
-$ifi not set policytype $setlocal policytype    'taxation'
-$ifi not set country    $setlocal country       'DK'
+* ======================================================================
+*  SCRIPT CONTROL (Commented if running from run.gms):
+* ======================================================================
+* * ----- Control flags -----
+* * Set default values if script not called from integrated model nor command line
+* $ifi not set project    $setlocal project       'default_prj'
+* $ifi not set scenario   $setlocal scenario      'default_scn'
+* $ifi not set policytype $setlocal policytype    'taxation'
+* $ifi not set country    $setlocal country       'DK'
 
-* ----- Directories, filenames, and scripts -----
-* Create directories for output if script not called from integrated model nor command line
-$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
-$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
+* * ----- Directories, filenames, and scripts -----
+* * Create directories for output if script not called from integrated model nor command line
+* $ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
+* $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
+
+
+* ======================================================================
+* SCALARS
+* ======================================================================
+* ----- Global scalars -----
+SCALAR
+M3                      'Thousand multiplier'   /1E3/
+M6                      'Million multiplier'    /1E6/
+D3                      'Thousand divisor'      /1E-3/
+D6                      'Million divisor'       /1E-6/
+;
+
 
 * ======================================================================
 *  SETS
@@ -378,4 +394,4 @@ $ifi %policytype% == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f
 * ======================================================================
 *  Output
 * ======================================================================
-execute_unload 'results/%project%/%scenario%/params.gdx';
+execute_unload 'results/%project%/%scenario%/parameters.gdx';

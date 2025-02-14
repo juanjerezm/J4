@@ -1,13 +1,3 @@
-
-* ======================================================================
-* DESCRIPTION:
-* ======================================================================
-* ----- INFO -----
-
-* ----- NOTES -----
-
-* ----- TO DO -----
-
 * ======================================================================
 *  SETUP:
 * ======================================================================
@@ -24,50 +14,59 @@ option optcr = 1e-4     !! Relative optimality tolerance
 option EpsToZero = on   !! Outputs Eps values as zero
 ;
 
-* ----- Control flags -----
-* --- "project" and "scenario" flags
-* These are unique identifiers setting directories and filenames.
-* Results will be overwritten if these flags are not unique. DO NOT USE spaces or hyphens (-)
-* - project: a collection of related scenarios
-* - scenario: the name of a specific run
+* ======================================================================
+*  SCRIPT CONTROL (Commented if running from run.gms):
+* ======================================================================
+* * ----- Control flags -----
+* * --- "project" and "scenario" flags
+* * These are unique identifiers setting directories and filenames.
+* * Results will be overwritten if these flags are not unique. DO NOT USE spaces or hyphens (-)
+* * - project: a collection of related scenarios
+* * - scenario: the name of a specific run
 
-$ifi not setglobal project  $SetGlobal project  'default_prj'
-$ifi not setglobal scenario $SetGlobal scenario 'default_scn'
+* $ifi not setglobal project  $SetGlobal project  'default_prj2'
+* $ifi not setglobal scenario $SetGlobal scenario 'default_scn2'
 
-* --- Policy flag ---
-* Uncomment policy setup to analyse:
-*  - 'socioeconomic' does not include taxes, tariffs or support schemes,
-*  - 'taxation'      includes energy/carbon taxes and electricity tariffs,
-*  - 'support'       includes support schemes on top of taxation
+* * --- Policy flag ---
+* * Uncomment policy setup to analyse:
+* *  - 'socioeconomic' does not include taxes, tariffs or support schemes,
+* *  - 'taxation'      includes energy/carbon taxes and electricity tariffs,
+* *  - 'support'       includes support schemes on top of taxation
 
-* $ifi not setglobal policytype $SetGlobal policytype 'socioeconomic'
-$ifi not setglobal policytype $SetGlobal policytype 'taxation'
-* $ifi not setglobal policytype $SetGlobal policytype 'support'
+* * $ifi not setglobal policytype $SetGlobal policytype 'socioeconomic'
+* $ifi not setglobal policytype $SetGlobal policytype 'taxation'
+* * $ifi not setglobal policytype $SetGlobal policytype 'support'
 
-* ----- Country flag -----
-* Uncomment country to analyse:
-$ifi not setglobal country  $SetGlobal country  'DK'
-* $ifi not setglobal country  $SetGlobal country  'DE'
-* $ifi not setglobal country  $SetGlobal country  'FR'
+* * ----- Country flag -----
+* * Uncomment country to analyse:
+* $ifi not setglobal country  $SetGlobal country  'DK'
+* * $ifi not setglobal country  $SetGlobal country  'DE'
+* * $ifi not setglobal country  $SetGlobal country  'FR'
 
-* --- Solving flag ---
-*   - 'single'      solves the model once, using assumed full-load hours
-*   - 'iterative'   solves the model iteratively, updating full-load hours
-$ifi not setglobal mode     $SetGlobal mode 'iterative'         !! Choose between 'single' and 'iterative'
+* * --- Solving flag ---
+* *   - 'single'      solves the model once, using assumed full-load hours
+* *   - 'iterative'   solves the model iteratively, updating full-load hours
+* $ifi not setglobal mode     $SetGlobal mode 'iterative'         !! Choose between 'single' and 'iterative'
 
-* ----- Directories, filenames, and scripts -----
-* Create directories for output
-$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
-$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
+* * ----- Directories, filenames, and scripts -----
+* * Create directories for output
+* $ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
+* $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
 
-* Execute the reference case
-$call gams ./scripts/gams/params.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/params.lst
-$call gams ./scripts/gams/model_reference --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/model_reference.lst  
+* * Execute the reference case
+* $call gams ./scripts/gams/parameters.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
+* $call gams ./scripts/gams/model_reference --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/model_reference.lst  
 
+* ======================================================================
+* SCALARS
+* ======================================================================
 * ----- Global scalars -----
 SCALAR
 M3                      'Thousand multiplier'   /1E3/
-D6                      'Million divisor'       /1E-6/;
+M6                      'Million multiplier'    /1E6/
+D3                      'Thousand divisor'      /1E-3/
+D6                      'Million divisor'       /1E-6/
+;
 
 
 * ======================================================================
@@ -181,7 +180,7 @@ pi_h_ceil(G)            'Waste-heat ceiling price (EUR/MWh)'
 
 * ----- Parameter definition -----
 * - Direct assignment - (This should, ideally, be done in a separate data file)
-$gdxin './results/%project%/%scenario%/params.gdx'
+$gdxin './results/%project%/%scenario%/parameters.gdx'
 $load T, H, M, G, S, SS, E, F, TM, TH, GF                                       !! Load sets
 $load G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL         !! Load subsets
 $load lifetime, r, AF                                                           !! Load entity parameters
@@ -240,7 +239,7 @@ $ifi %country% == 'DK' $ifi %policytype% == 'support' pi_h(T,G_HR)$(pi_h(T,G_HR)
 
 * ----- Temporary or auxiliary assignments -----
 * We add a small tolerance value so the MIP solver doesn't complain
-OPX_REF(E) = 1  + OPX_REF(E);
+* OPX_REF(E) = OPX_REF(E) + D3;
 
 * ======================================================================
 * VARIABLES
@@ -315,8 +314,9 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 * Variable cost of storages are negligible
 eq_NPV_all..                                NPV_all     =e= NPV('DHN') + NPV('WHS');
 
-eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_p      )) + (OPX_REF('DHN') - OPX('DHN') - WH_trnsctn)/AF('DHN');
-eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_g(G_HR))) + (OPX_REF('WHS') - OPX('WHS') + WH_trnsctn)/AF('WHS');
+* Added small tolerance so the MIP solver doesn't complain
+eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_p      )) + (OPX_REF('DHN') - OPX('DHN') - WH_trnsctn)/AF('DHN') + D6;
+eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_g(G_HR))) + (OPX_REF('WHS') - OPX('WHS') + WH_trnsctn)/AF('WHS') + D6;
 
 eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
                                                             + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))

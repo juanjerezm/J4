@@ -23,24 +23,33 @@ option optcr = 1e-4     !! Relative optimality tolerance
 option EpsToZero = on   !! Outputs Eps values as zero
 ;
 
-* ----- Control flags -----
-* Set default values if script not called from integrated model nor command line
-$ifi not set project    $setlocal project       'default_prj'
-$ifi not set scenario   $setlocal scenario      'default_scn'
-$ifi not set policytype $setlocal policytype    'taxation'
-$ifi not set country    $setlocal country       'DK'
+* ======================================================================
+*  SCRIPT CONTROL (Commented if running from run.gms):
+* ======================================================================
+* * ----- Control flags -----
+* * Set default values if script not called from integrated model nor command line
+* $ifi not set project    $setlocal project       'default_prj'
+* $ifi not set scenario   $setlocal scenario      'default_scn'
+* $ifi not set policytype $setlocal policytype    'taxation'
+* $ifi not set country    $setlocal country       'DK'
 
-* ----- Directories, filenames, and scripts -----
-* Create directories for output if script not called from integrated model nor command line
-$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
-$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
+* * ----- Directories, filenames, and scripts -----
+* * Create directories for output if script not called from integrated model nor command line
+* $ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
+* $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
 
-$call gams ./scripts/gams/params.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/params.lst
+* $call gams ./scripts/gams/parameters.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
 
+* ======================================================================
+* SCALARS
+* ======================================================================
 * ----- Global scalars -----
-SCALARS
+SCALAR
 M3                      'Thousand multiplier'   /1E3/
-D6                      'Million divisor'       /1E-6/;
+M6                      'Million multiplier'    /1E6/
+D3                      'Thousand divisor'      /1E-3/
+D6                      'Million divisor'       /1E-6/
+;
 
 
 * ======================================================================
@@ -122,7 +131,7 @@ eta_s(S)                'Storage throughput efficiency (-)'
 ;
 
 * ----- Parameter definition -----
-$gdxin results/%project%/%scenario%/params.gdx
+$gdxin results/%project%/%scenario%/parameters.gdx
 $load T, H, M, G, S, SS, E, F, TM, TH, GF                                       !! Load sets
 $load G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL         !! Load subsets
 $load D_h, D_c                                                                  !! Load system parameters

@@ -63,7 +63,7 @@ CAPEX(E)                        'Capital expenditure (EUR)'
 OPEX(E,CASE)                    'Operating expenditure (EUR)'
 OPEX_Savings(E)                 'Operating expenditure savings (EUR)'
 WH_transaction                  'Transaction value of waste-heat (EUR)'
-N(G_HR)                         'Full-load hours of heat-recovery generators (hours)'
+FLH(G_HR)                       'Full-load hours of heat-recovery generators (hours)'
 
 WasteHeatPrice(T,G_HR)          'Price of recovered heat (EUR/MWh)'
 AskPrice(T,G_HR)                'Minimum feasible price for WHS (EUR/MWh)'
@@ -105,7 +105,7 @@ PARAMETERS opex_i;
 $load opex_i=OPX.l
 $load NPV_all=NPV_all.l, NPV=NPV.l, CAPEX=CAPEX.l, WH_transaction=WH_transaction.l
 $load WasteHeatPrice=pi_h, AskPrice, BidPrice, MarginalAsk, MarginalBid, FixedAsk, FixedBid
-$load N
+$load FLH=N
 $gdxin
 
 * Merge OPEX from each case, calculate savings
@@ -207,7 +207,7 @@ FixedBid(G_HR)          = EPS + FixedBid(G_HR);
 execute_unload './results/%project%/%scenario%/results-%scenario%-postprocessing_all.gdx';
 
 execute_unload  './results/%project%/%scenario%/results-%scenario%-postprocessing.gdx',
-NPV_all, NPV, CAPEX, OPEX, OPEX_Savings, WH_transaction, IRR, PBT, N
+NPV_all, NPV, CAPEX, OPEX, OPEX_Savings, WH_transaction, IRR, PBT, FLH
 WasteHeatPrice, AskPrice, BidPrice, MarginalAsk, MarginalBid, FixedAsk, FixedBid
 HeatProduction, ColdProduction, ElectricityProduction, FuelConsumption, StorageFlow, StorageLevel, CarbonEmissions, FuelMaxCapacity, HeatRecoveryCapacity
 Tariffs, Taxes, ETSQuota, Support

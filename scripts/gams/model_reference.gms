@@ -265,7 +265,7 @@ PARAMETERS
 MarginalCostDHN_Ref(T)      'Reference marginal cost of DHN (EUR/MWh)'
 MarginalCostWHS_Ref(T)      'Reference marginal cost of WHS (EUR/MWh)'
 OperationalCost_Ref(E)      'Reference operating cost of each entity (EUR/year)'
-Emissions_Ref(T)            'Reference CO2 emissions per heat production (kg/MWh)'
+EmissionsDHN_Ref(T)         'Reference CO2 emissions per heat production (kg/MWh)'
 HeatProd_Ref(T,G_DH)        'Reference heat production (MWh)'
 ColdProd_Ref(T,G_WH)        'Reference cold production (MWh)'
 StorageProd_Ref(T,S,SS)     'Reference storage operation (MWh)'
@@ -275,7 +275,7 @@ StorageLevel_Ref(T,S)       'Reference storage level (MWh)'
 MarginalCostDHN_Ref(T)      = EPS + eq_load_heat.m(T);
 MarginalCostWHS_Ref(T)      = EPS + sum((G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f.L(T,G_CO,F) + C_c(G_CO) * x_c.L(T,G_CO))/D_c(T); !! Actually average cost, but doenst matter here
 OperationalCost_Ref(E)      = EPS + OPX.l(E);
-Emissions_Ref(T)            = EPS + sum((G,F)$GF(G,F), w.l(T,G,F))/D_h(T);
+EmissionsDHN_Ref(T)         = EPS + sum((G_DH,F)$GF(G_DH,F), w.l(T,G_DH,F))/D_h(T);
 HeatProd_Ref(T,G_DH)        = EPS + x_h.l(T,G_DH);
 ColdProd_Ref(T,G_WH)        = EPS + x_c.l(T,G_WH);
 StorageProd_Ref(T,S,SS)     = EPS + x_s.l(T,S,SS);
@@ -286,7 +286,7 @@ obj, OPX, x_f, x_h, x_e, x_c, w, z, y_f_used, x_s
 ;
 
 execute_unload  './results/%project%/%scenario%/transfer-%scenario%-reference.gdx',
-MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, Emissions_Ref, HeatProd_Ref, ColdProd_Ref, StorageProd_Ref, StorageLevel_Ref
+MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, EmissionsDHN_Ref, HeatProd_Ref, ColdProd_Ref, StorageProd_Ref, StorageLevel_Ref
 ;
 
 

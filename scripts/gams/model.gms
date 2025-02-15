@@ -177,7 +177,7 @@ $gdxin './results/%project%/%scenario%/transfer-%scenario%-reference.gdx'
 $load MarginalBid=MarginalCostDHN_Ref,
 $load SubstitutionCost=MarginalCostWHS_Ref,
 $load OPX_REF=OperationalCost_Ref,
-$load w_ref=Emissions_Ref,
+$load w_ref=EmissionsDHN_Ref,
 $load x_h_ref=HeatProd_Ref,
 $load x_c_ref=ColdProd_Ref,
 $load x_s_ref=StorageProd_Ref

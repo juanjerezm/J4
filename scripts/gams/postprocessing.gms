@@ -152,8 +152,8 @@ $gdxin
 
 * - Parameters from the reference case -
 $gdxin './results/%project%/%scenario%/transfer-%scenario%-reference.gdx'
-PARAMETERS Emissions_Ref;
-$load Emissions_Ref,
+PARAMETERS EmissionsDHN_Ref;
+$load EmissionsDHN_Ref,
 $gdxin
 
 $ifi     %policytype% == 'socioeconomic'    Tariffs('WHS',CASE) = EPS;
@@ -171,7 +171,7 @@ $ifi not %policytype% == 'socioeconomic'    ETSQuota('WHS',CASE) = EPS + sum((T,
 $ifi not %policytype% == 'support'                          Support(E,CASE)         = EPS;
 $ifi     %policytype% == 'support'                          Support(E,'reference')  = EPS;
 $ifi     %policytype% == 'support' $ifi %country% == 'DE'   Support('DHN','integrated') = EPS + sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_p      ) *  AF('DHN');
-$ifi     %policytype% == 'support' $ifi %country% == 'DE'   Support('WHS','integrated') = EPS + sum(G_HR,             C_g_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_g(G_HR)) *  AF('WHS') + pi_q * sum((T, G_HR), HeatProduction(T,G_HR,'integrated')*Emissions_Ref(T));
+$ifi     %policytype% == 'support' $ifi %country% == 'DE'   Support('WHS','integrated') = EPS + sum(G_HR,             C_g_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_g(G_HR)) *  AF('WHS') + pi_q * sum((T, G_HR), HeatProduction(T,G_HR,'integrated')*EmissionsDHN_Ref(T));
 $ifi     %policytype% == 'support' $ifi %country% == 'FR'   Support('DHN','integrated') = EPS + sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_p      ) *  AF('DHN');
 $ifi     %policytype% == 'support' $ifi %country% == 'FR'   Support('WHS','integrated') = EPS + sum(G_HR,             C_g_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_g(G_HR)) *  AF('WHS');
 $ifi     %policytype% == 'support' $ifi %country% == 'DK'   Support('DHN','integrated') = EPS + sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_p      ) * (AF_og('DHN') - AF('DHN'));

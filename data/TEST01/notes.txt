@@ -1,0 +1,1 @@
+This run checks if there are important changes of fixing substitution cost

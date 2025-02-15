@@ -1,75 +1,3 @@
-$eolCom !!
-
-$ifi not setglobal project $SetGlobal project 'BASE'
-$ifi not setglobal scenario $SetGlobal scenario 'FRsup'
-$SetGlobal policytype 'support' !! Pay attention to this!!
-$SetGlobal country 'FR' !! Pay attention to this!!
-
-
-SETS
-E                       'Entity'
-G_HR
-;
-
-PARAMETERS
-AF(E)
-lifetime(E)             'Lifetime of investment (years)'
-L_p(G_HR)
-C_p_inv(G_HR)
-C_g_inv(G_HR)
-k_inv_p
-k_inv_g(G_HR)
-OPX_REF(E)
-;
-
-VARIABLES
-OPX(E)
-WH_trnsctn
-y_hr(G_HR)
-;
-
-
-$gdxin './results/%project%/%scenario%/params.gdx'
-$load E, G_HR
-$load AF, lifetime, L_p, C_p_inv, C_g_inv
-$gdxin
-
-$gdxin './results/%project%/%scenario%/results-%scenario%-reference.gdx'
-$load OPX_REF
-$gdxin
-
-$gdxin './results/%project%/%scenario%/results-%scenario%-integrated.gdx'
-$load OPX, WH_trnsctn, y_hr
-$gdxin
-
-$ifi NOT %policytype% == 'support'                        k_inv_g(G_HR)    = 0;
-$ifi NOT %policytype% == 'support'                        k_inv_p          = 0;
-$ifi     %policytype% == 'support' $ifi %country% == 'DE' k_inv_p          = 0.5;
-$ifi     %policytype% == 'support' $ifi %country% == 'DE' k_inv_g(G_HR)    = 0.0;
-$ifi     %policytype% == 'support' $ifi %country% == 'FR' k_inv_p          = 0.6;
-$ifi     %policytype% == 'support' $ifi %country% == 'FR' k_inv_g(G_HR)    = 0.3;
-$ifi     %policytype% == 'support' $ifi %country% == 'DK' k_inv_p          = 0.0;
-$ifi     %policytype% == 'support' $ifi %country% == 'DK' k_inv_g(G_HR)    = 0.0;
-
-PARAMETER
-I(E)                    'Investment'
-S(E)                    'Annual savings'
-N(E)                    'Number of years'
-;
-
-I('DHN')  = sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * y_hr.l(G_HR) * (1 - k_inv_p      ));
-I('WHS')  = sum(G_HR,             C_g_inv(G_HR) * y_hr.l(G_HR) * (1 - k_inv_g(G_HR)));
-
-S('DHN')  = (OPX_REF('DHN') - OPX.l('DHN') - WH_trnsctn.l);
-S('WHS')  = (OPX_REF('WHS') - OPX.l('WHS') + WH_trnsctn.l);
-
-N(E)      = lifetime(E);
-
-
-SET
-ITER /I01*I99/
-;
-
 SCALAR
 tolerance       /0.001/
 IRR_Low         /0/
@@ -84,16 +12,14 @@ IRR(E)
 
 loop(ITER,
 
-    if (sum(G_HR, y_hr.l(G_HR)) < tolerance,
+    if (sum(G_HR, HeatRecoveryCapacity(G_HR,'integrated')) < tolerance,
         display "No investment for DHN";
         break;
     );
 
     IRR_Estimation = (IRR_Low + IRR_High) / 2;
-    NPV_Estimation = - I('DHN') + S('DHN') * (1 - (1 + IRR_Estimation)**(-N('DHN'))) / IRR_Estimation;
-    
-    display IRR_Estimation, NPV_Estimation;
-    
+    NPV_Estimation = - CAPEX('DHN') + OPEX_Savings('DHN') * (1 - (1 + IRR_Estimation)**(-N('DHN'))) / (IRR_Estimation + D6);
+        
     if (abs(IRR_Low-IRR_High) < tolerance,
         IRR('DHN') = IRR_Estimation;
         display "Convergence reached for DHN";
@@ -116,16 +42,14 @@ IRR_High = 1;
 
 loop(ITER,
     
-    if (sum(G_HR, y_hr.l(G_HR)) < tolerance,
+    if (sum(G_HR, HeatRecoveryCapacity(G_HR,'integrated')) < tolerance,
         display "No investment for DHN";
         break;
     );
 
     IRR_Estimation = (IRR_Low + IRR_High) / 2;
-    NPV_Estimation = - I('WHS') + S('WHS') * (1 - (1 + IRR_Estimation)**(-N('WHS'))) / IRR_Estimation;
-    
-    display IRR_Estimation, NPV_Estimation;
-    
+    NPV_Estimation = - CAPEX('WHS') + OPEX_Savings('WHS') * (1 - (1 + IRR_Estimation)**(-N('WHS'))) / (IRR_Estimation + D6);
+        
     if (abs(IRR_Low-IRR_High) < tolerance,
         IRR('WHS') = IRR_Estimation;
         display "Convergence reached for WHS";
@@ -141,11 +65,3 @@ loop(ITER,
     );
 )
 ;
-
-display y_hr.l;
-display AF;
-DISPLAY I, S, N;
-
-
-display "Final results";
-display IRR;

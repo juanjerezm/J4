@@ -18,35 +18,12 @@ option EpsToZero = on   !! Outputs Eps values as zero
 *  SCRIPT CONTROL (Commented if running from run.gms):
 * ======================================================================
 * * ----- Control flags -----
-* * --- "project" and "scenario" flags
-* * These are unique identifiers setting directories and filenames.
-* * Results will be overwritten if these flags are not unique. DO NOT USE spaces or hyphens (-)
-* * - project: a collection of related scenarios
-* * - scenario: the name of a specific run
-
-* $ifi not setglobal project  $SetGlobal project  'default_prj2'
-* $ifi not setglobal scenario $SetGlobal scenario 'default_scn2'
-
-* * --- Policy flag ---
-* * Uncomment policy setup to analyse:
-* *  - 'socioeconomic' does not include taxes, tariffs or support schemes,
-* *  - 'taxation'      includes energy/carbon taxes and electricity tariffs,
-* *  - 'support'       includes support schemes on top of taxation
-
-* * $ifi not setglobal policytype $SetGlobal policytype 'socioeconomic'
-* $ifi not setglobal policytype $SetGlobal policytype 'taxation'
-* * $ifi not setglobal policytype $SetGlobal policytype 'support'
-
-* * ----- Country flag -----
-* * Uncomment country to analyse:
-* $ifi not setglobal country  $SetGlobal country  'DK'
-* * $ifi not setglobal country  $SetGlobal country  'DE'
-* * $ifi not setglobal country  $SetGlobal country  'FR'
-
-* * --- Solving flag ---
-* *   - 'single'      solves the model once, using assumed full-load hours
-* *   - 'iterative'   solves the model iteratively, updating full-load hours
-* $ifi not setglobal mode     $SetGlobal mode 'iterative'         !! Choose between 'single' and 'iterative'
+* * Set default values if script not called from another script or command line
+* $ifi not setglobal project    $setGlobal project      'default_prj'
+* $ifi not setglobal scenario   $setGlobal scenario     'default_scn'
+* $ifi not setglobal policytype $setGlobal policytype   'taxation'
+* $ifi not setglobal country    $setGlobal country      'DK'
+* $ifi not setglobal mode       $SetGlobal mode         'iterative'         !! Choose between 'single' and 'iterative'
 
 * * ----- Directories, filenames, and scripts -----
 * * Create directories for output
@@ -54,8 +31,8 @@ option EpsToZero = on   !! Outputs Eps values as zero
 * $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
 
 * * Execute the reference case
-* $call gams ./scripts/gams/parameters.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
-* $call gams ./scripts/gams/model_reference --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/model_reference.lst  
+* $call gams ./scripts/gams/parameters      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
+* $call gams ./scripts/gams/model_reference --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/model_reference.lst
 
 * ======================================================================
 * SCALARS
@@ -126,19 +103,20 @@ C_g_inv(G)              'Investment cost of generator (EUR/MW)'
 C_s(S)                  'Storage variable cost (EUR/MWh)'
 C_p_inv(G)              'Investment cost of pipe connection (EUR/MW-m)'
 
-MC_DH(T)                'Marginal cost of DH (EUR/MWh)'
-OPX_REF(E)              'Operating cost for entity (stakeholder) - reference case (EUR)'
-CO2_REF(T)              'Mean carbon footprint of heat in reference case (kg/MWh)'
-XH_ref(T,G)             'Reference heat production (MWh)'
-XC_ref(T,G)             'Reference cold production (MWh)'
-XS_ref(T,S,ss)          'Reference storage operation (MWh)'
-* XF_ref(T,G,F)           'Reference fuel consumption (MWh)'
+OPX_REF(E)              'Reference operating cost for entity (stakeholder) (EUR)'
+w_ref(T)                'Reference mean carbon footprint of heat (kg/MWh)'
+x_h_ref(T,G)            'Reference heat production (MWh)'
+x_c_ref(T,G)            'Reference cold production (MWh)'
+x_s_ref(T,S,ss)         'Reference storage operation (MWh)'
+z_ref(T,S)              'Reference storage state-of-charge (MWh)'
 
-MC_DH_month(M)          'Marginal cost of DH - monthly average (EUR/MWh)'
-MC_HR(T,G)              'Marginal cost of HR units (EUR/MWh)'
-MC_HR_month(M,G)        'Marginal cost of HR units - monthly average (EUR/MWh)'
-MU_DH(G)                'Markup from DH investments (EUR/MWh)'
-MU_HR(G)                'Markup from HR investments (EUR/MWh)'
+SubstitutionCost(T)     'Substitution cost of cooling (EUR/MWh)'
+MarginalBid(T)          'Marginal cost-component of bid-price, from DH marginal cost in reference case (EUR/MWh)'
+MarginalAsk(T,G)        'Marginal cost-component of ask-price, from marginal cost of HR units (EUR/MWh)'
+MarginalBid_month(M)    'Marginal cost-component of bid-price - monthly average (EUR/MWh)'
+MarginalAsk_month(M,G)  'Marginal cost-component of ask-price - monthly average (EUR/MWh)'
+FixedBid(G)             'Fixed cost-component of bid-price, from DH investments (EUR/MWh)'
+FixedAsk(G)             'Fixed cost-component of ask-price, from HR investments (EUR/MWh)'
 BidPrice(T,G_HR)        'Maximum feasible price for DHU (EUR/MWh)'
 AskPrice(T,G_HR)        'Minimum feasible price for WHS (EUR/MWh)'
 N(G)                    'Full load hours of HR units (h)'
@@ -191,56 +169,55 @@ $load C_p_inv, L_p, rho_g                                                       
 $load C_f, pi_f, qc_f, pi_q, pi_e, qc_e                                         !! Load fuel parameters
 $load tax_fuel_f, tariff_c, tariff_v, tax_fuel_g                                !! Load tax-and-tariff parameters
 $load C_s, Y_s, eta_s, rho_s, F_s_flo, F_s_end, F_s_min, F_s_max                !! Load storage parameters
+$load k_inv_g, k_inv_p, pi_h_ceil                                               !! Load policy parameters
 $gdxin
 
 * - Parameters from the reference case -
 $gdxin './results/%project%/%scenario%/transfer-%scenario%-reference.gdx'
-$load MC_DH=MarginalCostDHN_Ref, OPX_REF=OperationalCost_Ref, CO2_REF=Emissions_Ref, XH_REF=HeatProd_Ref, XC_REF=ColdProd_Ref, XS_ref=StorageProd_Ref   !! Load data from reference case
+$load MarginalBid=MarginalCostDHN_Ref,
+$load SubstitutionCost=MarginalCostWHS_Ref,
+$load OPX_REF=OperationalCost_Ref,
+$load w_ref=Emissions_Ref,
+$load x_h_ref=HeatProd_Ref,
+$load x_c_ref=ColdProd_Ref,
+$load x_s_ref=StorageProd_Ref
+$load z_ref=StorageLevel_Ref
 $gdxin
 
-* - Policy parameters -
-$ifi NOT %policytype% == 'support'  k_inv_g(G) = 0;     !! default value w/o support policy
-$ifi NOT %policytype% == 'support'  k_inv_p    = 0;     !! default value w/o support policy
-$ifi NOT %policytype% == 'support'  pi_h_ceil(G) = 0;   !! default value w/o support policy
-$ifi     %policytype% == 'support'  $include './scripts/gams/definition_policy.inc';
 
 * ----- Parameter operations -----
-N(G_HR)         = 8760;     !! Initial estimation of full load hours for HR units
+N(G_HR)                     = 8760;     !! Initial estimation of full load hours for HR units
 
-* Calculate marginal cost of HR units
-MC_HR(T,G_HR)       = sum(F$GF(G_HR,F), C_f(T,G_HR,F))/eta_g(T,G_HR) + C_h(G_HR);
+* Calculate marginal cost of HR units (€/MWh-heat)
+MarginalAsk(T,G_HR)         = sum(F$GF(G_HR,F), C_f(T,G_HR,F))/eta_g(T,G_HR) + C_h(G_HR);
 
-* Substract the cooling substitution cost from the HR marginal. This implementation is janky, but it works assuming that, in the reference case, free-cooling is always used when available.
-MC_HR(T,G_HR)       = MC_HR(T,G_HR)
-                    - ((sum(F$GF('free_cooling',F),     C_f(T,'free_cooling',F)    /eta_g(T,'free_cooling'))     + C_c('free_cooling'))/eta_g(T,G_HR))$(F_a(T,'free_cooling') GE 0) 
-                    - ((sum(F$GF('electric_chiller',F), C_f(T,'electric_chiller',F)/eta_g(T,'electric_chiller')) + C_c('electric_chiller'))/eta_g(T,G_HR))$(F_a(T,'free_cooling') EQ 0)
-                    ;
+* And substract the substitution cost of cooling (€/MWh-cold), adjusted by the ratio heat-cold
+MarginalAsk(T,G_HR)         = MarginalAsk(T,G_HR) - SubstitutionCost(T) * (eta_g(T,G_HR) - 1)/eta_g(T,G_HR);
 
 * Calculate monthly averages, and reassign values to each hour
-MC_HR_month(M,G_HR) = sum(T$TM(T,M), MC_HR(T,G_HR))/730;
-MC_DH_month(M)      = sum(T$TM(T,M), MC_DH(T))/730;
+MarginalAsk_month(M,G_HR)   = sum(T$TM(T,M), MarginalAsk(T,G_HR)  )/730;
+MarginalBid_month(M)        = sum(T$TM(T,M), MarginalBid(T)       )/730;
 loop(T,
-    MC_HR(T,G_HR)   = sum(M$TM(T,M), MC_HR_month(M,G_HR));
-    MC_DH(T)        = sum(M$TM(T,M), MC_DH_month(M));
+    MarginalAsk(T,G_HR)     = sum(M$TM(T,M), MarginalAsk_month(M,G_HR));
+    MarginalBid(T)          = sum(M$TM(T,M), MarginalBid_month(M));
 );
 
 * Define initial mark-ups from investement costs, and availability factor from it
-MU_DH(G_HR)     = (L_p(G_HR) * C_p_inv(G_HR) * AF('DHN')                )/(N(G_HR) + D6) * (1 - k_inv_p);         !! Adjusted by the subsidy factor
-MU_HR(G_HR)     = (            C_g_inv(G_HR) * AF('WHS') + C_g_fix(G_HR))/(N(G_HR) + D6) * (1 - k_inv_g(G_HR));   !! Adjusted by the subsidy factor
+FixedBid(G_HR)              = (L_p(G_HR) * C_p_inv(G_HR) * AF('DHN')                )/(N(G_HR) + D6) * (1 - k_inv_p);         !! Adjusted by the subsidy factor
+FixedAsk(G_HR)              = (            C_g_inv(G_HR) * AF('WHS') + C_g_fix(G_HR))/(N(G_HR) + D6) * (1 - k_inv_g(G_HR));   !! Adjusted by the subsidy factor
 
-BidPrice(T,G_HR)    = MC_DH(T)      - MU_DH(G_HR);   
-AskPrice(T,G_HR)    = MC_HR(T,G_HR) + MU_HR(G_HR);
-pi_h(T,G_HR)        = (BidPrice(T,G_HR) + AskPrice(T,G_HR))/2;  !! Price for recovered waste heat
+BidPrice(T,G_HR)            = MarginalBid(T)      - FixedBid(G_HR);
+AskPrice(T,G_HR)            = MarginalAsk(T,G_HR) + FixedAsk(G_HR);
+pi_h(T,G_HR)                = (BidPrice(T,G_HR) + AskPrice(T,G_HR))/2;  !! Price for recovered waste heat mean between bid and ask
 
 F_a(T,G_HR)$( AskPrice(T,G_HR) GE BidPrice(T,G_HR) ) = 0;
 
 * Apply price-ceiling for waste-heat (DK - support)
-$ifi %country% == 'DK' $ifi %policytype% == 'support' pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-MU_DH(G_HR))) = pi_h_ceil(G_HR)-MU_DH(G_HR);
+$ifi %country% == 'DK' $ifi %policytype% == 'support' pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-FixedBid(G_HR))) = pi_h_ceil(G_HR)-FixedBid(G_HR);
 
 
 * ----- Temporary or auxiliary assignments -----
-* We add a small tolerance value so the MIP solver doesn't complain
-* OPX_REF(E) = OPX_REF(E) + D3;
+
 
 * ======================================================================
 * VARIABLES
@@ -249,11 +226,12 @@ $ifi %country% == 'DK' $ifi %policytype% == 'support' pi_h(T,G_HR)$(pi_h(T,G_HR)
 FREE VARIABLES
 NPV_all                     'Net present value of project - total (EUR)'
 OPX(E)                      'Operating cost for entity (stakeholder) (EUR)'
-WH_trnsctn                  'Transaction of waste-heat (EUR)'
+WH_transaction              'Transaction value of waste-heat (EUR)'
 ;
 
 POSITIVE VARIABLES
 NPV(E)                      'Net present value for entity (stakeholder) (EUR)'
+CAPEX(E)                    'Capital expenditure for entity (stakeholder) (EUR)'
 x_f(T,G,F)                  'Consumption of fuel by generator (MWh)'
 x_h(T,G)                    'Production of heat (MWh)'
 x_e(T,G)                    'Production of electricity (MWh)'
@@ -270,8 +248,11 @@ x_s(T,S,SS)                 'Storage charge/discharge flow (MWh)'
 
 * ----- Variable attributes -----
 * Warm-starting the model
-x_h.l(T,G_DH) = XH_ref(T,G_DH);
-x_c.l(T,G_WH) = XC_ref(T,G_WH);
+x_h.l(T,G_DH) = x_h_ref(T,G_DH);
+x_c.l(T,G_WH) = x_c_ref(T,G_WH);
+x_s.l(T,S,SS) = x_s_ref(T,S,SS);
+z.l(T,S)      = z_ref(T,S);
+
 
 * ======================================================================
 * EQUATIONS
@@ -281,6 +262,8 @@ EQUATIONS
 eq_NPV_all                  'Net Present Value (total)'
 eq_NPV_DHN                  'Net Present Value for DHN'
 eq_NPV_WHS                  'Net Present Value for WHS'
+eq_CAPEX_DHN                'Capital expenditure for DHN'
+eq_CAPEX_WHS                'Capital expenditure for WHS'
 eq_OPX_DHN                  'Operating cost of DH system'
 eq_OPX_WHS                  'Operating cost of WH source'
 eq_trnsctn                  'Transaction of waste-heat'  
@@ -317,8 +300,11 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 eq_NPV_all..                                NPV_all     =e= NPV('DHN') + NPV('WHS');
 
 * Added small tolerance so the MIP solver doesn't complain
-eq_NPV_DHN..                                NPV('DHN')  =e= - sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_p      )) + (OPX_REF('DHN') - OPX('DHN') - WH_trnsctn)/AF('DHN') + D6;
-eq_NPV_WHS..                                NPV('WHS')  =e= - sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_g(G_HR))) + (OPX_REF('WHS') - OPX('WHS') + WH_trnsctn)/AF('WHS') + D6;
+eq_NPV_DHN..                                NPV('DHN')  =e= - CAPEX('DHN') + (OPX_REF('DHN') - OPX('DHN') - WH_transaction)/AF('DHN') + D6;
+eq_NPV_WHS..                                NPV('WHS')  =e= - CAPEX('WHS') + (OPX_REF('WHS') - OPX('WHS') + WH_transaction)/AF('WHS') + D6;
+
+eq_CAPEX_DHN..                              CAPEX('DHN')=e= + sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_p      ));
+eq_CAPEX_WHS..                              CAPEX('WHS')=e= + sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_g(G_HR)));
 
 eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
                                                             + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
@@ -334,10 +320,10 @@ eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(
                                                             + sum((T,G_HR),              C_h(G_HR)     * x_h(T,G_HR))
                                                             + sum(G_HR,                  C_g_fix(G_HR) * y_hr(G_HR))
 $ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('WHS',F))
-$ifi %policytype% == 'support' $ifi %country% == 'DE'       - pi_q * sum((T, G_HR), x_h(T,G_HR)*CO2_ref(T))
+$ifi %policytype% == 'support' $ifi %country% == 'DE'       - pi_q * sum((T, G_HR), x_h(T,G_HR)*w_ref(T))
                                                             ;
 
-eq_trnsctn..                                WH_trnsctn  =e= sum((T,G_HR), pi_h(T,G_HR)  * x_h(T,G_HR));
+eq_trnsctn..                                WH_transaction  =e= sum((T,G_HR), pi_h(T,G_HR)  * x_h(T,G_HR));
 
 eq_load_heat(T)..                           sum(G_DH, x_h(T,G_DH)) + sum(G_HR, x_h(T,G_HR)*(1-rho_g(G_HR))) + sum(S_DH, x_s(T,S_DH,'discharge')) - sum(S_DH, x_s(T,S_DH,'charge')) =e= D_h(T);
 eq_load_cold(T)..                           sum(G_WH, x_c(T,G_WH))                                                                                                                 =e= D_c(T);
@@ -377,47 +363,31 @@ mdl_all              'All equations'    /all/
 mdl_all.optfile = 1;
 
 * ======================================================================
-* SOLVE AND POSTPROCESSING
+* SOLVE
 * ======================================================================
 
 $ifi %mode% == 'single'     $include './scripts/gams/solve_single.inc';
 $ifi %mode% == 'iterative'  $include './scripts/gams/solve_iterative.inc';
 
-PARAMETERS
-value_taxes(E)     'Value of energy taxes and ETS (EUR/year)'
-value_tariffs(E)   'Value of electricity tariffs (EUR/year)'
-value_support(E)   'Value of support schemes (EUR/year)'
-out_FPC_DH(G_HR)    'Fixed price component for DH (EUR/MWh)'
-out_FPC_HR(G_HR)    'Fixed price component for HR (EUR/MWh)'
-out_MPC_DH(T,G_HR)  'Marginal price component for DH (EUR/MWh)'
-out_MPC_HR(T,G_HR)  'Marginal price component for HR (EUR/MWh)'
-AP_DH(T,G_HR)       'Acceptable price for DH (EUR/MWh)'
-AP_HR(T,G_HR)       'Acceptable price for HR (EUR/MWh)'
-;
 
-out_FPC_DH(G_HR)    = EPS + MU_DH(G_HR);
-out_FPC_HR(G_HR)    = EPS + MU_HR(G_HR);
-out_MPC_DH(T,G_HR)  = EPS + MC_DH(T);
-out_MPC_HR(T,G_HR)  = EPS + MC_HR(T,G_HR);
-AP_DH(T,G_HR)       = EPS + MC_DH(T) - MU_DH(G_HR);
-AP_HR(T,G_HR)       = EPS + MC_HR(T,G_HR) + MU_HR(G_HR);
+* ======================================================================
+* OUTPUT
+* ======================================================================
+AskPrice(T,G_HR)        = EPS + AskPrice(T,G_HR);
+BidPrice(T,G_HR)        = EPS + BidPrice(T,G_HR);
+MarginalAsk(T,G_HR)     = EPS + MarginalAsk(T,G_HR);
+MarginalBid(T)          = EPS + MarginalBid(T);
+FixedAsk(G_HR)          = EPS + FixedAsk(G_HR);
+FixedBid(G_HR)          = EPS + FixedBid(G_HR);
+pi_h(T,G_HR)            = EPS + pi_h(T,G_HR);
 
-$ifi     %policytype% == 'socioeconomic' value_taxes('WHS')     = EPS;
-$ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = EPS + sum((T,G_WH,F)$GF(G_WH,F), x_f.l(T,G_WH,F) * (tax_fuel_f(F) + tax_fuel_g(G_WH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
-                                         value_taxes('DHN')     = EPS + sum((T,G_DH,F)$GF(G_DH,F), x_f.l(T,G_DH,F) * (tax_fuel_f(F) + tax_fuel_g(G_DH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
-
-$ifi     %policytype% == 'socioeconomic' value_tariffs('WHS')   = EPS;
-$ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = EPS + sum((T,G_WH,F)$(GF(G_WH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_WH,F)) + sum(F, tariff_c(F) * y_f_used.l('WHS',F));
-                                         value_tariffs('DHN')   = EPS + sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_DH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
-
-$ifi not %policytype% == 'support'       value_support(E)       = EPS;
-$ifi     %policytype% == 'support'       $include './scripts/gams/value_policy.inc';
-
-execute_unload './results/%project%/%scenario%/results-%scenario%-integrated.gdx'
-,
+execute_unload './results/%project%/%scenario%/results-%scenario%-integrated.gdx',
 $ifi %mode% == 'iterative' log_n,
-NPV_all, OPX, WH_trnsctn, NPV, x_f, x_h, x_e, x_c, w, z, y_hr, y_f_used, x_s,
-value_taxes, value_tariffs, value_support, out_FPC_DH, out_FPC_HR, out_MPC_DH, out_MPC_HR, AP_DH, AP_HR
+NPV_all, NPV, OPX, CAPEX, WH_transaction,
+x_f, x_h, x_e, x_c, w, z, y_hr, y_f_used, x_s
+pi_h, AskPrice, BidPrice, MarginalAsk, MarginalBid, FixedAsk, FixedBid
 ;
+
+
 * ======================================================================
 * END OF FILE

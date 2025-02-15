@@ -27,18 +27,18 @@ option EpsToZero = on   !! Outputs Eps values as zero
 *  SCRIPT CONTROL (Commented if running from run.gms):
 * ======================================================================
 * * ----- Control flags -----
-* * Set default values if script not called from integrated model nor command line
-* $ifi not set project    $setlocal project       'default_prj'
-* $ifi not set scenario   $setlocal scenario      'default_scn'
-* $ifi not set policytype $setlocal policytype    'taxation'
-* $ifi not set country    $setlocal country       'DK'
+* * Set default values if script not called from another script or command line
+* $ifi not setglobal project    $setGlobal project      'default_prj'
+* $ifi not setglobal scenario   $setGlobal scenario     'default_scn'
+* $ifi not setglobal policytype $setGlobal policytype   'taxation'
+* $ifi not setglobal country    $setGlobal country      'DK'
 
 * * ----- Directories, filenames, and scripts -----
 * * Create directories for output if script not called from integrated model nor command line
 * $ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
 * $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
 
-* $call gams ./scripts/gams/parameters.gms      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
+* $call gams ./scripts/gams/parameters  --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
 
 * ======================================================================
 * SCALARS
@@ -252,27 +252,14 @@ mdl_all             'DHN and WHS'       !! Each entity is independent of the oth
 
 
 * ======================================================================
-* SOLVE AND POST-PROCESSING
+* SOLVE
 * ======================================================================
 solve mdl_all using mip minimizing obj;
 
 
-PARAMETERS
-value_taxes(E)     'Value of energy taxes and ETS (EUR/year)'
-value_tariffs(E)   'Value of electricity tariffs (EUR/year)'
-value_support(E)   'Value of support schemes (EUR/year)'
-;
-
-$ifi     %policytype% == 'socioeconomic' value_taxes('WHS')     = EPS;
-$ifi not %policytype% == 'socioeconomic' value_taxes('WHS')     = EPS + sum((T,G_WH,F)$GF(G_WH,F), x_f.l(T,G_WH,F) * (tax_fuel_f(F) + tax_fuel_g(G_WH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
-                                         value_taxes('DHN')     = EPS + sum((T,G_DH,F)$GF(G_DH,F), x_f.l(T,G_DH,F) * (tax_fuel_f(F) + tax_fuel_g(G_DH) + pi_q*qc_f(T,F)$(NOT F_EL(F))));
-
-$ifi     %policytype% == 'socioeconomic' value_tariffs('WHS')   = EPS;
-$ifi not %policytype% == 'socioeconomic' value_tariffs('WHS')   = EPS + sum((T,G_WH,F)$(GF(G_WH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_WH,F)) + sum(F, tariff_c(F) * y_f_used.l('WHS',F));
-                                         value_tariffs('DHN')   = EPS + sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * x_f.l(T,G_DH,F)) + sum(F, tariff_c(F) * y_f_used.l('DHN',F));
-
-value_support(E)       = EPS;
-
+* ======================================================================
+* OUTPUT
+* ======================================================================
 * The following is transfered to the integrated model
 PARAMETERS
 MarginalCostDHN_Ref(T)      'Reference marginal cost of DHN (EUR/MWh)'
@@ -282,26 +269,25 @@ Emissions_Ref(T)            'Reference CO2 emissions per heat production (kg/MWh
 HeatProd_Ref(T,G_DH)        'Reference heat production (MWh)'
 ColdProd_Ref(T,G_WH)        'Reference cold production (MWh)'
 StorageProd_Ref(T,S,SS)     'Reference storage operation (MWh)'
+StorageLevel_Ref(T,S)       'Reference storage level (MWh)'
 ;
 
 MarginalCostDHN_Ref(T)      = EPS + eq_load_heat.m(T);
-MarginalCostWHS_Ref(T)      = EPS + sum((G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f.L(T,G_CO,F) + C_c(G_CO) * x_c.L(T,G_CO))/D_c(T);
+MarginalCostWHS_Ref(T)      = EPS + sum((G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f.L(T,G_CO,F) + C_c(G_CO) * x_c.L(T,G_CO))/D_c(T); !! Actually average cost, but doenst matter here
 OperationalCost_Ref(E)      = EPS + OPX.l(E);
 Emissions_Ref(T)            = EPS + sum((G,F)$GF(G,F), w.l(T,G,F))/D_h(T);
 HeatProd_Ref(T,G_DH)        = EPS + x_h.l(T,G_DH);
 ColdProd_Ref(T,G_WH)        = EPS + x_c.l(T,G_WH);
 StorageProd_Ref(T,S,SS)     = EPS + x_s.l(T,S,SS);
+StorageLevel_Ref(T,S)       = EPS + z.l(T,S);
 
-execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx'
-,
-obj, OPX, x_f, x_h, x_e, x_c, w, z, y_f_used, x_s,
-value_taxes, value_tariffs, value_support
+execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx',
+obj, OPX, x_f, x_h, x_e, x_c, w, z, y_f_used, x_s
 ;
 
 execute_unload  './results/%project%/%scenario%/transfer-%scenario%-reference.gdx',
-MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, Emissions_Ref, HeatProd_Ref, ColdProd_Ref, StorageProd_Ref
+MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, Emissions_Ref, HeatProd_Ref, ColdProd_Ref, StorageProd_Ref, StorageLevel_Ref
 ;
-
 
 
 * ======================================================================

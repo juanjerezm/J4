@@ -36,6 +36,8 @@ def summarize_results(scenario: Scenario) -> pd.DataFrame:
         pd.DataFrame: The summarized results.
     """
     df = scenario.results
+    # rename columns CASE to case and value to level
+    df = df.rename(columns={"CASE": "case", "value": "level"})
 
     df["level"] = df["level"] * SCALE
     df['level'] = df['level'].round(6) # just to remove any negligible difference
@@ -46,7 +48,6 @@ def summarize_results(scenario: Scenario) -> pd.DataFrame:
     df["policy"] = pd.Categorical(df["policy"], categories=cfg.POLICIES.values(), ordered=True)  # .values() if renamed, .keys() if not
 
     # Clean up
-    df = df.drop(columns=["case"])
     df = df[["country", "policy", "E", "level"]]
 
     scenario.results = df
@@ -56,7 +57,7 @@ def summarize_results(scenario: Scenario) -> pd.DataFrame:
 
 
 # ----- Main -----
-def main():
+def plot_NPV():
 
     scenarios = utils.read_scenarios(SCENARIO_PARAMETERS)
     for scenario in scenarios:
@@ -115,11 +116,11 @@ def main():
 
 if __name__ == "__main__":
 
-    PROJECT = "BASE"
-    SCENARIO_PARAMETERS = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
+    PROJECT = "NEWOUTPUT"
+    SCENARIO_PARAMETERS = f"data/{PROJECT}/scenario_parameters.csv"
 
-    SAVE = True
-    SHOW = False
+    SAVE = False
+    SHOW = True
 
     VAR = "NPV"
     SCALE = 1e-6  # M€/€
@@ -142,4 +143,4 @@ if __name__ == "__main__":
     )
 
 
-    main()
+    plot_NPV()

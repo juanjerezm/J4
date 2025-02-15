@@ -35,6 +35,9 @@ def summarize_results(scenario: Scenario) -> pd.DataFrame:
         pd.DataFrame: The summarized results.
     """
     df = scenario.results
+    # rename columns CASE to case and value to level
+    df = df.rename(columns={"CASE": "case", "value": "level"})
+
 
     # Map and rename fuels, aggregate and compute scaled differences
     df['F'] = df['G'].map(cfg.GenFuelMap)
@@ -58,7 +61,7 @@ def summarize_results(scenario: Scenario) -> pd.DataFrame:
 
 
 # ----- Main -----
-def main():
+def plot_ElectricityProduction():
 
     scenarios = utils.read_scenarios(SCENARIO_PARAMETERS)
     for scenario in scenarios:
@@ -110,13 +113,13 @@ def main():
 
 if __name__ == "__main__":
 
-    PROJECT = "BASE"
-    SCENARIO_PARAMETERS = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
+    PROJECT = "NEWOUTPUT"
+    SCENARIO_PARAMETERS = f"data/{PROJECT}/scenario_parameters.csv"
 
-    SAVE = True
-    SHOW = False
+    SAVE = False
+    SHOW = True
 
-    VAR = "x_e"
+    VAR = "ElectricityProduction"
     SCALE = 1e-3  # GWh/MWh
 
     FIGSIZE = (8.5, 9) # width, heigth in cm
@@ -137,4 +140,4 @@ if __name__ == "__main__":
     )
 
 
-    main()
+    plot_ElectricityProduction()

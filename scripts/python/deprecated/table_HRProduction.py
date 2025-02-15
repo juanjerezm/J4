@@ -8,8 +8,14 @@ from utilities import Scenario
 
 def summarize_results(scenario: Scenario) -> pd.DataFrame:
     df = scenario.results
+    # rename columns CASE to case and value to level
+    df = df.rename(columns={"CASE": "case", "value": "level"})
+
+    df = utils.aggregate(df, ["case", "G"], ["level"])
+    df = utils.diff(df, "case", "reference", "level")
+    df = utils.filter(df, include={"G": "HR_DC"})
     df["level"] = df["level"] * SCALE
-    df["level"] = df["level"].round(1)
+    df["level"] = df["level"].round(2)
 
     # Assign country and policy data
     df = df.assign(country=scenario.country, policy=scenario.policy)
@@ -46,16 +52,16 @@ def main(file):
 
 
 if __name__ == "__main__":
-    PROJECT = "BASE"
-    SCENARIO_PARAMETERS = f"data/{PROJECT}/{PROJECT}_scnpars.csv"
+    PROJECT = "NEWOUTPUT"
+    SCENARIO_PARAMETERS = f"data/{PROJECT}/scenario_parameters.csv"
 
-    SAVE = True
+    SAVE = False
     SHOW = True
 
-    VAR = "y_hr"
-    SCALE = 1  # MW/MW
+    VAR = "HeatProduction"
+    SCALE = 1e-3 # MWh/GWh
 
-    NAME = "HRCapacity"
+    NAME = "HRProduction"
     OUTDIR = (
         Path.home()
         / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"

@@ -105,6 +105,50 @@ def gdxdf_par(
     return data_all
 
 
+def gdxdf_postprocess(
+    path: Union[str, Path],
+    parameters: Optional[List[str]] = None,
+) -> Dict[str, pd.DataFrame]:
+    """
+    Reads postprocessing GDX files from the specified paths, extracting either all parameters or those provided.
+    Returns a dictionary mapping parameter names to DataFrames.
+
+    Args:
+        paths (Union[List[str], List[Path]]): A list of file paths to GDX files.
+        parameters (Optional[List[str]]): A list of parameter names to read. If None, all parameters are read.
+
+    Returns:
+        Dict[str, pd.DataFrame]: A dictionary where keys are parameter names and values are corresponding DataFrames.
+        If a parameter is missing or has no data, an empty DataFrame is associated with it.
+    """
+    path = Path(path)
+
+    container = gt.Container(str(path))
+
+    data_all = dict()
+
+    if parameters is None:
+        spec_par = container.listParameters()
+    else:
+        spec_par = parameters
+
+    for par in spec_par:
+        try:
+            df_temp = container[par].records  # type: ignore
+        except KeyError:
+            print(f"KeyError: {par} not found in path")
+            continue
+        if df_temp is None:
+            print(f"Empty DataFrame for {par} in path")
+            continue
+
+        if par not in data_all:
+            data_all[par] = pd.DataFrame()
+        data_all[par] = pd.concat([data_all[par], df_temp])
+
+    return data_all
+
+
 # ========== data processing utilities ==========
 def filter(df: pd.DataFrame, include: dict = {}, exclude: dict = {}) -> pd.DataFrame:
     """

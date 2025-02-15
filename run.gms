@@ -108,6 +108,6 @@ $eval error_integrated errorLevel
 $if not %error_integrated%==0               $abort "model.gms did not execute successfully. Errorlevel: %error_integrated%"
 
 * post-processing
-* $call gams ./scripts/gams/post_processing   --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/post_processing.lst
-* $eval error_postprocessing errorLevel
-* $if not %error_postprocessing%==0           $abort "post_processing.gms did not execute successfully. Errorlevel: %error_postprocessing%"
+$call gams ./scripts/gams/postprocessing   --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/post_processing.lst
+$eval error_postprocessing errorLevel
+$if not %error_postprocessing%==0           $abort "post_processing.gms did not execute successfully. Errorlevel: %error_postprocessing%"

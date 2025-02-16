@@ -1,5 +1,6 @@
 # Standard library imports
 from pathlib import Path
+from pickle import FALSE
 
 # Third-party library imports
 import matplotlib.pyplot as plt
@@ -116,10 +117,10 @@ def main():
 
 if __name__ == "__main__":
 
-    PROJECT = "NEWOUTPUT"
+    PROJECT = "MAIN"
     SCENARIO_PARAMETERS = f"data/{PROJECT}/scenario_parameters.csv"
 
-    SAVE = False
+    SAVE = True
     SHOW = True
 
     VAR = "NPV"
@@ -129,17 +130,17 @@ if __name__ == "__main__":
     DPI = 900
 
     FORMAT_YAXIS = True
-    Y_RANGE = (0, 12)
-    Y_STEP = 3
+    Y_RANGE = (0, 14)
+    Y_STEP = 3.5
     Y_TITLE = "NPV [M€]"
 
     NAME = "NPV"
     OUTDIR = (
         Path.home()
         / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
-        / "diagrams"
-        / "plots"
+        / "consolidated results"
         / PROJECT
+        / "plots"
     )
 
 

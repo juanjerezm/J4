@@ -114,10 +114,10 @@ def main():
 
 if __name__ == "__main__":
 
-    PROJECT = "NEWOUTPUT"
+    PROJECT = "MAIN"
     SCENARIO_PARAMETERS = f"data/{PROJECT}/scenario_parameters.csv"
 
-    SAVE = False
+    SAVE = True
     SHOW = True
 
     VAR = "CarbonEmissions"
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     DPI = 900
 
     FORMAT_YAXIS = True
-    Y_RANGE = (-3, 0.5)
+    Y_RANGE = (-3.5, 0.5)
     Y_STEP = 0.5
     Y_TITLE = "Change in carbon emissions\n[kton/year]"
 
@@ -135,9 +135,9 @@ if __name__ == "__main__":
     OUTDIR = (
         Path.home()
         / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
-        / "diagrams"
-        / "plots"
+        / "consolidated results"
         / PROJECT
+        / "plots"
     )
 
 

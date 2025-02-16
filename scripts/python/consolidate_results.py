@@ -92,6 +92,7 @@ runs = [
 
     ('IRR',                     1e+0,   3),  # -
     ('PBT',                     1e+0,   2),  # years
+    ('FLH',                     1e+0,   0),  # hours
 
     ('CarbonEmissions',         1e+0,   0),  # kg
     ('HeatProduction',          1e+0,   2),  # MWh

@@ -1,4 +1,4 @@
-$ifi %country% == 'DE' k_inv_p          = 0.5;
+$ifi %country% == 'DE' k_inv_p          = 0.4;
 $ifi %country% == 'DE' k_inv_g(G_HR)    = 0.0;
 
 $ifi %country% == 'FR' k_inv_p          = 0.6;

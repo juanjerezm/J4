@@ -17,7 +17,9 @@ def summarize_results(scenario: Scenario, scale, decimals) -> pd.DataFrame:
     if "T" in df.columns:
         if var in var_reduced:
             # cols = [col for col in df.columns if col != "T"]
-            df = utils.aggregate(df, ['G', 'CASE'], ['value'])
+            # cols is all columns except T, and value
+            cols = [col for col in df.columns if col not in ["T", "value"]]
+            df = utils.aggregate(df, cols, ['value'])
 
     df["value"] = df["value"] * scale
     df['value'] = df['value'].round(decimals)
@@ -56,7 +58,7 @@ def table(var, scale, decimals):
     return df_all
 
 if __name__ == "__main__":
-    PROJECT = "NEWOUTPUT"
+    PROJECT = "MAIN"
     SCENARIO_SPECS = f"data/{PROJECT}/scenario_parameters.csv"
     
     OUTDIR = (
@@ -91,15 +93,15 @@ runs = [
     ('IRR',                     1e+0,   3),  # -
     ('PBT',                     1e+0,   2),  # years
 
-    ('CarbonEmissions',         1e+0,   0),  # ton
+    ('CarbonEmissions',         1e+0,   0),  # kg
     ('HeatProduction',          1e+0,   2),  # MWh
     ('ColdProduction',          1e+0,   2),  # MWh
     ('ElectricityProduction',   1e+0,   2),  # MWh
     ('FuelConsumption',         1e+0,   2),  # MWh
-    # ('StorageFlow',             1e+0,   2),  # MWh
-    # ('StorageLevel',            1e+0,   2),  # MWh
+  # ('StorageFlow',             1e+0,   2),  # MWh
+  # ('StorageLevel',            1e+0,   2),  # MWh
     ('HeatRecoveryCapacity',    1e+0,   2),  # MW
-    # ('FuelMaxCapacity',         1e+0,   2),  # MW
+  # ('FuelMaxCapacity',         1e+0,   2),  # MW
 ]
 
 # for these variables, we aggregate the results by summing over the time dimension, to save memory

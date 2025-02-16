@@ -28,5 +28,6 @@ def main(file):
         export_to_csv(scenario, results)
 
 if __name__ == "__main__":
-    scenario_parameters = 'data/NEWOUTPUT/scenario_parameters.csv'
+    PROJECT = "MAIN"
+    scenario_parameters = f'data/{PROJECT}/scenario_parameters.csv'
     main(scenario_parameters)

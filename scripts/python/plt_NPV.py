@@ -57,7 +57,7 @@ def summarize_results(scenario: Scenario) -> pd.DataFrame:
 
 
 # ----- Main -----
-def plot_NPV():
+def main():
 
     scenarios = utils.read_scenarios(SCENARIO_PARAMETERS)
     for scenario in scenarios:
@@ -143,4 +143,4 @@ if __name__ == "__main__":
     )
 
 
-    plot_NPV()
+    main()

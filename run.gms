@@ -73,8 +73,8 @@ $ifi not setglobal country  $SetGlobal country  'DK'
 *   - 'iterative'   solves the model iteratively, updating full-load hours
 
 * If running directly from GAMS UI (without specifying parameters), the default is as uncommented below
-* $ifi not setglobal mode     $SetGlobal mode 'single'         !! Choose between 'single' and 'iterative'
-$ifi not setglobal mode     $SetGlobal mode 'iterative'         !! Choose between 'single' and 'iterative'
+$ifi not setglobal mode     $SetGlobal mode 'single'         !! Choose between 'single' and 'iterative'
+* $ifi not setglobal mode     $SetGlobal mode 'iterative'         !! Choose between 'single' and 'iterative'
 
 
 * ======================================================================

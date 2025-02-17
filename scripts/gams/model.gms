@@ -382,8 +382,8 @@ FixedBid(G_HR)          = EPS + FixedBid(G_HR);
 pi_h(T,G_HR)            = EPS + pi_h(T,G_HR);
 
 execute_unload './results/%project%/%scenario%/results-%scenario%-integrated.gdx',
-$ifi %mode% == 'iterative' log_n, N
-NPV_all, NPV, OPX, CAPEX, WH_transaction,
+$ifi %mode% == 'iterative' log_n,
+NPV_all, NPV, OPX, CAPEX, WH_transaction, N
 x_f, x_h, x_e, x_c, w, z, y_hr, y_f_used, x_s
 pi_h, AskPrice, BidPrice, MarginalAsk, MarginalBid, FixedAsk, FixedBid
 ;

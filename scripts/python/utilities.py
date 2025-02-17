@@ -372,7 +372,7 @@ def output_table(
         print(df)
 
 
-def print_line(length: int = 50) -> None:
+def print_line(length: int = 50, character: str = '-') -> None:
     """
     Prints a horizontal line of a given length.
 
@@ -382,7 +382,7 @@ def print_line(length: int = 50) -> None:
     Returns:
         None
     """
-    print("-" * length)
+    print(character * length)
 
 
 def print_title(title: str) -> None:
@@ -395,9 +395,9 @@ def print_title(title: str) -> None:
     Returns:
         None
     """
-    print_line()
+    print_line(character='=')
     print(title)
-    print_line()
+    print_line(character='=')
 
 
 # ========== Scenario class ==========

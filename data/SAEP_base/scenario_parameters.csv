@@ -1,0 +1,10 @@
+project,name,country,policy
+SAEP_base,DEsoc,DE,socioeconomic
+SAEP_base,DEtax,DE,taxation
+SAEP_base,DEsup,DE,support
+SAEP_base,DKsoc,DK,socioeconomic
+SAEP_base,DKtax,DK,taxation
+SAEP_base,DKsup,DK,support
+SAEP_base,FRsoc,FR,socioeconomic
+SAEP_base,FRtax,FR,taxation
+SAEP_base,FRsup,FR,support

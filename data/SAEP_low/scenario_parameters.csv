@@ -1,0 +1,10 @@
+project,name,country,policy
+SAEP_low,DEsoc,DE,socioeconomic
+SAEP_low,DEtax,DE,taxation
+SAEP_low,DEsup,DE,support
+SAEP_low,DKsoc,DK,socioeconomic
+SAEP_low,DKtax,DK,taxation
+SAEP_low,DKsup,DK,support
+SAEP_low,FRsoc,FR,socioeconomic
+SAEP_low,FRtax,FR,taxation
+SAEP_low,FRsup,FR,support

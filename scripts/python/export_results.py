@@ -28,6 +28,16 @@ def main(file):
         export_to_csv(scenario, results)
 
 if __name__ == "__main__":
-    PROJECT = "MAIN"
-    scenario_parameters = f'data/{PROJECT}/scenario_parameters.csv'
-    main(scenario_parameters)
+
+    # ----- main analysis -----
+    projects = ["MAIN"]
+    
+    # ----- sensitivity analysis (discount rate) -----
+    # projects = ["SADR_00", "SADR_02", "SADR_04", "SADR_06", "SADR_08", "SADR_10", "SADR_12"]
+    
+    # ---- sensitivity analysis (electricity prices) -----
+    # projects = ["SAEP_low", "SAEP_base", "SAEP_high"]
+
+    for project in projects:
+        scenario_parameters = f"data/{project}/scenario_parameters.csv"
+        main(scenario_parameters)

@@ -126,7 +126,7 @@ if __name__ == "__main__":
     projects = ["MAIN"]
 
     # ----- sensitivity analysis (discount rate) -----
-    # projects = ["SADR_00", "SADR_02", "SADR_04", "SADR_06", "SADR_08", "SADR_10", "SADR_12"]
+    # projects = ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]
     # OUTDIR = OUTDIR / "SADR"
 
     # ---- sensitivity analysis (electricity prices) -----

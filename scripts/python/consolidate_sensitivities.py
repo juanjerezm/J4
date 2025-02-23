@@ -21,11 +21,12 @@ def main(projects, outdir):
 
 if __name__ == "__main__":
     SENSITIVITY = "discount rate"
+    # SENSITIVITY = "electricity prices"
 
     OUTDIR = Path.home() / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article/consolidated results"
 
     if SENSITIVITY == "discount rate":
-        projects = ["SADR_00", "SADR_02", "SADR_04", "SADR_06", "SADR_08", "SADR_10", "SADR_12"]
+        projects = ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]
         outdir = OUTDIR / "SADR"
 
     if SENSITIVITY == "electricity prices":

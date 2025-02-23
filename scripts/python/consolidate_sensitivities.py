@@ -2,7 +2,7 @@
 from pathlib import Path
 import pandas as pd
 
-METRICS = ['NPV_all', 'HeatProduction']
+METRICS = ['NPV_all', 'HeatProduction', 'HeatRecoveryCapacity']
 
 def main(projects, outdir):
     for metric in METRICS:
@@ -11,7 +11,7 @@ def main(projects, outdir):
         merged_df = pd.DataFrame()
         for project, path in zip(projects, paths):
             df = pd.read_csv(path)
-            df.insert(0, 'Project', project)
+            df.insert(0, 'project', project)
             merged_df = pd.concat([merged_df, df], ignore_index=True)
 
         output_path = outdir / f"consolidated-table-{metric}.csv"

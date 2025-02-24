@@ -1,5 +1,6 @@
 COUNTRIES = {"DK": "Denmark", "DE": "Germany", "FR": "France"}
 POLICIES = {"socioeconomic": "Technical", "taxation": "Taxation", "support": "Policy"}
+SAEP_PROJECTS = {'SAEP_low': 'Low\n(2020)', 'SAEP_base': 'Base\n(2023)', 'SAEP_high': 'High\n(2022)'}
 
 # ----- Mapping -----
 GenFuelMap = {

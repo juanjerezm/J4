@@ -10,13 +10,16 @@ plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.size"] = 8
 
 # ----- Function definitions -----
-def plot_sensitivity_NPV(file):
+def plot_sensitivity_heatproduction(file):
 
     data = pd.read_csv(file)
 
-    renames = {"country": cfg.COUNTRIES, "policy": cfg.POLICIES, 'project': cfg.SAEP_PROJECTS}
-    sorting = {"country": cfg.COUNTRIES.values(), "policy": cfg.POLICIES.values(), 'project': cfg.SAEP_PROJECTS.values()}
+    include = {"G": "HR_DC"}
+    renames = {"country": cfg.COUNTRIES, "policy": cfg.POLICIES}
+    sorting = {"country": cfg.COUNTRIES.values(), "policy": cfg.POLICIES.values()}
 
+    data = utils.filter(data, include=include)
+    data = utils.diff(data, "CASE", "reference", "value")
     data = utils.rename_values(data, renames)
     data["value"] = data["value"] * VALUE_SCALE
 
@@ -26,12 +29,9 @@ def plot_sensitivity_NPV(file):
     data["policy"] = pd.Categorical(
         data["policy"], categories=sorting["policy"], ordered=True
     )
-    data['project'] = pd.Categorical(
-        data['project'], categories=sorting["project"], ordered=True
-    )
 
     #sort data by country, project, and policy
-    data = data.sort_values(by=['country', 'project', 'policy'])
+    data = data.sort_values(by=['country', 'policy'])
 
     # outputting table
     utils.output_table(data, SHOW, SAVE, DIR / "plots", OUTNAME, ['country', 'project'], ['policy'], 'value')
@@ -49,32 +49,19 @@ def plot_sensitivity_NPV(file):
     for ax, country in zip(axes, cfg.COUNTRIES.values()):
         df = data[(data["country"] == country)]
         df = df.pivot(index="project", columns="policy", values="value")
-        # for policy in df.columns:
-        #     df[policy].plot(ax=ax, linewidth=0.75, marker=MARKERS[policy][0], markersize=MARKERS[policy][1], markerfacecolor='none', legend=False)
-
-        # Plotting each policy as a separate bar
-        bar_width = 0.25
-        x_indices = range(len(df.index))  # Indices for each project
-
-        for i, policy in enumerate(df.columns):
-            ax.bar(
-                [x + i * bar_width for x in x_indices],  # Bar positions
-                df[policy],  # Bar heights
-                width=bar_width,  # Bar width
-                label=policy,  # Label for legend
-            )
+        for policy in df.columns:
+            df[policy].plot(ax=ax, linewidth=0.75, marker=MARKERS[policy][0], markersize=MARKERS[policy][1], markerfacecolor='none', legend=False)
 
         ax.set_title(country, fontweight="bold")
 
     # x-axis formatting
     xticks = data["project"].unique()
-    x_indices = range(len(xticks))
-    ax.set_xticks([x + (len(df.columns) - 1) * bar_width / 2 for x in x_indices])
-    ax.set_xticklabels(xticks)
-    # ax.set_xticklabels([f"{int(x[4:])}" for x in xticks])
+    ax.set_xticks(range(len(xticks)))
+    ax.set_xticklabels([f"{int(x[4:])}%" for x in xticks])
+    ax.set_xlim([0, len(xticks) - 1])
     for ax in axes:
         ax.set_xlabel(X_LABEL)
-        # ax.grid(axis="x", linestyle="--", linewidth=0.5, alpha=0.5)
+        ax.grid(axis="x", linestyle="--", linewidth=0.5, alpha=0.5)
 
     # y-axis formatting
     if FORMATTED_YAXIS:
@@ -83,9 +70,8 @@ def plot_sensitivity_NPV(file):
         )
         ax.set_ylim([Y_VALUES["min"] - Y_VALUES["pad"], Y_VALUES["max"] + Y_VALUES["pad"]])
     for ax in axes:
-        # ax.set_ylabel(Y_LABEL)
+        ax.set_ylabel(Y_LABEL)
         ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.5)
-    axes[0].set_ylabel(Y_LABEL)
 
     # legend formatting
     (_, _, x_center), (y_down, _, _) = utils_plot.axes_coordinates(axes)
@@ -114,12 +100,12 @@ def plot_sensitivity_NPV(file):
     return
 
 if __name__ == "__main__":
-    SENSITIVITY = "SAEP"
+    SENSITIVITY = "SADR"
 
-    VAR = "NPV_all"
-    VALUE_SCALE = 1e-3  # k€ -> M€
-
-    OUTNAME = f"SAEP_NPV_Plot"
+    VAR = "HeatProduction"
+    VALUE_SCALE = 1e-3 # MWh -> GWh
+    
+    OUTNAME = f"SADR_HeatProduction_Plot"
     SHOW = False
     SAVE = True
 
@@ -134,9 +120,9 @@ if __name__ == "__main__":
     DPI = 900
 
     FORMATTED_YAXIS = True
-    Y_VALUES = {"min": 0, "max": 40, "step": 10, "pad": 0}
-    Y_LABEL = "NPV [M€]"
-    X_LABEL = "Electricity Price"
+    Y_VALUES = {"min": 0, "max": 30, "step": 5, "pad": 2.5}
+    Y_LABEL = "Heat-recovery output [GWh/year]"
+    X_LABEL = "Discount rate [%]"
 
     MARKERS = {
         "Technical": ("o", 4),    # Circle
@@ -144,4 +130,4 @@ if __name__ == "__main__":
         "Policy": ("s", 4)       # Square
     }
 
-    plot_sensitivity_NPV(DIR / f"consolidated-table-{VAR}.csv")
+    plot_sensitivity_heatproduction(DIR / f"consolidated-table-{VAR}.csv")

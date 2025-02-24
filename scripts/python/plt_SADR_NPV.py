@@ -1,155 +1,58 @@
-import csv
-import sys
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict, List
-
-import pandas as pd
-import plt_config as cfg
-import utilities as utils
-import utilities_plotting as utils_plot
 from matplotlib import pyplot as plt
+import pandas as pd
+from pathlib import Path
+import utilities as utils
+import plt_config as cfg
+import utilities_plotting as utils_plot
 
 # ----- Matplotlib settings -----
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.size"] = 8
 
+# ----- Function definitions -----
+def plot_sensitivity_NPV(file):
 
-@dataclass
-class ScenarioParams:
-    """
-    Represents the parameters for a scenario.
+    data = pd.read_csv(file)
 
-    Attributes:
-        name (str): The name of the scenario.
-        project (str): The project associated with the scenario.
-        country (str): The country associated with the scenario.
-        policy (str): The policy associated with the scenario.
-    """
+    renames = {"country": cfg.COUNTRIES, "policy": cfg.POLICIES}
+    sorting = {"country": cfg.COUNTRIES.values(), "policy": cfg.POLICIES.values()}
 
-    project: str
-    name: str
-    country: str
-    policy: str
-    dir: Path = field(init=False)
-    data: pd.DataFrame = field(init=False)
+    data = utils.rename_values(data, renames)
+    data["value"] = data["value"] * VALUE_SCALE
 
-    def __post_init__(self):
-        self.dir = Path("results") / self.project / self.name / "csv"
+    data["country"] = pd.Categorical(
+        data["country"], categories=sorting["country"], ordered=True
+    )
+    data["policy"] = pd.Categorical(
+        data["policy"], categories=sorting["policy"], ordered=True
+    )
 
-    def __str__(self) -> str:
-        return f"- Scenario {self.name}: country={self.country}, policy={self.policy}"
+    #sort data by country, project, and policy
+    data = data.sort_values(by=['country', 'policy'])
 
-    def get_data(self, var: str) -> None:
-        file = self.dir / f"{var}.csv"
-        self.data = pd.read_csv(file)
-        return
-
-    def process_data(self) -> None:
-        df = self.data
-        df["level"] = df["level"] * VALUE_SCALING
-        df["level"] = df["level"].round(2)
-
-        # Assign country and policy data
-        df = df.assign(project=self.project, country=self.country, policy=self.policy)
-        df = utils.rename_values(df, {"policy": cfg.POLICIES})
-        df["policy"] = pd.Categorical(
-            df["policy"], categories=cfg.POLICIES.values(), ordered=True  # type: ignore
-        )  # .values() if renamed, .keys() if not
-
-        # Clean up
-        df = df.drop(columns=["case"])
-        df = df[["project", "country", "policy", "level"]]
-        self.data = df
-        return
-
-
-def load_scenario_params(file_path: Path) -> List[ScenarioParams]:
-    """Read scenario parameters from a csv-file and return a list of ScenarioParams objects."""
-    scenarios = []
-    with open(file_path, "r") as file:
-        delimiter = csv.Sniffer().sniff(file.read()).delimiter
-        file.seek(0)
-        reader = csv.DictReader(file, delimiter=delimiter)
-        for row_number, row in enumerate(
-            reader, start=2
-        ):  # Start from 2, skipping header row
-            validate_row(row, row_number)
-            scenario = ScenarioParams(**row)
-            scenarios.append(scenario)
-    return scenarios
-
-
-def validate_row(row: Dict[str, str], row_number: int) -> None:
-    """Validate that rows are not empty and do not contain missing values."""
-    if not any(row.values()):
-        raise ValueError(f"Empty line detected at row {row_number}")
-    if not all(row.values()):
-        raise ValueError(f"Missing value in row {row_number}: {row}")
-
-
-def check_file_exist(file_path: Path) -> None:
-    """Check if the input csv-file exists."""
-    if not file_path.is_file():
-        sys.exit("ERROR: Input csv-file not found, script has stopped.")
-
-
-def summary_csv(df: pd.DataFrame, save: bool = False, outdir: Path = Path.cwd(), filename: str = '') -> None:
-    df = df.copy()
-    df['level'] = df['level'].round(3)
-    df["project"] = df["project"].apply(lambda x: f"{int(x[4:]):02d}%")
-    df = df.pivot(index=["country", "project"], columns="policy", values="level")
-    df.rename_axis(index={"project": "discount rate"}, inplace=True)
-
-    print(df)
-
-    if save:
-        if not filename:
-            raise ValueError("The 'filename' parameter is required when save=True.")
-        
-        outdir.mkdir(parents=True, exist_ok=True)
-        output_path = outdir / f"{filename}.csv"
-        df.to_csv(output_path)
-        print(f"-> File saved to {output_path}")
-
-    return
-
-def main(param_files, var):
-    scenarios = []
-
-    # collecting data
-    for project in param_files:
-        check_file_exist(Path(project))
-        scenarios += load_scenario_params(Path(project))
-
-        for scenario in scenarios:
-            scenario.get_data(var)
-            scenario.process_data()
-
-    df = pd.concat([scenario.data for scenario in scenarios], ignore_index=True)
-    df = utils.rename_values(df, {"country": cfg.COUNTRIES})
-
-    summary_csv(df, save=True, outdir=OUTDIR / "plot-tables", filename="table-SADR-NPV")
+    # outputting table
+    utils.output_table(data, SHOW, SAVE, DIR / "plots", OUTNAME, ['country', 'project'], ['policy'], 'value')
 
     # creating figure
     fig, axes = plt.subplots(
         1,
         3,
-        figsize=(FIGSIZE["width"] / 2.54, FIGSIZE["height"] / 2.54),
+        figsize=(FIGSIZE[0] / 2.54, FIGSIZE[1] / 2.54),
         sharey=True,
         sharex=True,
     )
 
     # drawing subplots
     for ax, country in zip(axes, cfg.COUNTRIES.values()):
-        data = df[(df["country"] == country)]
-        data = data.pivot(index="project", columns="policy", values="level")
-        for policy in data.columns:
-            data[policy].plot(ax=ax, linewidth=0.75, marker=MARKERS[policy][0], markersize=MARKERS[policy][1], legend=False)
+        df = data[(data["country"] == country)]
+        df = df.pivot(index="project", columns="policy", values="value")
+        for policy in df.columns:
+            df[policy].plot(ax=ax, linewidth=0.75, marker=MARKERS[policy][0], markersize=MARKERS[policy][1], markerfacecolor='none', legend=False)
+
         ax.set_title(country, fontweight="bold")
 
     # x-axis formatting
-    xticks = df["project"].unique()
+    xticks = data["project"].unique()
     ax.set_xticks(range(len(xticks)))
     ax.set_xticklabels([f"{int(x[4:])}%" for x in xticks])
     ax.set_xlim([0, len(xticks) - 1])
@@ -188,26 +91,30 @@ def main(param_files, var):
 
     # output
     utils_plot.output_plot(
-        show=SHOW, save=SAVE, outdir=OUTDIR, plotname=PLOTNAME, dpi=DPI
+        show=SHOW, save=SAVE, outdir=DIR / "plots", plotname=OUTNAME, dpi=DPI
     )
 
+    return
 
 if __name__ == "__main__":
-    SAVE = True
-    SHOW = False
+    SENSITIVITY = "SADR"
 
-    PLOTNAME = "SensitivityDR_NPV"
-    OUTDIR = (
+    VAR = "NPV_all"
+    VALUE_SCALE = 1e-3  # k€ -> M€
+
+    OUTNAME = f"SADR_NPV_Plot"
+    SHOW = False
+    SAVE = True
+
+    DIR = (
         Path.home()
         / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
-        / "diagrams"
-        / "plots"
+        / "consolidated results"
+        / SENSITIVITY
     )
 
-    FIGSIZE = {"width": 16, "height": 7}  # cm
+    FIGSIZE = (16, 7)  # width, height in cm
     DPI = 900
-
-    VALUE_SCALING = 1e-6  # M€/€
 
     FORMATTED_YAXIS = True
     Y_VALUES = {"min": 0, "max": 50, "step": 10, "pad": 2.5}
@@ -217,10 +124,7 @@ if __name__ == "__main__":
     MARKERS = {
         "Technical": ("o", 4),    # Circle
         "Taxation": ("^", 4),     # Triangle
-        "Support": ("s", 4)       # Square
+        "Policy": ("s", 4)       # Square
     }
 
-    runs = ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]
-    param_files = [f"data/{run}/{run}_scnpars.csv" for run in runs]
-
-    main(param_files, "NPV_all")
+    plot_sensitivity_NPV(DIR / f"consolidated-table-{VAR}.csv")

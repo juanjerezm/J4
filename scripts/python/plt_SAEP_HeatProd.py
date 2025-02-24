@@ -10,13 +10,16 @@ plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.size"] = 8
 
 # ----- Function definitions -----
-def plot_sensitivity_NPV(file):
+def plot_sensitivity_heatproduction(file):
 
     data = pd.read_csv(file)
 
+    include = {"G": "HR_DC"}
     renames = {"country": cfg.COUNTRIES, "policy": cfg.POLICIES, 'project': cfg.SAEP_PROJECTS}
     sorting = {"country": cfg.COUNTRIES.values(), "policy": cfg.POLICIES.values(), 'project': cfg.SAEP_PROJECTS.values()}
 
+    data = utils.filter(data, include=include)
+    data = utils.diff(data, "CASE", "reference", "value")
     data = utils.rename_values(data, renames)
     data["value"] = data["value"] * VALUE_SCALE
 
@@ -48,6 +51,10 @@ def plot_sensitivity_NPV(file):
     # drawing subplots
     for ax, country in zip(axes, cfg.COUNTRIES.values()):
         df = data[(data["country"] == country)]
+        df['project'] = pd.Categorical(
+            df['project'], categories=sorting["project"], ordered=True
+        )
+
         df = df.pivot(index="project", columns="policy", values="value")
         # for policy in df.columns:
         #     df[policy].plot(ax=ax, linewidth=0.75, marker=MARKERS[policy][0], markersize=MARKERS[policy][1], markerfacecolor='none', legend=False)
@@ -116,10 +123,10 @@ def plot_sensitivity_NPV(file):
 if __name__ == "__main__":
     SENSITIVITY = "SAEP"
 
-    VAR = "NPV_all"
-    VALUE_SCALE = 1e-3  # k€ -> M€
+    VAR = "HeatProduction"
+    VALUE_SCALE = 1e-3  # MWh -> GWh
 
-    OUTNAME = f"SAEP_NPV_Plot"
+    OUTNAME = f"SAEP_HeatProduction_Plot"
     SHOW = False
     SAVE = True
 
@@ -134,8 +141,8 @@ if __name__ == "__main__":
     DPI = 900
 
     FORMATTED_YAXIS = True
-    Y_VALUES = {"min": 0, "max": 40, "step": 10, "pad": 0}
-    Y_LABEL = "NPV [M€]"
+    Y_VALUES = {"min": 0, "max": 35, "step": 5, "pad": 0}
+    Y_LABEL = "Heat-recovery output [GWh/year]"
     X_LABEL = "Electricity Price"
 
     MARKERS = {
@@ -144,4 +151,4 @@ if __name__ == "__main__":
         "Policy": ("s", 4)       # Square
     }
 
-    plot_sensitivity_NPV(DIR / f"consolidated-table-{VAR}.csv")
+    plot_sensitivity_heatproduction(DIR / f"consolidated-table-{VAR}.csv")

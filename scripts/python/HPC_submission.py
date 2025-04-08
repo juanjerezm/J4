@@ -149,12 +149,14 @@ def job_creation(scenario: ScenarioParams) -> None:
     Returns:
         None
     """
+    email_line = f"#BSUB -u {cfg['email']}" if cfg["email"] else ""
     job_content = load_template().safe_substitute(
         project=scenario.project,
         scenario=scenario.name,
         country=scenario.country,
         policytype=scenario.policy,
         base_dir=cfg["base_path"].as_posix(),
+        email_line=email_line,
     )
 
     with scenario.jobscript.open(mode="w+") as file:
@@ -210,6 +212,12 @@ def parse_args():
         help="Maximum number of runs allowed",
     )
     parser.add_argument(
+        "--email",
+        type=str,
+        default=None,
+        help="Non-default email address for job notifications",
+    )
+    parser.add_argument(
         "--submit",
         action="store_true",
         default=cfg["opt_submit"],
@@ -225,6 +233,7 @@ def parse_args():
             "template_path": Path(args.template_path),
             "max_runs": args.max_runs,
             "opt_submit": args.submit,
+            "email": args.email,
         }
     )
 

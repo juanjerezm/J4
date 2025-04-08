@@ -8,13 +8,14 @@
     #BSUB -R "span[hosts=1]"
     #BSUB -R "rusage[mem=8GB]"
     #BSUB -M 8GB
-    #BSUB -W 04:00 
+    #BSUB -W 04:00
 
-    #BSUB -B 
-    #BSUB -N 
+    #BSUB -B
+    #BSUB -N
+    ${email_line}
 
-    #BSUB -oo ${base_dir}/results/${project}/${scenario}/Output_%J.out 
-    #BSUB -eo ${base_dir}/results/${project}/${scenario}/Error_%J.err 
+    #BSUB -oo ${base_dir}/results/${project}/${scenario}/Output_%J.out
+    #BSUB -eo ${base_dir}/results/${project}/${scenario}/Error_%J.err
         
     ### Get paths to GAMS 37
     export PATH=/appl/gams/37.1.0:$PATH

@@ -72,9 +72,9 @@ $ifi not setglobal country  $SetGlobal country  'DK'
 *   - 'single'      solves the model once, using assumed full-load hours
 *   - 'iterative'   solves the model iteratively, updating full-load hours
 
-* If running directly from GAMS UI (without specifying parameters), the default is as uncommented below
-$ifi not setglobal mode     $SetGlobal mode 'single'         !! Choose between 'single' and 'iterative'
-* $ifi not setglobal mode     $SetGlobal mode 'iterative'         !! Choose between 'single' and 'iterative'
+* Default is as uncommented below, if not specified in the HPC submission file (current case), command line, or GAMS parameter UI
+* $ifi not setglobal mode     $SetGlobal mode 'single'         !! Choose between 'single' and 'iterative'
+$ifi not setglobal mode     $SetGlobal mode 'iterative'         !! Choose between 'single' and 'iterative'
 
 
 * ======================================================================

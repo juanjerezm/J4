@@ -134,7 +134,7 @@ if __name__ == "__main__":
     NAME = "HeatChange"
     OUTDIR = (
         Path.home()
-        / "OneDrive - Danmarks Tekniske Universitet/Papers/J4 - article"
+        / "PhD/OneDrive/Papers/J4 - article"
         / "consolidated results"
         / PROJECT
         / "plots"

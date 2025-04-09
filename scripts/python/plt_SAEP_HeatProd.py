@@ -127,7 +127,7 @@ if __name__ == "__main__":
     VALUE_SCALE = 1e-3  # MWh -> GWh
 
     OUTNAME = f"SAEP_HeatProduction_Plot"
-    SHOW = False
+    SHOW = True
     SAVE = True
 
     DIR = (

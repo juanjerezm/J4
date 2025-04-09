@@ -120,7 +120,7 @@ if __name__ == "__main__":
     VALUE_SCALE = 1e-3  # k€ -> M€
 
     OUTNAME = f"SAEP_NPV_Plot"
-    SHOW = False
+    SHOW = True
     SAVE = True
 
     DIR = (

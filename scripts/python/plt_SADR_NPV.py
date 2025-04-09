@@ -100,7 +100,7 @@ if __name__ == "__main__":
     SENSITIVITY = "SADR"
 
     VAR = "NPV_all"
-    VALUE_SCALE = 1e-3  # k€ -> M€
+    VALUE_SCALE = 1e-6  # € -> M€
 
     OUTNAME = f"SADR_NPV_Plot"
     SHOW = True

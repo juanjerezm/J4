@@ -14,10 +14,10 @@ from utilities import Scenario
 
 # specify the metrics to be consolidated, the scale factor, number of decimals, and whether the results are aggregated across timesteps
 METRIC_PARAMETERS = [
-    ("ETSQuota", 1e-3, 3, False),  # €->k€
-    ("Tariffs", 1e-3, 3, False),  # €->k€
-    ("Taxes", 1e-3, 3, False),  # €->k€
-    ("Support", 1e-3, 3, False),  # €->k€
+    ("ETSQuota", 1e0, 0, False),  # €->€
+    ("Tariffs", 1e0, 0, False),  # €->€
+    ("Taxes", 1e0, 0, False),  # €->€
+    ("Support", 1e0, 0, False),  # €->€
     ("WasteHeatPrice", 1e0, 2, False),  # €/MWh
     ("AskPrice", 1e0, 2, False),  # €/MWh
     ("BidPrice", 1e0, 2, False),  # €/MWh
@@ -25,12 +25,12 @@ METRIC_PARAMETERS = [
     ("FixedBid", 1e0, 2, False),  # €/MWh
     ("MarginalAsk", 1e0, 2, False),  # €/MWh
     ("MarginalBid", 1e0, 2, False),  # €/MWh
-    ("CAPEX", 1e-3, 3, False),  # €->k€
-    ("NPV", 1e-3, 3, False),  # €->k€
-    ("NPV_all", 1e-3, 3, False),  # €->k€
-    ("OPEX", 1e-3, 3, False),  # €->k€
-    ("OPEX_Savings", 1e-3, 3, False),  # €->k€
-    ("WH_transaction", 1e-3, 3, False),  # €->k€
+    ("CAPEX", 1e0, 0, False),  # €->€
+    ("NPV", 1e0, 0, False),  # €->€
+    ("NPV_all", 1e0, 0, False),  # €->€
+    ("OPEX", 1e0, 0, False),  # €->€
+    ("OPEX_Savings", 1e0, 0, False),  # €->€
+    ("WH_transaction", 1e0, 0, False),  # €->€
     ("IRR", 1e0, 3, False),  # -
     ("PBT", 1e0, 2, False),  # years
     ("FLH", 1e0, 0, False),  # hours

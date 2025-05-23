@@ -1,8 +1,12 @@
 ## ----- Project specific ----- ##
 # Result files
-/results/*
-/results-old-desktop/*
-/results-old-laptop/*
+results/**
+!results/**/
+# Allow .csv and .gdx files in results folder and subfolders
+!results/**/*.csv
+!results/**/*.gdx
+
+
 !/results/.gitkeep
 
 # Gams files

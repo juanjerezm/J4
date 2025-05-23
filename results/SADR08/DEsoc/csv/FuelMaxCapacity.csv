@@ -1,0 +1,45 @@
+E,F,CASE,value
+DHN,biogas,integrated,13.0
+DHN,biogas,reference,13.0
+DHN,coal,integrated,595.0
+DHN,coal,reference,595.0
+DHN,electricity,integrated,127.0
+DHN,electricity,reference,127.0
+DHN,excess heat,integrated,8.0
+DHN,excess heat,reference,8.0
+DHN,fuel oil,integrated,20.0
+DHN,fuel oil,reference,20.0
+DHN,gas oil,integrated,0.0
+DHN,gas oil,reference,0.0
+DHN,municipal waste,integrated,559.0
+DHN,municipal waste,reference,559.0
+DHN,natural gas,integrated,1025.5466209050576
+DHN,natural gas,reference,1030.8805788715538
+DHN,wood chips,integrated,603.0
+DHN,wood chips,reference,603.0
+DHN,wood pellets,integrated,2154.0
+DHN,wood pellets,reference,2154.0
+DHN,wood waste,integrated,14.0
+DHN,wood waste,reference,14.0
+WHS,biogas,integrated,0.0
+WHS,biogas,reference,0.0
+WHS,coal,integrated,0.0
+WHS,coal,reference,0.0
+WHS,electricity,integrated,1.697156716236693
+WHS,electricity,reference,1.2387736141220191
+WHS,excess heat,integrated,0.0
+WHS,excess heat,reference,0.0
+WHS,fuel oil,integrated,0.0
+WHS,fuel oil,reference,0.0
+WHS,gas oil,integrated,0.0
+WHS,gas oil,reference,0.0
+WHS,municipal waste,integrated,0.0
+WHS,municipal waste,reference,0.0
+WHS,natural gas,integrated,0.0
+WHS,natural gas,reference,0.0
+WHS,wood chips,integrated,0.0
+WHS,wood chips,reference,0.0
+WHS,wood pellets,integrated,0.0
+WHS,wood pellets,reference,0.0
+WHS,wood waste,integrated,0.0
+WHS,wood waste,reference,0.0

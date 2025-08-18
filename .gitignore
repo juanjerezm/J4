@@ -2,12 +2,12 @@
 # Result files
 results/**
 !results/**/
+!/results/.gitkeep
+
 # Allow .csv and .gdx files in results folder and subfolders
 !results/**/*.csv
 !results/**/*.gdx
 
-
-!/results/.gitkeep
 
 # Gams files
 *.log~*
@@ -19,6 +19,9 @@ results/**
 
 # VS Code
 .vscode/
+
+# MacOS
+.DS_Store
 
 ## ----- End of project specific ----- ##
 

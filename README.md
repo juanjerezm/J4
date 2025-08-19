@@ -1,14 +1,10 @@
-# J4
- Regulation for excess heat
-# Install 
+# J4 -  Regulation for Excess Heat
 
-1. Create the and Activate the Conda Environment, installing packages from the environment.yml file:
-```
-conda env create -f environment.yml
-conda activate myenv
-```
+Installation:
 
-2. Install GAMS python API from the requirements.txt file:
-```
-pip install -r requirements.txt
-```
+1. Create and activate the Conda Environment, installing packages from the environment.yml file:
+
+    ```bash
+    conda env create -f environment.yml
+    conda activate myenv
+    ```

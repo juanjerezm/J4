@@ -1,0 +1,21 @@
+[project]
+name = "J4"
+version = "0.1.0"
+description = "Policy effects on WHR recovery"
+authors = [
+	{ name = "Juan Jerez", email = "juanjerezmonsalves@gmail.com" }
+]
+license = {file = "LICENSE"}
+
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "pandas",
+    "matplotlib",
+]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.format]
+docstring-code-format = true

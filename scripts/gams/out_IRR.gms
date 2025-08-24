@@ -43,7 +43,7 @@ IRR_High = 1;
 loop(ITER,
     
     if (sum(G_HR, HeatRecoveryCapacity(G_HR,'integrated')) < tolerance,
-        display "No investment for DHN";
+        display "No investment for WHS";
         break;
     );
 

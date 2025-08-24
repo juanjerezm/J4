@@ -154,6 +154,7 @@ eta_s(S)                'Storage throughput efficiency (-)'
 
 k_inv_g(G)              'Investment subsidy fraction for HR units (-)'
 k_inv_p                 'Investment subsidy fraction for connection pipe (-)'
+k_op_g(T,G)             'Operating subsidy for HR units (EUR/MWh-out)'
 pi_h_ceil(G)            'Waste-heat ceiling price (EUR/MWh)'
 ;
 
@@ -169,7 +170,7 @@ $load C_p_inv, L_p, rho_g                                                       
 $load C_f, pi_f, qc_f, pi_q, pi_e, qc_e                                         !! Load fuel parameters
 $load tax_fuel_f, tariff_c, tariff_v, tax_fuel_g                                !! Load tax-and-tariff parameters
 $load C_s, Y_s, eta_s, rho_s, F_s_flo, F_s_end, F_s_min, F_s_max                !! Load storage parameters
-$load k_inv_g, k_inv_p, pi_h_ceil                                               !! Load policy parameters
+$load k_inv_g, k_inv_p, k_op_g, pi_h_ceil                                       !! Load policy parameters
 $gdxin
 
 * - Parameters from the reference case -
@@ -189,7 +190,7 @@ $gdxin
 N(G_HR)                     = 8760;     !! Initial estimation of full load hours for HR units
 
 * Calculate marginal cost of HR units (€/MWh-heat)
-MarginalAsk(T,G_HR)         = sum(F$GF(G_HR,F), C_f(T,G_HR,F))/eta_g(T,G_HR) + C_h(G_HR);
+MarginalAsk(T,G_HR)         = sum(F$GF(G_HR,F), C_f(T,G_HR,F))/eta_g(T,G_HR) + C_h(G_HR) - k_op_g(T,G_HR);
 
 * And substract the substitution cost of cooling (€/MWh-cold), adjusted by the ratio heat-cold
 MarginalAsk(T,G_HR)         = MarginalAsk(T,G_HR) - SubstitutionCost(T) * (eta_g(T,G_HR) - 1)/eta_g(T,G_HR);
@@ -306,21 +307,21 @@ eq_NPV_WHS..                                NPV('WHS')  =e= - CAPEX('WHS') + (OP
 eq_CAPEX_DHN..                              CAPEX('DHN')=e= + sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_p      ));
 eq_CAPEX_WHS..                              CAPEX('WHS')=e= + sum(G_HR,             C_g_inv(G_HR) * y_hr(G_HR) * (1 - k_inv_g(G_HR)));
 
-eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
-                                                            + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
-                                                            + sum((T,S_DH),              C_s(S_DH)     * x_s(T,S_DH,'discharge'))
-                                                            + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
-                                                            - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
-$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('DHN',F))
+eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F)  * x_f(T,G_DH,F))
+                                                            + sum((T,G_HO),              C_h(G_HO)      * x_h(T,G_HO))
+                                                            + sum((T,S_DH),              C_s(S_DH)      * x_s(T,S_DH,'discharge'))
+                                                            + sum((T,G_CHP),             C_e(G_CHP)     * x_e(T,G_CHP))
+                                                            - sum((T,G_CHP),             pi_e(T)        * x_e(T,G_CHP))
+$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)    * y_f_used('DHN',F))
                                                             ;
 
-eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f(T,G_CO,F))
-                                                            + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
-                                                            + sum((T,G_HR,F)$GF(G_HR,F), C_f(T,G_HR,F) * x_f(T,G_HR,F))
-                                                            + sum((T,G_HR),              C_h(G_HR)     * x_h(T,G_HR))
-                                                            + sum(G_HR,                  C_g_fix(G_HR) * y_hr(G_HR))
-$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('WHS',F))
-$ifi %policytype% == 'support' $ifi %country% == 'DE'       - pi_q * sum((T, G_HR), x_h(T,G_HR)*w_ref(T))
+eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F)  * x_f(T,G_CO,F))
+                                                            + sum((T,G_CO),              C_c(G_CO)      * x_c(T,G_CO))
+                                                            + sum((T,G_HR,F)$GF(G_HR,F), C_f(T,G_HR,F)  * x_f(T,G_HR,F))
+                                                            + sum((T,G_HR),              C_h(G_HR)      * x_h(T,G_HR))
+                                                            + sum(G_HR,                  C_g_fix(G_HR)  * y_hr(G_HR))
+$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)    * y_f_used('WHS',F))
+                                                            - sum((T,G_HR),              k_op_g(T,G_HR) * x_h(T,G_HR));
                                                             ;
 
 eq_trnsctn..                                WH_transaction  =e= sum((T,G_HR), pi_h(T,G_HR)  * x_h(T,G_HR));

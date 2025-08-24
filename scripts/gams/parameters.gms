@@ -275,6 +275,7 @@ eta_s(S)                'Storage throughput efficiency (-)'
 
 k_inv_g(G)              'Investment subsidy fraction for HR units (-)'
 k_inv_p                 'Investment subsidy fraction for connection pipe (-)'
+k_op_g(T,G)             'Operating subsidy for HR units (EUR/MWh-out)'
 pi_h_ceil(G)            'Waste-heat ceiling price (EUR/MWh)'
 ;
 
@@ -396,9 +397,10 @@ $ifi %policytype% == 'taxation'         C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f
 $ifi %policytype% == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
 
 * - Policy parameters -
-$ifi NOT %policytype% == 'support'  k_inv_g(G)      = 0;                        !! default value w/o support policy
-$ifi NOT %policytype% == 'support'  k_inv_p         = 0;                        !! default value w/o support policy
-$ifi NOT %policytype% == 'support'  pi_h_ceil(G)    = 0;                        !! default value w/o support policy
+$ifi NOT %policytype% == 'support'  k_inv_g(G)      = EPS + 0;                        !! default value w/o support policy
+$ifi NOT %policytype% == 'support'  k_inv_p         = EPS + 0;                        !! default value w/o support policy
+$ifi NOT %policytype% == 'support'  k_op_g(T,G)     = EPS + 0;                        !! default value w/o support policy
+$ifi NOT %policytype% == 'support'  pi_h_ceil(G)    = EPS + 0;                        !! default value w/o support policy
 $ifi     %policytype% == 'support'  $include './scripts/gams/definition_policy.inc';
 
 

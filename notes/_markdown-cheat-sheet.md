@@ -1,12 +1,19 @@
+<!-- markdownlint-disable MD025 -->
+
 # Markdown Cheat Sheet
 
 ## Headers
 
 # H1
+
 ## H2
+
 ### H3
+
 #### H4
+
 ##### H5
+
 ###### H6
 
 ## Lists
@@ -41,8 +48,8 @@
 
 `Inline code`
 
-
 ## Links to references
+
 - [Markdown cheat sheet](https://www.markdownguide.org/cheat-sheet/)
 - [Markdown guide vscode](https://www.markdownguide.org/tools/vscode/)
 - [Markdown all-in-one documentation](https://markdown-all-in-one.github.io/docs/guide/#link-processing)

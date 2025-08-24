@@ -1,2 +1,3 @@
-This project corresponds to the sensitivity analysis on electricity prices.
-Prices correspond to the year 2020, with a mean price of 28 €/MWh and a standard deviation of 20 €/MWh.
+# Scenario notes
+
+This project corresponds to a sensitivity analysis with baseline electricity prices, corresponding to 2020. The mean price is 28 €/MWh and the standard deviation is 20 €/MWh.

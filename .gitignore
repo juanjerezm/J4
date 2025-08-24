@@ -1,15 +1,13 @@
 ## ----- Project specific ----- ##
-# Result files
+# Ignore all files within result directories, but keep .gitkeep to keep empty directories
 results/**
-!results/**/
-!/results/.gitkeep
+results-consolidated/**
 
-# Allow .csv and .gdx files in results folder and subfolders
-!results/**/*.csv
-!results/**/*.gdx
+!results/.gitkeep
+!results-consolidated/.gitkeep
 
 
-# Gams files
+# GAMS files
 *.log~*
 *.~log
 *.lxi
@@ -17,14 +15,15 @@ results/**
 *.gsp
 **/225*/
 
+## ----- Other ----- ##
 # VS Code
 .vscode/
 
 # MacOS
 .DS_Store
 
-## ----- End of project specific ----- ##
 
+## ----- Python template ----- ##
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -76,6 +76,7 @@ GF(G,F)                 'Generator-fuel mapping'
 * ======================================================================
 * ----- Subset declaration -----
 SETS
+G_ETS(G)                'Generators subject to emissions trading system (ETS)'
 G_BP(G)                 'Backpressure generators'
 G_EX(G)                 'Extraction generators'  
 G_HO(G)                 'Heat-only generators'
@@ -133,7 +134,7 @@ eta_s(S)                'Storage throughput efficiency (-)'
 * ----- Parameter definition -----
 $gdxin results/%project%/%scenario%/parameters.gdx
 $load T, H, M, G, S, SS, E, F, TM, TH, GF                                       !! Load sets
-$load G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL         !! Load subsets
+$load G_ETS, G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL  !! Load subsets
 $load D_h, D_c                                                                  !! Load system parameters
 $load C_e, C_h, C_c, Y_c, Y_f, F_a, eta_g, beta_b, beta_v                       !! Load generator parameters
 $load C_f, pi_f, qc_f, pi_q, pi_e, qc_e                                         !! Load fuel parameters

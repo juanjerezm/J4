@@ -114,6 +114,7 @@ $offDelim
 ACRONYMS EX 'Extraction', BP 'Backpressure', HO 'Heat-only', HR 'Heat recovery', CO 'Cold-only';
 ACRONYMS DH 'District heating network', WH 'Waste heat source';
 ACRONYMS timeVar 'time-variable data';
+ACRONYMS TRUE, FALSE;
 
 * --- Load data attributes ---
 SET EnttAttrs(*)        'Auxiliary set to load entity data'
@@ -192,6 +193,7 @@ $offDelim
 * ======================================================================
 * ----- Subset declaration -----
 SETS
+G_ETS(G)                'Generators subject to emissions trading system (ETS)'
 G_BP(G)                 'Backpressure generators'
 G_EX(G)                 'Extraction generators'  
 G_HO(G)                 'Heat-only generators'
@@ -206,6 +208,8 @@ F_EL(F)                 'Electricity fuel'
 ;
 
 * --- Subset definition ---
+G_ETS(G)    = YES$(GNRT_DATA(G,'ETS') EQ TRUE);
+
 G_BP(G)     = YES$(GNRT_DATA(G,'TYPE') EQ BP);
 G_EX(G)     = YES$(GNRT_DATA(G,'TYPE') EQ EX);
 G_HO(G)     = YES$(GNRT_DATA(G,'TYPE') EQ HO);
@@ -389,12 +393,12 @@ Y_c(G_CO)           = smax(T, D_c(T));                                          
 tariff_v(T)         = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M)); !! mapping hour-month schedule to timesteps
 
 *  Calculate fuel cost from fuel price, taxes (per fuel and generator), electricity tariffs and ETS quotas
-C_f(T,G,F)$(GF(G,F) AND G_DH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
+C_f(T,G,F)$(GF(G,F) AND G_DH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
 
 * Fuel costs for WHS depend on the policy type
 $ifi %policytype% == 'socioeconomic'    C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
-$ifi %policytype% == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(NOT F_EL(F));
+$ifi %policytype% == 'taxation'         C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
+$ifi %policytype% == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
 
 * - Policy parameters -
 $ifi NOT %policytype% == 'support'  k_inv_g(G)      = EPS + 0;                        !! default value w/o support policy

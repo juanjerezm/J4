@@ -47,8 +47,8 @@ REF(CASE)               'Case identifier for reference case'    /reference/
 
 $gdxin './results/%project%/%scenario%/parameters.gdx'
 SETS
-        T, E, G, S, SS, F, G_HR(G), G_DH(G), G_WH(G), G_CHP(G), F_EL(F), GF(G,F);
-$load   T, E, G, S, SS, F, G_HR   , G_DH   , G_WH   , G_CHP   , F_EL   , GF
+        T, E, G, S, SS, F, G_ETS(G), G_HR(G), G_DH(G), G_WH(G), G_CHP(G), F_EL(F), GF(G,F);
+$load   T, E, G, S, SS, F, G_ETS   , G_HR   , G_DH   , G_WH   , G_CHP   , F_EL   , GF
 $gdxin 
 
 
@@ -157,8 +157,8 @@ $ifi not %policytype% == 'socioeconomic'    Taxes('WHS',CASE) = EPS + sum((T,G_W
                                             Taxes('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), FuelConsumption(T,G_DH,F,CASE) * (tax_fuel_f(F) + tax_fuel_g(G_DH)));
 
 $ifi     %policytype% == 'socioeconomic'    ETSQuota('WHS',CASE) = EPS;
-$ifi not %policytype% == 'socioeconomic'    ETSQuota('WHS',CASE) = EPS + sum((T,G_WH,F)$GF(G_WH,F), FuelConsumption(T,G_WH,F,CASE) * pi_q*qc_f(T,F)$(NOT F_EL(F)));
-                                            ETSQuota('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), FuelConsumption(T,G_DH,F,CASE) * pi_q*qc_f(T,F)$(NOT F_EL(F)));
+$ifi not %policytype% == 'socioeconomic'    ETSQuota('WHS',CASE) = EPS + sum((T,G_WH,F)$GF(G_WH,F), FuelConsumption(T,G_WH,F,CASE) * pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F)));
+                                            ETSQuota('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), FuelConsumption(T,G_DH,F,CASE) * pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F)));
 
 $ifi not %policytype% == 'support'                          Support(E,CASE)             = EPS;
 $ifi     %policytype% == 'support'                          Support(E,'reference')      = EPS;

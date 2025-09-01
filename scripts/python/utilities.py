@@ -1,28 +1,31 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
-import pandas as pd
-import gams.transfer as gt
 from pathlib import Path
-from typing import List, Union, Dict, Optional
+
+import gams.transfer as gt
+import pandas as pd
 
 
 # ========== GAMS utilities ==========
 def gdxdf_var(
-    paths: Union[List[str], List[Path]],
-    variables: Optional[List[str]] = None,
-    attributes: List[str] = ["level"],
-) -> Dict[str, pd.DataFrame]:
+    paths: list[str] | list[Path],
+    variables: list[str] | None = None,
+    attributes: list[str] | None = None,
+) -> dict[str, pd.DataFrame]:
     """
     Reads GDX files from the given paths and returns all or some variables in a dictionary of pandas DataFrames.
 
     Args:
-        paths (Union[List[str], List[Path]]): A list of file paths to the GDX files.
-        variables (List[str], optional): A list of variable names to read from the GDX files. If None, all variables will be read.
-        attributes (List[str], optional): A list of attribute names to include in the resulting DataFrames. Defaults to ['level'].
+        paths (list[str] | list[Path]): A list of file paths to the GDX files.
+        variables (list[str], optional): A list of variable names to read from the GDX files. If None, all variables will be read.
+        attributes (list[str], optional): A list of attribute names to include in the resulting DataFrames. Defaults to ['level'].
 
     Returns:
         dict: A dictionary where the keys are variable names and the values are pandas DataFrames containing the data.
 
     """
+    if attributes is None:
+        attributes = ["level"]
     gams_attrs = ["level", "marginal", "lower", "upper", "scale"]
 
     paths = [Path(path) for path in paths]
@@ -33,12 +36,9 @@ def gdxdf_var(
     # read gdx files into containers
     containers = [gt.Container(str(path)) for path in paths]
 
-    data_all = dict()
-    for case, container in zip(cases, containers):
-        if variables is None:
-            spec_var = container.listVariables()
-        else:
-            spec_var = variables
+    data_all = {}
+    for case, container in zip(cases, containers, strict=True):
+        spec_var = container.listVariables() if variables is None else variables
 
         for var in spec_var:
             df_temp = container[var].records  # type: ignore
@@ -47,9 +47,8 @@ def gdxdf_var(
                 continue
 
             df_temp.insert(0, "case", case)
-            df_temp.drop(
+            df_temp = df_temp.drop(
                 columns=[col for col in gams_attrs if col not in attributes],
-                inplace=True,
             )
 
             if var not in data_all:
@@ -60,8 +59,8 @@ def gdxdf_var(
 
 
 def gdxdf_par(
-    paths: Union[List[str], List[Path]], parameters: List[str]
-) -> Dict[str, pd.DataFrame]:
+    paths: list[str] | list[Path], parameters: list[str]
+) -> dict[str, pd.DataFrame]:
     """
     Reads GDX files from the given paths and returns the specified parameters in a dictionary of DataFrames.
 
@@ -69,11 +68,11 @@ def gdxdf_par(
     - If a parameter is not found in a GDX file, an empty DataFrame will be returned for that parameter.
 
     Args:
-        paths ([List[str], List[Path]]): A list of file paths to the GDX files.
-        parameters (List[str]): A list of parameters names to read from the GDX files.
+        paths (list[str] | list[Path]): A list of file paths to the GDX files.
+        parameters (list[str]): A list of parameters names to read from the GDX files.
 
     Returns:
-        Dict[str, pd.DataFrame]: A dictionary where the keys are parameter names and the values are pandas DataFrames containing the data.
+        dict[str, pd.DataFrame]: A dictionary where the keys are parameter names and the values are pandas DataFrames containing the data.
 
     """
 
@@ -85,8 +84,8 @@ def gdxdf_par(
     # read gdx files into containers
     containers = [gt.Container(str(path)) for path in paths]
 
-    data_all = dict()
-    for case, container in zip(cases, containers):
+    data_all = {}
+    for case, container in zip(cases, containers, strict=True):
         for par in parameters:
             try:
                 df_temp = container[par].records  # type: ignore
@@ -106,9 +105,9 @@ def gdxdf_par(
 
 
 def gdxdf_postprocess(
-    path: Union[str, Path],
-    parameters: Optional[List[str]] = None,
-) -> Dict[str, pd.DataFrame]:
+    path: str | Path,
+    parameters: list[str] | None = None,
+) -> dict[str, pd.DataFrame]:
     """
     Reads postprocessing GDX files from the specified paths, extracting either all parameters or those provided.
     Returns a dictionary mapping parameter names to DataFrames.
@@ -125,12 +124,9 @@ def gdxdf_postprocess(
 
     container = gt.Container(str(path))
 
-    data_all = dict()
+    data_all = {}
 
-    if parameters is None:
-        spec_par = container.listParameters()
-    else:
-        spec_par = parameters
+    spec_par = container.listParameters() if parameters is None else parameters
 
     for par in spec_par:
         try:
@@ -150,7 +146,9 @@ def gdxdf_postprocess(
 
 
 # ========== data processing utilities ==========
-def filter(df: pd.DataFrame, include: dict = {}, exclude: dict = {}) -> pd.DataFrame:
+def filter(
+    df: pd.DataFrame, include: dict | None = None, exclude: dict | None = None
+) -> pd.DataFrame:
     """
     Filters a DataFrame based on inclusion (whitelist) and exclusion (blacklist) criteria.
     Keys are strings that correspond to dataframe columns.
@@ -165,14 +163,20 @@ def filter(df: pd.DataFrame, include: dict = {}, exclude: dict = {}) -> pd.DataF
         pd.DataFrame: The filtered DataFrame.
 
     Examples:
-        >>> df = pd.DataFrame({'A': [1, 2, 3], 'B': ['x', 'y', 'z']})
-        >>> include_criteria = {'A': [1, 3]}
-        >>> exclude_criteria = {'B': 'x'}
-        >>> filtered_df = filter_df(df, include=include_criteria, exclude=exclude_criteria)
+        >>> df = pd.DataFrame({"A": [1, 2, 3], "B": ["x", "y", "z"]})
+        >>> include_criteria = {"A": [1, 3]}
+        >>> exclude_criteria = {"B": "x"}
+        >>> filtered_df = filter_df(
+        ...     df, include=include_criteria, exclude=exclude_criteria
+        ... )
         >>> print(filtered_df)
            A  B
         2  3  z
     """
+    if exclude is None:
+        exclude = {}
+    if include is None:
+        include = {}
     df = df.copy()
     if include:
         for key, value in include.items():
@@ -190,7 +194,7 @@ def filter(df: pd.DataFrame, include: dict = {}, exclude: dict = {}) -> pd.DataF
 
 
 def rename_values(
-    df: pd.DataFrame, rename_dict: Dict[str, Dict[str, str]]
+    df: pd.DataFrame, rename_dict: dict[str, dict[str, str]]
 ) -> pd.DataFrame:
     """
     Renames values in a DataFrame based on a provided dictionary, with added checks
@@ -205,8 +209,8 @@ def rename_values(
         pd.DataFrame: Modified DataFrame with values renamed according to rename_dict, if columns exist.
 
     Examples:
-        >>> df = pd.DataFrame({'A': [1, 2, 3], 'B': ['x', 'y', 'z']})
-        >>> rename_dict = {'A': {1: 'One', 2: 'Two'}, 'B': {'z': 'zed'}}
+        >>> df = pd.DataFrame({"A": [1, 2, 3], "B": ["x", "y", "z"]})
+        >>> rename_dict = {"A": {1: "One", 2: "Two"}, "B": {"z": "zed"}}
         >>> renamed_df = rename_values(df, rename_dict)
         >>> print(renamed_df)
            A  B
@@ -227,7 +231,7 @@ def rename_values(
     return df
 
 
-def rename_columns(df: pd.DataFrame, column_mapping: Dict[str, str]) -> pd.DataFrame:
+def rename_columns(df: pd.DataFrame, column_mapping: dict[str, str]) -> pd.DataFrame:
     """
     Wrapper for rename pandas function, specific for column mapping.
 
@@ -239,8 +243,8 @@ def rename_columns(df: pd.DataFrame, column_mapping: Dict[str, str]) -> pd.DataF
         pd.DataFrame: The DataFrame with renamed columns.
 
     Example:
-        >>> df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-        >>> column_mapping = {'A': 'New_A', 'B': 'New_B'}
+        >>> df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+        >>> column_mapping = {"A": "New_A", "B": "New_B"}
         >>> renamed_df = rename_columns(df, column_mapping)
         >>> print(renamed_df)
            New_A  New_B
@@ -252,7 +256,7 @@ def rename_columns(df: pd.DataFrame, column_mapping: Dict[str, str]) -> pd.DataF
     return df
 
 
-def aggregate(df: pd.DataFrame, categories: List[str], sums: List[str]) -> pd.DataFrame:
+def aggregate(df: pd.DataFrame, categories: list[str], sums: list[str]) -> pd.DataFrame:
     """
     Aggregates data in a DataFrame by grouping it based on specified columns and summing the values in other columns.
     It's a wrapper for the pandas groupby function with the sum operation, and it resets the index.
@@ -266,9 +270,9 @@ def aggregate(df: pd.DataFrame, categories: List[str], sums: List[str]) -> pd.Da
         pd.DataFrame: The aggregated DataFrame.
 
     Examples:
-        >>> df = pd.DataFrame({'Category': ['A', 'A', 'B', 'B'], 'Value': [1, 2, 3, 4]})
-        >>> categories = ['Category']
-        >>> sums = ['Value']
+        >>> df = pd.DataFrame({"Category": ["A", "A", "B", "B"], "Value": [1, 2, 3, 4]})
+        >>> categories = ["Category"]
+        >>> sums = ["Value"]
         >>> aggregated_df = aggregate_data(df, categories, sums)
         >>> print(aggregated_df)
           Category  Value
@@ -299,16 +303,21 @@ def diff(df, reference_col: str, reference_item: str, value_col: str) -> pd.Data
 
     Example:
     >>> import pandas as pd
-    >>> data = {'A': ['x', 'x', 'y', 'y'], 'B': ['a', 'b', 'a', 'b'], 'C': [1, 2, 6, 5], 'D': [5, 4, 1, 2]}
+    >>> data = {
+    ...     "A": ["x", "x", "y", "y"],
+    ...     "B": ["a", "b", "a", "b"],
+    ...     "C": [1, 2, 6, 5],
+    ...     "D": [5, 4, 1, 2],
+    ... }
     >>> df = pd.DataFrame(data)
-    >>> diff(df, 'A', 'x', ['C', 'D'])
+    >>> diff(df, "A", "x", ["C", "D"])
        A  B  C  D
     0  y  a  5 -4
     1  y  b  3 -2
     """
     if reference_col not in df.columns:
         raise ValueError(f"Column '{reference_col}' does not exist in the DataFrame.")
-    if reference_item not in df[reference_col].values:
+    if reference_item not in df[reference_col].to_numpy():
         raise ValueError(
             f"Reference item '{reference_item}' not found in the column '{reference_col}'."
         )
@@ -346,33 +355,50 @@ def exclude_empty_category(df: pd.DataFrame, category: str) -> pd.DataFrame:
 # ========== other utilities ==========
 def output_table(
     df: pd.DataFrame,
+    index: list[str],
+    columns: list[str],
+    values: str,
+    aggfunc: str | Callable | None = None,  # optional
+    filename: str = "defaultTable",
+    outdir: Path | str = Path(),
     show: bool = True,
     save: bool = False,
-    outdir: Path | str = Path(),
-    filename: str = "",
-    index: List[str] = ["country", "F"],
-    columns: List[str] = ["policy"],
-    values: str = "level",
 ) -> None:
+    """
+    Pivot a DataFrame into a summary table and optionally save or display it.
 
-    df[values] = df[values].round(6)
-    df = df.pivot(index=index, columns=columns, values=values)
+    Args:
+        df: The DataFrame to output/pivot.
+        index (list[str]): The columns to use as index.
+        columns (list[str]): The columns to use as columns.
+        values (str): The column to use for values.
+        aggfunc (str, callable, or None, optional): Aggregation function to pass
+            to pivot_table. If None (default), pandas' default is used ("mean").
+        filename (str, optional): The name of the output file (without extension).
+        outdir (Path | str, optional): The directory to save the output file.
+        show (bool, optional): Whether to display the table.
+        save (bool, optional): Whether to save the table to file.
+    """
+
+    table = df.pivot_table(
+        index=index, columns=columns, values=values, aggfunc=aggfunc, observed=True
+    )
+    table = table.round(6)
+
+    if save and (not outdir or not filename):
+        raise ValueError("Both 'outdir' and 'filename' are required when save=True.")
 
     if save:
-        if not filename:
-            raise ValueError("The 'filename' parameter is required when save=True.")
-
-        outdir = Path(outdir)
-        outdir.mkdir(parents=True, exist_ok=True)
-        output_path = outdir / f"{filename}.csv"
-        df.to_csv(output_path)
-        print(f"-> File saved to {output_path}")
+        path = Path(outdir) / f"{filename}.csv"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        table.to_csv(path)
+        print(f"-> File saved to {path}")
 
     if show:
-        print(df)
+        print(table)
 
 
-def print_line(length: int = 50, character: str = '-') -> None:
+def print_line(length: int = 50, character: str = "-") -> None:
     """
     Prints a horizontal line of a given length.
 
@@ -395,9 +421,9 @@ def print_title(title: str) -> None:
     Returns:
         None
     """
-    print_line(character='=')
+    print_line(character="=")
     print(title)
-    print_line(character='=')
+    print_line(character="=")
 
 
 # ========== Scenario class ==========
@@ -427,7 +453,7 @@ class Scenario:
             )
 
 
-def read_scenarios(specification_file: Union[str, Path]) -> List[Scenario]:
+def read_scenarios(specification_file: str | Path) -> list[Scenario]:
     path = Path(specification_file)
     df = pd.read_csv(path)
     if df.empty:

@@ -63,7 +63,7 @@ The following units were excluded despite meeting the above criteria:
 - ID 970-4 – *VEKS – Solrød Kedelcentral* (low-capacity CHP)  
 - ID 2303-1 – *Solvarmecentral Vesterled* (small unique solar unit)  
 - ID 1922-1 – *Geotermisk anlæg, Amagerværket* (inoperative testing unit)  
-- ID 332-2 – *Svanemølleværket* (SMV1 & SMV7 removed as per [Ørsted](https://orsted.dk/vores-groenne-loesninger/bioenergi/vores-kraftvarmevaerker)). 
+- ID 332-2 – *Svanemølleværket* (SMV1 & SMV7 removed as per [Ørsted](https://orsted.dk/vores-groenne-loesninger/bioenergi/vores-kraftvarmevaerker)).
 
 The following adjustments were made to multi-fuel units:
 

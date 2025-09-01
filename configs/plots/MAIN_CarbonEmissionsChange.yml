@@ -1,0 +1,23 @@
+project: MAIN
+var: CarbonEmissions
+scale: !!float 1e-6 # kton/kg, float flag needed
+
+plot:
+  name: "CarbonEmissionsChange"
+  save: true
+  show: true
+  # width: 8.5
+  height: 9
+  autoscale: false
+
+  y1:
+    min: -4.5
+    max: 0.5
+    pad: 0
+    major_ticks: {start: -4.5, stop: 0.5, step: 0.5}
+    minor_ticks: {start: -4.5, stop: 0.5, step: 0.25}
+    major_grid: true
+    minor_grid: false
+    label: "Change in carbon emissions\n(kton/year)"
+    label_kwargs: {fontweight: "bold"}
+    ticklabel_format: "{:.1f}"

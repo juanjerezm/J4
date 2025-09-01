@@ -1,0 +1,23 @@
+project: SADR
+var: NPV_all
+scale: !!float 1e-6 # M€/€, float flag needed
+
+plot:
+  name: "SADR_NPV"
+  save: true
+  show: true
+  # width: 16
+  height: 7
+  autoscale: false
+
+  y1:
+    min: 0
+    max: 50
+    pad: 2.5
+    major_ticks: {start: 0, stop: 50, step: 10}
+    minor_ticks: {start: 0, stop: 50, step: 5}
+    major_grid: true
+    minor_grid: false
+    label: "Lifetime NPV (M€)"
+    label_kwargs: {fontweight: "bold"}
+    ticklabel_format: "{:.0f}"

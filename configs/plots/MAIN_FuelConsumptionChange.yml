@@ -1,0 +1,23 @@
+project: MAIN
+var: FuelConsumption
+scale: !!float 1e-3 # GWh/MWh, float flag needed
+
+plot:
+  name: "FuelConsumptionChange"
+  save: true
+  show: true
+  # width: 8.5
+  height: 9
+  autoscale: false
+
+  y1:
+    min: -50
+    max: 10
+    pad: 0
+    major_ticks: {start: -50, stop: 10, step: 10}
+    minor_ticks: {start: -50, stop: 10, step: 10}
+    major_grid: true
+    minor_grid: false
+    label: "Change in fuel consumption\n(GWh/year)"
+    label_kwargs: {fontweight: "bold"}
+    ticklabel_format: "{:.0f}"

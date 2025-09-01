@@ -1,0 +1,204 @@
+# ===== COUNTRIES AND POLICIES =====
+countries:
+  DK:
+    label: Denmark
+  FR:
+    label: France
+  DE:
+    label: Germany
+
+
+policies:
+  socioeconomic:
+    label: Technical
+    marker: "o"
+  taxation:
+    label: Taxation
+    marker: "^"
+  support:
+    label: Policy
+    marker: "s"
+
+
+# ===== PROJECTS =====
+projects:
+  SAEP_low:
+    label: "Low\n(2020)"
+  SAEP_base:
+    label: "Base\n(2023)"
+  SAEP_high:
+    label: "High\n(2022)"
+
+
+# ===== ENTITIES =====
+entities:
+  DHN:
+    color: "#e56b6f"
+  WHS:
+    color: "#177e89"
+
+
+# ===== FUEL GROUPS =====
+fuel_groups:
+  Electricity: &Electricity
+    label: Electricity
+    color: "#EEDD88"
+    color_name: light yellow
+
+  Biomass: &Biomass
+    label: Biomass
+    color: "#44BB99"
+    color_name: mint
+
+  Coal: &Coal
+    label: Coal
+    color: "#77AADD"
+    color_name: indigo
+
+  Mun. waste: &MunWaste
+    label: Mun. waste
+    color: "#99DDFF"
+    color_name: light cyan
+
+  Natural gas: &NaturalGas
+    label: Natural gas
+    color: "#FFAABB"
+    color_name: pink
+
+  Oil products: &OilProducts
+    label: Oil products
+    color: "#EE8866"
+    color_name: wine
+
+  Other: &Other
+    label: Other
+    color: "#C7C7C7"
+    color_name: grey
+
+
+fuels:
+  electricity:
+    <<: *Electricity
+  wood chips:
+    <<: *Biomass
+  wood pellets:
+    <<: *Biomass
+  wood waste:
+    <<: *Biomass
+  coal:
+    <<: *Coal
+  municipal waste:
+    <<: *MunWaste
+  natural gas:
+    <<: *NaturalGas
+  fuel oil:
+    <<: *OilProducts
+  gas oil:
+    <<: *OilProducts
+  biogas:
+    <<: *Other
+  industrial heat:
+    <<: *Other
+
+# ===== GENERATORS =====
+generators:
+  AMV1:
+    label: AMV1
+    fuel: wood pellets
+    type: CHP
+  AMV4:
+    label: AMV4
+    fuel: wood chips
+    type: CHP
+  ARC:
+    label: ARC
+    fuel: municipal waste
+    type: CHP
+  ARGO5:
+    label: ARGO5
+    fuel: municipal waste
+    type: CHP
+  ARGO6:
+    label: ARGO6
+    fuel: municipal waste
+    type: CHP
+  AVV1:
+    label: AVV1
+    fuel: wood pellets
+    type: CHP
+  AVV2:
+    label: AVV2
+    fuel: wood pellets
+    type: CHP
+  HCV7:
+    label: HCV7
+    fuel: natural gas
+    type: CHP
+  HCV8:
+    label: HCV8
+    fuel: natural gas
+    type: CHP
+  KKV8:
+    label: KKV8
+    fuel: wood chips
+    type: CHP
+  VF5:
+    label: VF5
+    fuel: municipal waste
+    type: CHP
+  VF6:
+    label: VF6
+    fuel: municipal waste
+    type: CHP
+  HOB_BG:
+    label: HOB_BG
+    fuel: biogas
+    type: HO
+  HOB_EL:
+    label: HOB_EL
+    fuel: electricity
+    type: HO
+  HOB_GO:
+    label: HOB_GO
+    fuel: gas oil
+    type: 
+  HOB_GO_NOETS:
+    label: HOB_GO_NOETS
+    fuel: gas oil
+    type: HO
+  HOB_NG:
+    label: HOB_NG
+    fuel: natural gas
+    type: HO
+  HOB_NG_NOETS:
+    label: HOB_NG_NOETS
+    fuel: natural gas
+    type: HO
+  HOB_WP:
+    label: HOB_WP
+    fuel: wood pellets
+    type: HO
+  HP_AMBIENT:
+    label: HP_AMBIENT
+    fuel: electricity
+    type: HO
+  HP_PROCESS:
+    label: HP_PROCESS
+    fuel: electricity
+    type: HO
+  INDUSTRY:
+    label: INDUSTRY
+    fuel: industrial heat
+    type: HO
+  ELECTRIC_CHILLER:
+    label: ELECTRIC_CHILLER
+    fuel: electricity
+    type: CO
+  FREE_COOLING:
+    label: FREE_COOLING
+    fuel: electricity
+    type: CO
+  HR_DC:
+    label: HR_DC
+    fuel: electricity
+    type: HR

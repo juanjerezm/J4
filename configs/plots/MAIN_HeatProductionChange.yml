@@ -1,0 +1,23 @@
+project: MAIN
+var: HeatProduction
+scale: !!float 1e-3 # GWh/MWh, float flag needed
+
+plot:
+  name: "HeatProductionChange"
+  save: true
+  show: true
+  # width: 8.5
+  height: 9
+  autoscale: false
+
+  y1:
+    min: -32
+    max: 32
+    pad: 0
+    major_ticks: {start: -32, stop: 32, step: 8}
+    minor_ticks: {start: -32, stop: 32, step: 4}
+    major_grid: true
+    minor_grid: false
+    label: "Change in heat production\n(GWh/year)"
+    label_kwargs: {fontweight: "bold"}
+    ticklabel_format: "{:.0f}"

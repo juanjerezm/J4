@@ -1,0 +1,16 @@
+analyses:
+  MAIN:   # Main analysis
+    projects: [MAIN]
+    # labels: ["MAIN"]
+
+  SADR:   # Sensitivity analysis on discount rate
+    projects: ["SADR00", "SADR02", "SADR04", "SADR06", "SADR08", "SADR10", "SADR12"]
+    # labels: ["0%", "2%", "4%", "6%", "8%", "10%", "12%"]
+
+  SAEP:   # Sensitivity analysis on electricity prices
+    projects: ["SAEP_low", "SAEP_base", "SAEP_high"]
+    # labels: ["Low\n(2020)", "Base\n(2023)", "High\n(2022)"]
+
+  TEST:   # Dummy placeholder for code testing
+    projects: [TEST]
+    # labels: ["TEST"]

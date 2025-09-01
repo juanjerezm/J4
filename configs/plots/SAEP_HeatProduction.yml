@@ -1,0 +1,23 @@
+project: SAEP
+var: HeatProduction
+scale: !!float 1e-3 # MWh/GWh, float flag needed
+
+plot:
+  name: "SAEP_HeatProduction"
+  save: true
+  show: true
+  # width: 16
+  height: 7
+  autoscale: false
+
+  y1:
+    min: 0
+    max: 35
+    pad: 0
+    major_ticks: {start: 0, stop: 35, step: 5.0}
+    minor_ticks: {start: 0, stop: 35, step: 2.5}
+    major_grid: true
+    minor_grid: false
+    label: "Heat-recovery output\n(GWh/year)"
+    label_kwargs: {fontweight: "bold"}
+    ticklabel_format: "{:.0f}"

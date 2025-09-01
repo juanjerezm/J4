@@ -1,0 +1,23 @@
+# This file defines the overall plotting style for the project
+
+# Define a base style
+base: &base
+  font.family: "Times New Roman"
+  font.size: 7
+  axes.labelsize: 9
+  axes.titlesize: 10
+  xtick.labelsize: 7
+  ytick.labelsize: 7
+  legend.fontsize: 8
+  legend.title_fontsize: 8
+  savefig.dpi: 900
+  # figure.figsize can be overridden per style
+
+# Define specific overrides
+paper-1col:
+  <<: *base
+  figure.figsize: [9.0, 9.0]  # width, height in cm
+
+paper-2col:
+  <<: *base
+  figure.figsize: [19.0, 9.0]  # width, height in cm

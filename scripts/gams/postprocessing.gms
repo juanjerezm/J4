@@ -157,8 +157,8 @@ $ifi not %policytype% == 'socioeconomic'    Taxes('WHS',CASE) = EPS + sum((T,G_W
                                             Taxes('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), FuelConsumption(T,G_DH,F,CASE) * (tax_fuel_f(F) + tax_fuel_g(G_DH)));
 
 $ifi     %policytype% == 'socioeconomic'    ETSQuota('WHS',CASE) = EPS;
-$ifi not %policytype% == 'socioeconomic'    ETSQuota('WHS',CASE) = EPS + sum((T,G_WH,F)$GF(G_WH,F), FuelConsumption(T,G_WH,F,CASE) * pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F)));
-                                            ETSQuota('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), FuelConsumption(T,G_DH,F,CASE) * pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F)));
+$ifi not %policytype% == 'socioeconomic'    ETSQuota('WHS',CASE) = EPS + sum((T,G_WH,F)$(GF(G_WH,F) AND G_ETS(G_WH) AND NOT F_EL(F)), FuelConsumption(T,G_WH,F,CASE) * pi_q*qc_f(T,F));
+                                            ETSQuota('DHN',CASE) = EPS + sum((T,G_DH,F)$(GF(G_DH,F) AND G_ETS(G_DH) AND NOT F_EL(F)), FuelConsumption(T,G_DH,F,CASE) * pi_q*qc_f(T,F));
 
 $ifi not %policytype% == 'support'                          Support(E,CASE)             = EPS;
 $ifi     %policytype% == 'support'                          Support(E,'reference')      = EPS;

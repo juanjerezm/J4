@@ -45,13 +45,15 @@ cat > "$temp_script" << EOF
     #BSUB -B 
     ### -- send notification at completion -- 
     #BSUB -N 
+    ### -- set email address for notifications -- 
+    #BSUB -u juanjerezmonsalves@gmail.com
     ### -- Specify the output and error file. %J is the job-id -- 
     ### -- -o and -e mean append, -oo and -eo mean overwrite -- 
     #BSUB -oo ${output_dir}/Output_%J.out
     #BSUB -eo ${output_dir}/Error_%J.err
 
     # Run GAMS model
-    gams run --project=${project} --scenario=${scenario} --policytype=${policytype} --country=${country} o=${output_dir}/run.lst
+    gams run.gms --project=${project} --scenario=${scenario} --policytype=${policytype} --country=${country} o=${output_dir}/run.lst
 EOF
 
 # ===== Submit Job =====

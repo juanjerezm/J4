@@ -12,6 +12,9 @@ dependencies = [
     "numpy",
     "pandas",
     "matplotlib",
+    "pyyaml",
+    "requests",
+    "gamsapi"
 ]
 
 [tool.ruff]

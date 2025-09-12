@@ -1,25 +1,46 @@
 
     #!/bin/sh
     
+    ### -- job name --
     #BSUB -J ${project}_${scenario}
-    #BSUB -q man
+    
+    ### -- specify queue --
+    #BSUB -q ${queue}
 
-    #BSUB -n 8
+    ### -- number of CPU cores requested -- 
+    #BSUB -n ${cores}
+
+    ### -- Ensure all cores are on the same host --
     #BSUB -R "span[hosts=1]"
-    #BSUB -R "rusage[mem=8GB]"
-    #BSUB -M 8GB
-    #BSUB -W 04:00
 
+    ### -- memory reserved per core for scheduling --
+    #BSUB -R "rusage[mem=${memory}GB]"
+
+    ### -- Hard memory limit per core (job is killed if exceeded) --
+    #BSUB -M ${memory}GB
+
+    ### -- walltime limit (hh:mm) --
+    #BSUB -W ${walltime}
+
+    ### -- email notification on job start/end --
     #BSUB -B
     #BSUB -N
-    ${email_line}
+    ### -- optional: non-default email address --
+    #BSUB -u ${email}
 
+    ### -- log files for std output and error --
     #BSUB -oo ${base_dir}/results/${project}/${scenario}/Output_%J.out
     #BSUB -eo ${base_dir}/results/${project}/${scenario}/Error_%J.err
         
-    ### Get paths to GAMS 37
+    ### -- load GAMS 37 into environment --
     export PATH=/appl/gams/37.1.0:$PATH
-    export LD_LIBRARY_PATH=/appl/gams/37.1.0:$LD_LIBRARY_PATH
 
-    gams ${base_dir}/run --project=${project} --scenario=${scenario} --country=${country} --policytype=${policytype} o=${base_dir}/results/${project}/${scenario}/run.lst
-    
+    ### Not sure if this is needed, but I will leave it here for now
+    # export LD_LIBRARY_PATH=/appl/gams/37.1.0:$LD_LIBRARY_PATH
+
+    ### -- run GAMS model --
+    gams ${base_dir}/run.gms \
+        --project=${project} \
+        --scenario=${scenario} \
+        ${flags} \
+        o=${base_dir}/results/${project}/${scenario}/run.lst

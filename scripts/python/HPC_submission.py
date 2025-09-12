@@ -4,29 +4,33 @@ It reads scenario parameters from a CSV file, creates job scripts based on a tem
 and submits the jobs to the HPC system.
 
 Minimum usage:
-module load python3/3.10.0      (if default python is not 3.7+)
-python3 HPC_submission.py path/to/scenarios.csv --submit
+module load python3/3.11.0      (or any version 3.7+)
+module load pandas
+python3 HPC_submission.py path/to/scenario_specs.csv --submit
 
 Arguments:
-- path/to/scenarios.csv: Path to the CSV file containing the scenario parameters.
+- path/to/scenario_specs.csv: Path to the CSV file containing the scenario specifications.
 - --submit: Optional flag to indicate whether to submit the jobs or not, set to False by default.
-- --base_path: Optional argument to specify the base path for the model.
-- --template_path: Optional argument to specify the path to the job template file.
-- --max_runs: Optional argument to specify the maximum number of runs allowed.
+- --base_path: Optional argument to specify the base path for the model. (default: current working directory)
+- --template_path: Optional argument to specify the path to the job template file. (default: scripts/python/job_template.sh)
+- --max_runs: Optional argument to specify the maximum number of runs allowed. (default: 12)
+- --queue: Optional argument to specify the queue to submit the job to. (default: man)
+- --cores: Optional argument to specify the number of cores to use for each job. (default: 12)
+- --memory: Optional argument to specify the memory (in GB) to allocate for each job. (default: 4)
+- --walltime: Optional argument to specify the walltime (in hh:mm) for each job. (default: 24:00)
+- --email: Optional argument to specify a non-default email address for job notifications. (default: None)
 
 The script performs the following steps:
-1. Reads the scenario parameters from the CSV file.
-2. Checks if the Python version is 3.7 or higher.
-3. Checks if the input CSV file exists.
-4. Validates the scenario parameters and ensures there are no missing values.
-5. Checks if the number of scenarios is below the maximum allowed runs.
-6. Loads the template file for the job script.
-7. Creates a job script for each scenario based on the template.
-8. Submits the job scripts to the HPC system (if the --submit flag is provided).
+1. Checks for the existence of the CSV file with scenario specifications.
+2. Reads the scenario specifications from the file.
+3. Checks for missing values in each scenario specification.
+4. Checks for number of scenarios below the maximum allowed runs.
+5. Loads the job submission template script.
+6. Creates a job submission script for each scenario using the template.
+7. Submits the job scripts to the HPC system (if the --submit flag is provided).
 
-Note: This script requires Python 3.7 or higher to run.
 
-Author: Juan Jerez Monsalves, jujmo@dtu.dk
+Author: Juan Jerez Monsalves, juanjerezmonsalves@gmail.com
 Date: July 2024
 """
 
@@ -38,7 +42,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from string import Template
-from typing import Dict, List
 
 TIMESTAMP = datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -46,8 +49,13 @@ TIMESTAMP = datetime.now().strftime("%Y%m%d-%H%M%S")
 cfg = {
     "base_path": Path.cwd(),
     "template_path": Path("scripts/python/job_template.sh"),
-    "max_runs": 10,
-    "opt_submit": False,
+    "max_runs": 12,
+    "submit_flag": False,
+    "queue": "man",  # specify the queue
+    "cores": 12,  # number of cores to use for each job
+    "memory": 4,  # allocated memory per core, in GB
+    "walltime": "24:00",  # job walltime (hh:mm)
+    "email": None,  # custom email address for job notifications
 }
 
 
@@ -66,8 +74,8 @@ class ScenarioParams:
 
     project: str
     name: str
-    country: str
-    policy: str
+    extra_flags: dict[str, str] = field(default_factory=dict)
+
     jobscript: Path = field(init=False)
 
     def __post_init__(self) -> None:
@@ -80,43 +88,38 @@ class ScenarioParams:
         )
 
     def __str__(self) -> str:
-        """Return a string representation of the object."""
-        return f"- Scenario parameters: project: {self.project}, name: {self.name}, country={self.country}, policy={self.policy}"
+        flags_str = ", ".join(f"{k}={v}" for k, v in self.extra_flags.items())
+        return (
+            f"- Scenario: project={self.project}, name={self.name}\n"
+            f"  Flags: {flags_str}"
+        )
 
 
-def read_csv(file_path: Path) -> List[ScenarioParams]:
+def read_csv(file_path: Path) -> list[ScenarioParams]:
     """Read scenario parameters from a csv-file and return a list of ScenarioParams objects."""
     scenarios = []
-    with open(file_path, "r") as file:
+    with file_path.open("r") as file:
         delimiter = csv.Sniffer().sniff(file.read()).delimiter
         file.seek(0)
         reader = csv.DictReader(file, delimiter=delimiter)
-        for row_number, row in enumerate(
-            reader, start=2
-        ):  # Start from 2, skipping header row
+        for row_number, row in enumerate(reader, start=2):
             validate_row(row, row_number)
-            scenario = ScenarioParams(**row)
-            scenarios.append(scenario)
+            project = row.pop("project")
+            name = row.pop("name")
+            scenario_params = ScenarioParams(
+                project=project, name=name, extra_flags=row
+            )
+            scenarios.append(scenario_params)
     return scenarios
-
-
-def check_version() -> None:
-    """Check if the Python version is 3.7 or higher."""
-    if sys.version_info < (3, 7):
-        print("-----------------------------------------------------")
-        sys.exit("ERROR: PYTHON 3.7+ IS REQUIRED. SCRIPT HAS STOPPED")
-    return
 
 
 def check_file_exist(file_path: Path) -> None:
     """Check if the input csv-file exists."""
     if not file_path.is_file():
-        sys.exit(
-            "ERROR: Input csv-file not found, script has stopped."
-        )
+        sys.exit("ERROR: Input csv-file not found, script has stopped.")
 
 
-def check_max_runs(scenarios: List[ScenarioParams]) -> None:
+def check_max_runs(scenarios: list[ScenarioParams]) -> None:
     """Check if the number of scenarios is below the maximum allowed runs."""
     if len(scenarios) > cfg["max_runs"]:
         raise ValueError(
@@ -124,7 +127,7 @@ def check_max_runs(scenarios: List[ScenarioParams]) -> None:
         )
 
 
-def validate_row(row: Dict[str, str], row_number: int) -> None:
+def validate_row(row: dict[str, str], row_number: int) -> None:
     """Validate that rows are not empty and do not contain missing values."""
     if not any(row.values()):
         raise ValueError(f"Empty line detected at row {row_number}")
@@ -149,14 +152,18 @@ def job_creation(scenario: ScenarioParams) -> None:
     Returns:
         None
     """
-    email_line = f"#BSUB -u {cfg['email']}" if cfg["email"] else ""
+    flags = " ".join(f"--{key}={value}" for key, value in scenario.extra_flags.items())
+
     job_content = load_template().safe_substitute(
         project=scenario.project,
         scenario=scenario.name,
-        country=scenario.country,
-        policytype=scenario.policy,
+        flags=flags,
         base_dir=cfg["base_path"].as_posix(),
-        email_line=email_line,
+        queue=cfg["queue"],
+        cores=cfg["cores"],
+        memory=cfg["memory"],
+        walltime=cfg["walltime"],
+        email=cfg["email"],
     )
 
     with scenario.jobscript.open(mode="w+") as file:
@@ -164,7 +171,7 @@ def job_creation(scenario: ScenarioParams) -> None:
     print(f"Submission file for scenario '{scenario.name}' created")
 
 
-def job_submision(scenario: ScenarioParams):
+def job_submission(scenario: ScenarioParams):
     """
     Submits a job for the given scenario.
 
@@ -174,7 +181,7 @@ def job_submision(scenario: ScenarioParams):
     Returns:
         None
     """
-    if cfg["opt_submit"]:
+    if cfg["submit_flag"]:
         with scenario.jobscript.open(mode="r") as file:
             subprocess.run(["bsub"], stdin=file, cwd=Path.cwd())
         print(f"Scenario '{scenario.name}' successfully submitted")
@@ -212,6 +219,30 @@ def parse_args():
         help="Maximum number of runs allowed",
     )
     parser.add_argument(
+        "--queue",
+        type=str,
+        default=cfg["queue"],
+        help="Queue to submit the job to",
+    )
+    parser.add_argument(
+        "--cores",
+        type=int,
+        default=cfg["cores"],
+        help="Number of cores to use for each job",
+    )
+    parser.add_argument(
+        "--memory",
+        type=int,
+        default=cfg["memory"],
+        help="Memory (in GB) to allocate for each job",
+    )
+    parser.add_argument(
+        "--walltime",
+        type=str,
+        default=cfg["walltime"],
+        help="Walltime (in hh:mm) for each job",
+    )
+    parser.add_argument(
         "--email",
         type=str,
         default=None,
@@ -220,11 +251,19 @@ def parse_args():
     parser.add_argument(
         "--submit",
         action="store_true",
-        default=cfg["opt_submit"],
-        help="Submit the job or not",
+        default=cfg["submit_flag"],
+        help="Submit the job scripts to the HPC queue (default: False)",
     )
 
     args = parser.parse_args()
+
+    # email resolution logic: CLI, pyproject.toml, interactive user input
+    email = args.email
+    if not email:
+        while not email:
+            email = input("Enter your email address for job notifications: ").strip()
+            if not email:
+                print("Email address cannot be empty. Please enter a valid email.")
 
     cfg.update(
         {
@@ -232,8 +271,12 @@ def parse_args():
             "base_path": Path(args.base_path),
             "template_path": Path(args.template_path),
             "max_runs": args.max_runs,
-            "opt_submit": args.submit,
-            "email": args.email,
+            "submit_flag": args.submit,
+            "queue": args.queue,
+            "cores": args.cores,
+            "memory": args.memory,
+            "walltime": args.walltime,
+            "email": email,
         }
     )
 
@@ -245,11 +288,15 @@ def main():
     if len(sys.argv) > 1:
         parse_args()
     else:
-        # Interactive input for file_path if running in an IDE without command-line arguments
+        # Interactive input if running in an IDE without command-line arguments
         file_path_input = input("Enter the path to the CSV file containing scenarios: ")
         cfg["file_path"] = Path(file_path_input)
+        email = input("Enter your email address for job notifications: ").strip()
+        while not email:
+            print("Email address cannot be empty. Please enter a valid email.")
+            email = input("Enter your email address for job notifications: ").strip()
+        cfg["email"] = email
 
-    check_version()
     check_file_exist(cfg["file_path"])
     scenarios = read_csv(cfg["file_path"])
     check_max_runs(scenarios)
@@ -263,7 +310,7 @@ def main():
     for scenario in scenarios:
         scenario.jobscript.parent.mkdir(parents=True, exist_ok=True)
         job_creation(scenario)
-        job_submision(scenario)
+        job_submission(scenario)
         print("---------------------------------")
 
 

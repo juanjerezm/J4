@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -358,7 +357,7 @@ def output_table(
     index: list[str],
     columns: list[str],
     values: str,
-    aggfunc: str | Callable | None = None,  # optional
+    aggfunc: str | None = "mean",  # optional
     filename: str = "defaultTable",
     outdir: Path | str = Path(),
     show: bool = True,
@@ -372,13 +371,15 @@ def output_table(
         index (list[str]): The columns to use as index.
         columns (list[str]): The columns to use as columns.
         values (str): The column to use for values.
-        aggfunc (str, callable, or None, optional): Aggregation function to pass
+        aggfunc (str or None, optional): Aggregation function to pass
             to pivot_table. If None (default), pandas' default is used ("mean").
         filename (str, optional): The name of the output file (without extension).
         outdir (Path | str, optional): The directory to save the output file.
         show (bool, optional): Whether to display the table.
         save (bool, optional): Whether to save the table to file.
     """
+
+    aggfunc = "mean" if aggfunc is None else aggfunc
 
     table = df.pivot_table(
         index=index, columns=columns, values=values, aggfunc=aggfunc, observed=True

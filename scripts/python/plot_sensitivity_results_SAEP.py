@@ -102,11 +102,12 @@ def main(*, specification_path: str) -> None:
 
         # --- filter and plot data ---
         df = data[data["country"] == country_label]
+        # Reindex to ensure all projects are present in the correct order
         df = df.pivot_table(
             index="project", columns="policy", values="level", observed=True
-        )
+        ).reindex(projects)
 
-        x_indices = range(len(df.index))  # Indices for each project
+        x_indices = range(len(projects))  # Indices for each project
 
         for i, policy in enumerate(df.columns):
             ax.bar(
@@ -121,11 +122,9 @@ def main(*, specification_path: str) -> None:
         ax.set_title(country_label, fontweight="bold")
 
         # --- x-axis ---
-        xticks = data["project"].unique()
-        x_indices = range(len(xticks))
         ax.set_xlabel("Electricity Price")
         ax.set_xticks([x + (len(df.columns) - 1) * BARWIDTH / 2 for x in x_indices])
-        ax.set_xticklabels(xticks)
+        ax.set_xticklabels(projects)
 
         # --- y-axis ---
         utils_plot.configure_yaxis(

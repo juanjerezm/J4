@@ -16,39 +16,3 @@ dependencies = [
     "requests",
     "gamsapi"
 ]
-
-[tool.ruff]
-target-version = "py312"
-
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.ruff.lint]
-extend-select = [
-    # Start with defaults and add pragmatic extras
-    "E",   # pycodestyle (style/errors) - default, explicit for clarity
-    "F",   # pyflakes - default
-    "I",   # import sorting - default
-    "UP",  # pyupgrade - default
-    "B",   # bugbear (subset) - default
-    "SIM", # simplify code
-    "C4",  # better comprehensions
-    "ARG", # unused function args (nice complement to F841)
-    "PTH", # pathlib over os.path
-    "RUF", # ruff-specific extras
-
-    # Optional packs you can toggle on per project needs:
-    # "TRY", # try/except best practices
-    "RET", # return statement clarity
-    # "RSE", # raise statement clarity
-    "PERF",# micro-optimizations
-    # "FLY", # f-string suggestions (some overlap with UP)
-    # "N",   # naming conventions (strict)
-    "PD",  # pandas vet (if you use pandas)
-]
-
-ignore = [
-    "E501",   # line length (formatter handles wrapping)
-    "PD901", # "Avoid using the generic variable name `df` for DataFrames"
-    "RET504", # "Unnecessary assignment to variable before `return` statement"
-]

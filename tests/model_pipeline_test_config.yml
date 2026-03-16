@@ -1,0 +1,13 @@
+project: test-refactor
+scenario: test-2E2
+country: DE
+policy: support
+mode: single
+scenario_file: data/test-refactor/scenario_parameters.csv
+
+# Absolute tolerance for KPI assertions (in the KPI's native units, i.e. EUR)
+tol_abs: 1.0
+
+expected:
+  NPV_all: 15494592.902014308
+  WH_transaction: 1469364.3694886093

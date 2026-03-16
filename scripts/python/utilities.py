@@ -382,7 +382,11 @@ def output_table(
     aggfunc = "mean" if aggfunc is None else aggfunc
 
     table = df.pivot_table(
-        index=index, columns=columns, values=values, aggfunc=aggfunc, observed=True
+        index=index,
+        columns=columns,
+        values=values,
+        aggfunc=aggfunc,  # type: ignore
+        observed=True,
     )
     table = table.round(6)
 
@@ -464,7 +468,7 @@ def read_scenarios(specification_file: str | Path) -> list[Scenario]:
         raise ValueError(
             f"Missing values detected in the following rows:\n{missing_info}"
         )
-    scenarios = [Scenario(**row.to_dict()) for _, row in df.iterrows()]
+    scenarios = [Scenario(**row.to_dict()) for _, row in df.iterrows()]  # type: ignore
     print(f"-> Loaded {len(scenarios)} runs from {path}")
     print_line()
     for scenario in scenarios:

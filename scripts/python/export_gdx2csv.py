@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import pandas as pd
@@ -5,6 +6,17 @@ import utilities as utils
 from utilities import Scenario
 
 cfg = {"base_path": Path.cwd()}
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Export postprocessing GDX files to CSV"
+    )
+    parser.add_argument(
+        "--scenario-file",
+        help="Path to a scenario_parameters.csv file to export",
+    )
+    return parser.parse_args()
 
 
 def export_to_csv(scenario: Scenario, data: dict[str, pd.DataFrame]) -> None:
@@ -16,7 +28,7 @@ def export_to_csv(scenario: Scenario, data: dict[str, pd.DataFrame]) -> None:
     pass
 
 
-def main(file):
+def main(file: str | Path) -> None:
     scenarios = utils.read_scenarios(file)
     utils.print_line()
     for scenario in scenarios:
@@ -27,6 +39,12 @@ def main(file):
 
 
 if __name__ == "__main__":
+    args = parse_args()
+
+    if args.scenario_file:
+        main(args.scenario_file)
+        raise SystemExit(0)
+
     # ----- main analysis -----
     # projects = ["MAIN"]
 

@@ -27,7 +27,7 @@ REQUIRED_KEYS = [
 ]
 
 
-def parse_args() -> argparse.Namespace:
+def _parse_args() -> argparse.Namespace:
     """Parse CLI arguments for this test script."""
     parser = argparse.ArgumentParser(
         description="Run an E2E for the model's pipeline locally"
@@ -55,13 +55,10 @@ def load_config(path: str) -> dict:
 
 def validate_config(cfg: dict, required_keys: list[str]) -> None:
     """Validate that all required config keys are present and non-null."""
-
     missing = [key for key in required_keys if cfg.get(key) is None]
-
     if missing:
         missing_str = ", ".join(missing)
         raise ValueError(f"Missing required spec keys: {missing_str}")
-
     return
 
 
@@ -134,19 +131,18 @@ def assert_expected(
             )
 
 
-def main() -> None:
+def main(config_file: str, no_clean: bool = False) -> None:
     """Run the full local test flow from scenario config to KPI validation."""
 
     print("==================================================")
     print("Starting modelling pipeline's E2E test")
 
-    args = parse_args()
-    cfg = load_config(args.config_file)
+    cfg = load_config(config_file)
     validate_config(cfg, REQUIRED_KEYS)
 
     outdir = Path("results") / cfg["project"] / cfg["scenario"]
 
-    if not args.no_clean:
+    if not no_clean:
         print(f"Cleaning previous results at {outdir}")
         shutil.rmtree(outdir, ignore_errors=True)
 
@@ -166,4 +162,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    args = _parse_args()
+    main(config_file=args.config_file, no_clean=args.no_clean)

@@ -1,0 +1,2 @@
+id: EPmax
+description: "Overrides electricity prices to 2022 levels (mean: €210/MWh, std: €150/MWh)"

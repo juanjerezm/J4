@@ -1,0 +1,2 @@
+id: EPmin
+description: "Overrides electricity prices to 2020 levels (mean: €28/MWh, std: €20/MWh)"

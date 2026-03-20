@@ -1,5 +1,12 @@
 * ======================================================================
-*  SETUP:
+*  DESCRIPTION
+* ======================================================================
+* ----- INFO -----
+* # TODO: fill this in
+* # TODO: work on fixing the input data directory tree. Look (ctrl+F) for %project%
+
+* ======================================================================
+*  SETUP
 * ======================================================================
 * ----- GAMS Options -----
 $eolCom !!
@@ -10,21 +17,6 @@ $offInclude             !! Suppresses listing of include-files
 option solprint = off   !! Toggles solution listing
 option limRow = 0       !! Maximum number of rows listed in equation block
 option limCol = 0       !! Maximum number of columns listed in one variable block
-
-* ======================================================================
-*  SCRIPT CONTROL (Commented if running from run.gms):
-* ======================================================================
-* * ----- Control flags -----
-* * Set default values if script not called from integrated model nor command line
-* $ifi not set project    $setlocal project       'default_prj'
-* $ifi not set scenario   $setlocal scenario      'default_scn'
-* $ifi not set policytype $setlocal policytype    'taxation'
-* $ifi not set country    $setlocal country       'DK'
-
-* * ----- Directories, filenames, and scripts -----
-* * Create directories for output if script not called from integrated model nor command line
-* $ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
-* $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
 
 
 * ======================================================================
@@ -63,24 +55,24 @@ SET E                   'Entity'
 SET G(*)                'Generators'
 /
 $onDelim
-$if     EXIST './data/%project%/name-generator.csv' $include './data/%project%/name-generator.csv'
-$if not EXIST './data/%project%/name-generator.csv' $include               './data/common/name-generator.csv'
+$if     EXIST './data/%override%/name-generator.csv' $include './data/%override%/name-generator.csv'
+$if not EXIST './data/%override%/name-generator.csv' $include './data/common/name-generator.csv'
 $offDelim
 /;
 
 SET S(*)                'Storages'
 /
 $onDelim
-$if     EXIST './data/%project%/name-storage.csv' $include './data/%project%/name-storage.csv'
-$if not EXIST './data/%project%/name-storage.csv' $include               './data/common/name-storage.csv'
+$if     EXIST './data/%override%/name-storage.csv' $include './data/%override%/name-storage.csv'
+$if not EXIST './data/%override%/name-storage.csv' $include './data/common/name-storage.csv'
 $offDelim
 /;
 
 SET F(*)                'Fuels'
 /
 $onDelim
-$if     EXIST './data/%project%/name-fuel.csv' $include './data/%project%/name-fuel.csv'
-$if not EXIST './data/%project%/name-fuel.csv' $include               './data/common/name-fuel.csv'
+$if     EXIST './data/%override%/name-fuel.csv' $include './data/%override%/name-fuel.csv'
+$if not EXIST './data/%override%/name-fuel.csv' $include './data/common/name-fuel.csv'
 $offDelim
 /;
 
@@ -101,8 +93,8 @@ $offDelim
 SET GF(G,F)             'Generator-fuel mapping'
 /
 $onDelim
-$if     EXIST './data/%project%/map-generator-fuel.csv' $include './data/%project%/map-generator-fuel.csv'
-$if NOT EXIST './data/%project%/map-generator-fuel.csv' $include               './data/common/map-generator-fuel.csv'
+$if     EXIST './data/%override%/map-generator-fuel.csv' $include './data/%override%/map-generator-fuel.csv'
+$if NOT EXIST './data/%override%/map-generator-fuel.csv' $include './data/common/map-generator-fuel.csv'
 $offDelim
 /;
 
@@ -155,36 +147,36 @@ $offDelim
 * --- Load data values --- *
 TABLE ENTT_DATA(E,EnttAttrs)    'Entity data'
 $onDelim
-$if     EXIST './data/%project%/data-entity.csv' $include './data/%project%/data-entity.csv'
-$if NOT EXIST './data/%project%/data-entity.csv' $include    './data/common/data-entity.csv'
+$if     EXIST './data/%override%/data-entity.csv' $include './data/%override%/data-entity.csv'
+$if NOT EXIST './data/%override%/data-entity.csv' $include './data/common/data-entity.csv'
 $offDelim
 ;
 
 TABLE GNRT_DATA(G,GnrtAttrs)    'Generator data'
 $onDelim
-$if     EXIST './data/%project%/data-generator.csv' $include './data/%project%/data-generator.csv'
-$if NOT EXIST './data/%project%/data-generator.csv' $include    './data/common/data-generator.csv'
+$if     EXIST './data/%override%/data-generator.csv' $include './data/%override%/data-generator.csv'
+$if NOT EXIST './data/%override%/data-generator.csv' $include './data/common/data-generator.csv'
 $offDelim
 ;
 
 TABLE STRG_DATA(S,StrgAttrs)    'Storage data'
 $onDelim
-$if     EXIST './data/%project%/data-storage.csv' $include './data/%project%/data-storage.csv'
-$if NOT EXIST './data/%project%/data-storage.csv' $include               './data/common/data-storage.csv'
+$if     EXIST './data/%override%/data-storage.csv' $include './data/%override%/data-storage.csv'
+$if NOT EXIST './data/%override%/data-storage.csv' $include './data/common/data-storage.csv'
 $offDelim
 ;
 
 TABLE CNCT_DATA(G,CnctAttrs)    'Connection data'
 $onDelim
-$if     EXIST './data/%project%/data-connection.csv' $include './data/%project%/data-connection.csv'
-$if NOT EXIST './data/%project%/data-connection.csv' $include               './data/common/data-connection.csv'
+$if     EXIST './data/%override%/data-connection.csv' $include './data/%override%/data-connection.csv'
+$if NOT EXIST './data/%override%/data-connection.csv' $include './data/common/data-connection.csv'
 $offDelim
 ;
 
 TABLE FUEL_DATA(F,FuelAttrs)    'Fuel data'
 $onDelim
-$if     EXIST './data/%project%/data-fuel-%country%.csv' $include './data/%project%/data-fuel-%country%.csv'
-$if NOT EXIST './data/%project%/data-fuel-%country%.csv' $include               './data/common/data-fuel-%country%.csv'
+$if     EXIST './data/%override%/data-fuel-%country%.csv' $include './data/%override%/data-fuel-%country%.csv'
+$if NOT EXIST './data/%override%/data-fuel-%country%.csv' $include './data/common/data-fuel-%country%.csv'
 $offDelim
 ;
 
@@ -293,40 +285,40 @@ PARAMETERS
 D_h(T)
 /
 $onDelim
-$if     EXIST './data/%project%/ts-demand-heat.csv' $include './data/%project%/ts-demand-heat.csv'
-$if NOT EXIST './data/%project%/ts-demand-heat.csv' $include               './data/common/ts-demand-heat.csv' 
+$if     EXIST './data/%override%/ts-demand-heat.csv' $include './data/%override%/ts-demand-heat.csv'
+$if NOT EXIST './data/%override%/ts-demand-heat.csv' $include './data/common/ts-demand-heat.csv' 
 $offDelim
 /
 
 D_c(T)
 /
 $onDelim
-$if     EXIST './data/%project%/ts-demand-cold.csv' $include './data/%project%/ts-demand-cold.csv'
-$if NOT EXIST './data/%project%/ts-demand-cold.csv' $include               './data/common/ts-demand-cold.csv'
+$if     EXIST './data/%override%/ts-demand-cold.csv' $include './data/%override%/ts-demand-cold.csv'
+$if NOT EXIST './data/%override%/ts-demand-cold.csv' $include './data/common/ts-demand-cold.csv'
 $offDelim
 /
 
 pi_e(T)
 /
 $onDelim
-$if     EXIST './data/%project%/ts-electricity-price.csv' $include './data/%project%/ts-electricity-price.csv'
-$if NOT EXIST './data/%project%/ts-electricity-price.csv' $include               './data/common/ts-electricity-price.csv'
+$if     EXIST './data/%override%/ts-electricity-price.csv' $include './data/%override%/ts-electricity-price.csv'
+$if NOT EXIST './data/%override%/ts-electricity-price.csv' $include './data/common/ts-electricity-price.csv'
 $offDelim
 /
 
 qc_e(T)
 /
 $onDelim
-$if     EXIST './data/%project%/ts-electricity-carbon.csv' $include './data/%project%/ts-electricity-carbon.csv'
-$if NOT EXIST './data/%project%/ts-electricity-carbon.csv' $include               './data/common/ts-electricity-carbon.csv'
+$if     EXIST './data/%override%/ts-electricity-carbon.csv' $include './data/%override%/ts-electricity-carbon.csv'
+$if NOT EXIST './data/%override%/ts-electricity-carbon.csv' $include './data/common/ts-electricity-carbon.csv'
 $offDelim
 /
 
 tax_fuel_g(G)
 /
 $onDelim
-$if     EXIST './data/%project%/data-fueltax-generator-%country%.csv' $include './data/%project%/data-fueltax-generator-%country%.csv'
-$if NOT EXIST './data/%project%/data-fueltax-generator-%country%.csv' $include               './data/common/data-fueltax-generator-%country%.csv'
+$if     EXIST './data/%override%/data-fueltax-generator-%country%.csv' $include './data/%override%/data-fueltax-generator-%country%.csv'
+$if NOT EXIST './data/%override%/data-fueltax-generator-%country%.csv' $include './data/common/data-fueltax-generator-%country%.csv'
 $OffDelim
 /
 ;
@@ -334,22 +326,22 @@ $OffDelim
 * - Multi-dimensional parameters -
 TABLE F_a(T,G)
 $onDelim
-$if     EXIST './data/%project%/ts-generator-availability.csv' $include './data/%project%/ts-generator-availability.csv'
-$if NOT EXIST './data/%project%/ts-generator-availability.csv' $include               './data/common/ts-generator-availability.csv'
+$if     EXIST './data/%override%/ts-generator-availability.csv' $include './data/%override%/ts-generator-availability.csv'
+$if NOT EXIST './data/%override%/ts-generator-availability.csv' $include './data/common/ts-generator-availability.csv'
 $offDelim
 ;
 
 TABLE eta_g(T,G)
 $onDelim
-$if     EXIST './data/%project%/ts-generator-efficiency.csv' $include './data/%project%/ts-generator-efficiency.csv'
-$if NOT EXIST './data/%project%/ts-generator-efficiency.csv' $include               './data/common/ts-generator-efficiency.csv'
+$if     EXIST './data/%override%/ts-generator-efficiency.csv' $include './data/%override%/ts-generator-efficiency.csv'
+$if NOT EXIST './data/%override%/ts-generator-efficiency.csv' $include './data/common/ts-generator-efficiency.csv'
 $offDelim
 ;
 
 TABLE tariff_schedule_v(H,M)
 $onDelim
-$if     EXIST './data/%project%/data-tariffschedule-vol-%country%.csv' $include './data/%project%/data-tariffschedule-vol-%country%.csv'¨
-$if NOT EXIST './data/%project%/data-tariffschedule-vol-%country%.csv' $include               './data/common/data-tariffschedule-vol-%country%.csv'
+$if     EXIST './data/%override%/data-tariffschedule-vol-%country%.csv' $include './data/%override%/data-tariffschedule-vol-%country%.csv'¨
+$if NOT EXIST './data/%override%/data-tariffschedule-vol-%country%.csv' $include './data/common/data-tariffschedule-vol-%country%.csv'
 $offDelim
 ;
 
@@ -396,19 +388,19 @@ tariff_v(T)         = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M)); 
 C_f(T,G,F)$(GF(G,F) AND G_DH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
 
 * Fuel costs for WHS depend on the policy type
-$ifi %policytype% == 'socioeconomic'    C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F);
-$ifi %policytype% == 'taxation'         C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
-$ifi %policytype% == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
+$ifi "%policytype%" == 'socioeconomic'    C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F);
+$ifi "%policytype%" == 'taxation'         C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
+$ifi "%policytype%" == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
 
 * - Policy parameters -
-$ifi NOT %policytype% == 'support'  k_inv_g(G)      = EPS + 0;                        !! default value w/o support policy
-$ifi NOT %policytype% == 'support'  k_inv_p         = EPS + 0;                        !! default value w/o support policy
-$ifi NOT %policytype% == 'support'  k_op_g(T,G)     = EPS + 0;                        !! default value w/o support policy
-$ifi NOT %policytype% == 'support'  pi_h_ceil(G)    = EPS + 0;                        !! default value w/o support policy
-$ifi     %policytype% == 'support'  $include './scripts/gams/definition_policy.inc';
+$ifi NOT "%policytype%" == 'support'  k_inv_g(G)      = EPS + 0;                        !! default value w/o support policy
+$ifi NOT "%policytype%" == 'support'  k_inv_p         = EPS + 0;                        !! default value w/o support policy
+$ifi NOT "%policytype%" == 'support'  k_op_g(T,G)     = EPS + 0;                        !! default value w/o support policy
+$ifi NOT "%policytype%" == 'support'  pi_h_ceil(G)    = EPS + 0;                        !! default value w/o support policy
+$ifi     "%policytype%" == 'support'  $include './scripts/gams/definition_policy.inc';
 
 
 * ======================================================================
 *  Output
 * ======================================================================
-execute_unload 'results/%project%/%scenario%/parameters.gdx';
+execute_unload './results/%scenario%/gdx/parameters.gdx';

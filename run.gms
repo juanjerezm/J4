@@ -1,24 +1,47 @@
 * ======================================================================
-* DESCRIPTION:
+* DESCRIPTION
 * ======================================================================
 * 
 * Written by Juan Jerez, jujmo@dtu.dk, 2024.
 
-* This script sets up flags, directories, and filenames for the model runs. 
-* It executes an entire model run:
-* - the parameter script that reads data and populates the parameters, 
-* - the reference case optimisation,
-* - the integrated case optimisation,
-* - and the post-processing script.
+* This script orchestrates several gams scripts, each corresponding to a specific step in the model run.
+* It is designed to be run from the command line, allowing users to specify various flags that control the model behavior as detailed below.     
+* The main steps of the model run are:
+* - parameters.gms      : script that reads data files and populates the parameters used in the following steps. 
+* - model_reference.gms : an optimization model representing a reference case without waste-heat recovery.
+* - model.gms           : an optimization model representing the integrated case with waste-heat recovery.
+* - postprocessing.gms  : a script for post-processing and merging results from model_reference and model_integrated.
 
 
-* ----- NOTES / TODO -----
+* ----- Scenario identifier flag (scenario) -----
+* Unique run identifier.
+
+* ----- Data override flag (override) -----
+* Selects an override under data/overrides/ to replace default input data ('none' uses defaults only).
+
+* ----- Solving mode flag (solve_mode) -----
+* Selects how the model is solved
+*  - 'static'       : solves the model once, using fixed WHR's full-load hours. Mainly used for testing.
+*  - 'iterative'    : solves the model repeatedly, updating WHR's full-load hours between iterations.
+
+* ----- Country flag (country) -----
+* These flags select country-specific data and policy rules. Options are:
+*  - 'DE'  : Germany.
+*  - 'DK'  : Denmark.
+*  - 'FR'  : France.
+
+* --- Policy flag (policytype) ---
+* Selects the specific policy regime applied to WHS costs, activating particular constraints in the model. Options are:
+*  - 'socioeconomic'    : does not include taxes, tariffs or support schemes.
+*  - 'taxation'         : applies common energy/carbon taxes and electricity tariffs.
+*  - 'support'          : includes support schemes on top of taxation
 
 
 * ======================================================================
-*  OPTIONS:
+*  OPTIONS
 * ======================================================================
 * ----- GAMS Options -----
+* # TODO: check GAMS output contents what to keep what to suppress, and adjust these options accordingly.
 $eolCom !!
 $onEmpty                !! Allows empty sets or parameters
 $Offlisting             !! Suppresses listing of input lines
@@ -33,81 +56,83 @@ option EpsToZero = on   !! Outputs Eps values as zero
 
 
 * ======================================================================
-*  CONTROL FLAGS:
+*  DEFAULTS (GAMS GUI FALLBACK)
 * ======================================================================
-* ----- Identifier flags -----
-* Used to set directories and filenames, results will be overwritten if these flags are not unique. 
-* DO NOT use spaces or hyphens (-)
-* - project: a collection of related scenarios
-* - scenario: the name of a specific run
+* When run from GAMS GUI, parameters are not passed via command line. In such case, control flags are defined here.
 
-$ifi not setglobal project  $SetGlobal project  'default_prj'
-$ifi not setglobal scenario $SetGlobal scenario 'default_scn'
-
-
-* --- Policy flag ---
-* These flags activate specific parameters, constraints and equation terms in the model.
-*  - 'socioeconomic' does not include taxes, tariffs or support schemes for the waste-heat source
-*  - 'taxation'      includes energy/carbon taxes and electricity tariffs,
-*  - 'support'       includes support schemes on top of taxation
-
-* If running directly from GAMS UI (without specifying parameters), the default is as uncommented below
-
-* $ifi not setglobal policytype $SetGlobal policytype 'socioeconomic'
-$ifi not setglobal policytype $SetGlobal policytype 'taxation'
-* $ifi not setglobal policytype $SetGlobal policytype 'support'
-
-
-* ----- Country flag -----
-* These flags select country-specific parameters and policies
-
-* If running directly from GAMS UI (without specifying parameters), the default is as uncommented below
-* $ifi not setglobal country  $SetGlobal country  'DE'
-$ifi not setglobal country  $SetGlobal country  'DK'
-* $ifi not setglobal country  $SetGlobal country  'FR'
-
-
-* --- Solving flag ---
-* Sets how the model is solved
-*   - 'single'      solves the model once, using assumed full-load hours
-*   - 'iterative'   solves the model iteratively, updating full-load hours
-
-* Default is as uncommented below, if not specified in the HPC submission file (current case), command line, or GAMS parameter UI
-* $ifi not setglobal mode     $SetGlobal mode 'single'         !! Choose between 'single' and 'iterative'
-$ifi not setglobal mode     $SetGlobal mode 'iterative'         !! Choose between 'single' and 'iterative'
+* ----- Control flag definition -----
+$ifi not setglobal scenario     $SetGlobal scenario     'default_scn'
+$ifi not setglobal override     $SetGlobal override     'none'
+$ifi not setglobal solve_mode   $SetGlobal solve_mode   'iterative'
+$ifi not setglobal country      $SetGlobal country      'DK'
+$ifi not setglobal policytype   $SetGlobal policytype   'taxation'
 
 
 * ======================================================================
-*  Directories and Filenames:
+*  VALIDATION
 * ======================================================================
-* ----- Directories, filenames, and scripts -----
-* Create directories for output
-$ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';   !! Windows
-$ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';   !! Unix
+* ----- Validation of control flags -----
+$if "%country%"==DE     $goto validCountry
+$if "%country%"==DK     $goto validCountry
+$if "%country%"==FR     $goto validCountry
+$abort "Invalid country."
+$label validCountry
+
+$if "%policytype%"==socioeconomic   $goto validPolicy
+$if "%policytype%"==taxation        $goto validPolicy
+$if "%policytype%"==support         $goto validPolicy
+$abort "Invalid policytype."
+$label validPolicy
+
+$if "%solve_mode%"==static          $goto validMode
+$if "%solve_mode%"==iterative       $goto validMode
+$abort "Invalid solving mode."
+$label validMode
+
+* ----- Validation of overrides -----
+* Ensure reserved override name 'none' is not used for an actual override directory.
+$if     "%override%" == 'none' $if     DEXIST './data/overrides/none'       $abort "Override directory 'none' should not exist in ./data/overrides/"
+
+* Ensure that if an override is specified, the corresponding directory exists. (This is a fallback for GAMS GUI users)
+$if not "%override%" == 'none' $if NOT DEXIST './data/overrides/%override%' $abort "Override directory not found: ./data/overrides/%override%"
+
+* ----- Listing of override contents -----
+* If an override is specified, list its contents in the log for traceability.
+$if not "%override%" == 'none' $log  "Override directory contents:"
+$if not "%override%" == 'none' $ifi %system.filesys% == unix   $call 'ls -l "./data/overrides/%override%" | tee -a "./results/%scenario%/run.log"'
+$if not "%override%" == 'none' $ifi %system.filesys% == msnt   $call   'dir ".\data\overrides\%override%" | tee -a ".\results\%scenario%\run.log"'
 
 
 * ======================================================================
-*  Run the model:
+*  DIRECTORY SETUP
 * ======================================================================
-* Specific parts of the model can be run by calling the corresponding script.
-* Each script requires all previous scripts to be executed.
+* ----- Directory setup -----
+* Create output directories, only relevant if running from GAMS GUI.
+$ifi %system.filesys% == msnt   $call 'mkdir    ".\results\%scenario%\gdx"';  !! Windows
+$ifi %system.filesys% == unix   $call 'mkdir -p "./results/%scenario%/gdx"';  !! Unix
 
-* parameter script
-$call gams ./scripts/gams/parameters.gms        --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
+
+* ======================================================================
+*  MODEL EXECUTION
+* ======================================================================
+* Run each stage in sequence, each script depends on outputs from previous stages.
+
+* ----- parameter script (parameters.gms) -----
+$call gams ./scripts/gams/parameters.gms    --scenario="%scenario%" --override="%override%" --country="%country%" --policytype="%policytype%"   o=./results/"%scenario%"/parameters.lst
 $eval error_parameters errorLevel
 $if not %error_parameters%==0               $abort "parameters.gms did not execute successfully. Errorlevel: %error_parameters%"
 
-* reference case
-$call gams ./scripts/gams/model_reference   --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/model_reference.lst  
+* ----- Case without WHR (model_reference.gms) -----
+$call gams ./scripts/gams/model_reference   --scenario="%scenario%" --override="%override%" --country="%country%" --policytype="%policytype%"   o=./results/"%scenario%"/model_reference.lst
 $eval error_reference errorLevel
 $if not %error_reference%==0                $abort "model_reference.gms did not execute successfully. Errorlevel: %error_reference%"
 
-* integrated case
-$call gams ./scripts/gams/model             --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% --mode=%mode% o=./results/%project%/%scenario%/model_integrated.lst  
+* ----- Case with possible WHR (model.gms) -----
+$call gams ./scripts/gams/model             --scenario="%scenario%" --override="%override%" --country="%country%" --policytype="%policytype%" --solve_mode="%solve_mode%" o=./results/"%scenario%"/model_integrated.lst  
 $eval error_integrated errorLevel
 $if not %error_integrated%==0               $abort "model.gms did not execute successfully. Errorlevel: %error_integrated%"
 
-* post-processing
-$call gams ./scripts/gams/postprocessing   --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/post_processing.lst
+* ----- post-processing script (postprocessing.gms) -----
+$call gams ./scripts/gams/postprocessing    --scenario="%scenario%" --override="%override%" --country="%country%" --policytype="%policytype%"   o=./results/"%scenario%"/post_processing.lst
 $eval error_postprocessing errorLevel
 $if not %error_postprocessing%==0           $abort "post_processing.gms did not execute successfully. Errorlevel: %error_postprocessing%"

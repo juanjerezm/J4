@@ -1,4 +1,12 @@
 * ======================================================================
+* DESCRIPTION
+* ======================================================================
+* ----- INFO -----
+* # TODO: fill this in
+* # TODO: rename this file to model-integrated.gms, and fix all references to it in run.gms 
+
+
+* ======================================================================
 *  SETUP:
 * ======================================================================
 * ----- GAMS Options -----
@@ -14,25 +22,6 @@ option optcr = 1e-4     !! Relative optimality tolerance
 option EpsToZero = on   !! Outputs Eps values as zero
 ;
 
-* ======================================================================
-*  SCRIPT CONTROL (Commented if running from run.gms):
-* ======================================================================
-* * ----- Control flags -----
-* * Set default values if script not called from another script or command line
-* $ifi not setglobal project    $setGlobal project      'default_prj'
-* $ifi not setglobal scenario   $setGlobal scenario     'default_scn'
-* $ifi not setglobal policytype $setGlobal policytype   'taxation'
-* $ifi not setglobal country    $setGlobal country      'DK'
-* $ifi not setglobal mode       $SetGlobal mode         'iterative'         !! Choose between 'single' and 'iterative'
-
-* * ----- Directories, filenames, and scripts -----
-* * Create directories for output
-* $ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
-* $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
-
-* * Execute the reference case
-* $call gams ./scripts/gams/parameters      --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
-* $call gams ./scripts/gams/model_reference --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/model_reference.lst
 
 * ======================================================================
 * SCALARS
@@ -161,7 +150,7 @@ pi_h_ceil(G)            'Waste-heat ceiling price (EUR/MWh)'
 
 * ----- Parameter definition -----
 * - Direct assignment - (This should, ideally, be done in a separate data file)
-$gdxin './results/%project%/%scenario%/parameters.gdx'
+$gdxin './results/%scenario%/gdx/parameters.gdx'
 $load T, H, M, G, S, SS, E, F, TM, TH, GF                                       !! Load sets
 $load G_ETS, G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL  !! Load subsets
 $load lifetime, r, AF                                                           !! Load entity parameters
@@ -175,7 +164,7 @@ $load k_inv_g, k_inv_p, k_op_g, pi_h_ceil                                       
 $gdxin
 
 * - Parameters from the reference case -
-$gdxin './results/%project%/%scenario%/transfer-%scenario%-reference.gdx'
+$gdxin './results/%scenario%/gdx/transfer-reference.gdx'
 $load MarginalBid=MarginalCostDHN_Ref,
 $load SubstitutionCost=MarginalCostWHS_Ref,
 $load OPX_REF=OperationalCost_Ref,
@@ -215,7 +204,7 @@ pi_h(T,G_HR)                = (BidPrice(T,G_HR) + AskPrice(T,G_HR))/2;  !! Price
 F_a(T,G_HR)$( AskPrice(T,G_HR) GE BidPrice(T,G_HR) ) = 0;
 
 * Apply price-ceiling for waste-heat (DK - support)
-$ifi %country% == 'DK' $ifi %policytype% == 'support' pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-FixedBid(G_HR))) = pi_h_ceil(G_HR)-FixedBid(G_HR);
+$ifi "%country%" == 'DK' $ifi "%policytype%" == 'support' pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-FixedBid(G_HR))) = pi_h_ceil(G_HR)-FixedBid(G_HR);
 
 
 * ----- Temporary or auxiliary assignments -----
@@ -313,7 +302,7 @@ eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(
                                                             + sum((T,S_DH),              C_s(S_DH)      * x_s(T,S_DH,'discharge'))
                                                             + sum((T,G_CHP),             C_e(G_CHP)     * x_e(T,G_CHP))
                                                             - sum((T,G_CHP),             pi_e(T)        * x_e(T,G_CHP))
-$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)    * y_f_used('DHN',F))
+$ifi not "%policytype%" == 'socioeconomic'                  + sum(F,                     tariff_c(F)    * y_f_used('DHN',F))
                                                             ;
 
 eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F)  * x_f(T,G_CO,F))
@@ -321,7 +310,7 @@ eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(
                                                             + sum((T,G_HR,F)$GF(G_HR,F), C_f(T,G_HR,F)  * x_f(T,G_HR,F))
                                                             + sum((T,G_HR),              C_h(G_HR)      * x_h(T,G_HR))
                                                             + sum(G_HR,                  C_g_fix(G_HR)  * y_hr(G_HR))
-$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)    * y_f_used('WHS',F))
+$ifi not "%policytype%" == 'socioeconomic'                  + sum(F,                     tariff_c(F)    * y_f_used('WHS',F))
                                                             - sum((T,G_HR),              k_op_g(T,G_HR) * x_h(T,G_HR));
                                                             ;
 
@@ -367,9 +356,8 @@ mdl_all.optfile = 1;
 * ======================================================================
 * SOLVE
 * ======================================================================
-
-$ifi %mode% == 'single'     $include './scripts/gams/solve_single.inc';
-$ifi %mode% == 'iterative'  $include './scripts/gams/solve_iterative.inc';
+$ifi "%solve_mode%" == 'static'       $include './scripts/gams/solve_static.inc';
+$ifi "%solve_mode%" == 'iterative'    $include './scripts/gams/solve_iterative.inc';
 
 
 * ======================================================================
@@ -383,8 +371,8 @@ FixedAsk(G_HR)          = EPS + FixedAsk(G_HR);
 FixedBid(G_HR)          = EPS + FixedBid(G_HR);
 pi_h(T,G_HR)            = EPS + pi_h(T,G_HR);
 
-execute_unload './results/%project%/%scenario%/results-%scenario%-integrated.gdx',
-$ifi %mode% == 'iterative' log_n,
+execute_unload './results/%scenario%/gdx/results-integrated.gdx',
+$ifi "%solve_mode%" == 'iterative' log_n,
 NPV_all, NPV, OPX, CAPEX, WH_transaction, N
 x_f, x_h, x_e, x_c, w, z, y_hr, y_f_used, x_s
 pi_h, AskPrice, BidPrice, MarginalAsk, MarginalBid, FixedAsk, FixedBid

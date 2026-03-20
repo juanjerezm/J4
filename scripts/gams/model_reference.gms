@@ -1,14 +1,12 @@
 * ======================================================================
-* DESCRIPTION:
+* DESCRIPTION
 * ======================================================================
 * ----- INFO -----
+* # TODO: fill this in
 
-* ----- NOTES -----
-
-* ----- TO DO -----
 
 * ======================================================================
-*  SETUP:
+*  SETUP
 * ======================================================================
 * ----- GAMS Options -----
 $eolCom !!
@@ -23,22 +21,6 @@ option optcr = 1e-4     !! Relative optimality tolerance
 option EpsToZero = on   !! Outputs Eps values as zero
 ;
 
-* ======================================================================
-*  SCRIPT CONTROL (Commented if running from run.gms):
-* ======================================================================
-* * ----- Control flags -----
-* * Set default values if script not called from another script or command line
-* $ifi not setglobal project    $setGlobal project      'default_prj'
-* $ifi not setglobal scenario   $setGlobal scenario     'default_scn'
-* $ifi not setglobal policytype $setGlobal policytype   'taxation'
-* $ifi not setglobal country    $setGlobal country      'DK'
-
-* * ----- Directories, filenames, and scripts -----
-* * Create directories for output if script not called from integrated model nor command line
-* $ifi %system.filesys% == msnt   $call 'mkdir    .\results\%project%\%scenario%\';
-* $ifi %system.filesys% == unix   $call 'mkdir -p ./results/%project%/%scenario%/';
-
-* $call gams ./scripts/gams/parameters  --project=%project% --scenario=%scenario% --policytype=%policytype% --country=%country% o=./results/%project%/%scenario%/parameters.lst
 
 * ======================================================================
 * SCALARS
@@ -132,7 +114,7 @@ eta_s(S)                'Storage throughput efficiency (-)'
 ;
 
 * ----- Parameter definition -----
-$gdxin results/%project%/%scenario%/parameters.gdx
+$gdxin './results/%scenario%/gdx/parameters.gdx'
 $load T, H, M, G, S, SS, E, F, TM, TH, GF                                       !! Load sets
 $load G_ETS, G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL  !! Load subsets
 $load D_h, D_c                                                                  !! Load system parameters
@@ -210,12 +192,12 @@ eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(
                                                             + sum((T,S_DH),              C_s(S_DH)     * x_s(T,S_DH,'discharge'))
                                                             + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
                                                             - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
-$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('DHN',F))
+$ifi not "%policytype%" == 'socioeconomic'                  + sum(F,                     tariff_c(F)   * y_f_used('DHN',F))
                                                             ;
 
 eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f(T,G_CO,F))
                                                             + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
-$ifi not %policytype% == 'socioeconomic'                    + sum(F,                     tariff_c(F)   * y_f_used('WHS',F))
+$ifi not "%policytype%" == 'socioeconomic'                  + sum(F,                     tariff_c(F)   * y_f_used('WHS',F))
                                                             ;
 
 eq_load_heat(T)..                           sum(G_DH, x_h(T,G_DH)) + sum(S_DH, x_s(T,S_DH,'discharge')) - sum(S_DH, x_s(T,S_DH,'charge')) =e= D_h(T);
@@ -282,11 +264,11 @@ ColdProd_Ref(T,G_WH)        = EPS + x_c.l(T,G_WH);
 StorageProd_Ref(T,S,SS)     = EPS + x_s.l(T,S,SS);
 StorageLevel_Ref(T,S)       = EPS + z.l(T,S);
 
-execute_unload  './results/%project%/%scenario%/results-%scenario%-reference.gdx',
+execute_unload  './results/%scenario%/gdx/results-reference.gdx',
 obj, OPX, x_f, x_h, x_e, x_c, w, z, y_f_used, x_s
 ;
 
-execute_unload  './results/%project%/%scenario%/transfer-%scenario%-reference.gdx',
+execute_unload  './results/%scenario%/gdx/transfer-reference.gdx',
 MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, EmissionsDHN_Ref, HeatProd_Ref, ColdProd_Ref, StorageProd_Ref, StorageLevel_Ref
 ;
 

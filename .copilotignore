@@ -1,1 +1,5 @@
 results/**/csv/
+results copy/**/csv/
+
+results/**/gdx/
+results copy/**/gdx/

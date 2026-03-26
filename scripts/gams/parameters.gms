@@ -2,8 +2,17 @@
 *  DESCRIPTION
 * ======================================================================
 * ----- INFO -----
-* # TODO: fill this in
-* # TODO: work on fixing the input data directory tree. Look (ctrl+F) for %project%
+* Written by Juan Jerez, jujmo@dtu.dk, 2024.
+*
+* This script builds the model input dataset and exports it to GDX.
+* It reads default data from ./data/common/, applies optional scenario-specific
+* overrides from ./data/%override%/, derives model subsets and parameters, and
+* computes policy-dependent cost terms used by the optimization models.
+*
+* Main outputs:
+* - ./results/%scenario%/gdx/parameters.gdx
+* - all sets, subsets, and parameters consumed by model_reference.gms,
+*   model_integrated.gms, and postprocessing.gms.
 
 * ======================================================================
 *  SETUP

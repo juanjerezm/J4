@@ -9,9 +9,10 @@
 * The main steps of the model run are:
 * - parameters.gms      : script that reads data files and populates the parameters used in the following steps. 
 * - model_reference.gms : an optimization model representing a reference case without waste-heat recovery.
-* - model.gms           : an optimization model representing the integrated case with waste-heat recovery.
+* - model_integrated.gms: an optimization model representing the integrated case with waste-heat recovery.
 * - postprocessing.gms  : a script for post-processing and merging results from model_reference and model_integrated.
 
+* It is possible to run this script from the GAMS GUI by defining the control flags in the "DEFAULTS" section below.
 
 * ----- Scenario identifier flag (scenario) -----
 * Unique run identifier.
@@ -41,7 +42,6 @@
 *  OPTIONS
 * ======================================================================
 * ----- GAMS Options -----
-* # TODO: check GAMS output contents what to keep what to suppress, and adjust these options accordingly.
 $eolCom !!
 $onEmpty                !! Allows empty sets or parameters
 $Offlisting             !! Suppresses listing of input lines
@@ -56,16 +56,34 @@ option EpsToZero = on   !! Outputs Eps values as zero
 
 
 * ======================================================================
+* LAUNCH METHOD DETECTION
+* ======================================================================
+* Determines how this script was launched based on whether control flags were provided as command-line arguments.
+
+* manual_run='false'    : All flags provided, launched from Python pipeline or equivalent CLI call
+* manual_run='true'     : No flags provided, launched from GAMS GUI or bare CLI "gams run.gms". FLAGS ARE SET TO DEFAULTS BELOW.
+* Partial args          : Abort, provide all flags or none.
+
+
+
+$ifi     set scenario $ifi     set override $ifi     set solve_mode $ifi     set country $ifi     set policytype $SetGlobal manual_run 'false'
+$ifi not set scenario $ifi not set override $ifi not set solve_mode $ifi not set country $ifi not set policytype $SetGlobal manual_run 'true'
+$ifi not set manual_run $abort "Partial arguments detected. Provide all flags or none."
+
+$ifi "%manual_run%"=='true'  $log "Launch type: manual (GAMS GUI or bare CLI)"
+$ifi "%manual_run%"=='false' $log "Launch type: automated (Python pipeline)"
+
+* ======================================================================
 *  DEFAULTS (GAMS GUI FALLBACK)
 * ======================================================================
-* When run from GAMS GUI, parameters are not passed via command line. In such case, control flags are defined here.
+* Control flags can be set here if this script is launched manually.
 
 * ----- Control flag definition -----
-$ifi not setglobal scenario     $SetGlobal scenario     'default_scn'
-$ifi not setglobal override     $SetGlobal override     'none'
-$ifi not setglobal solve_mode   $SetGlobal solve_mode   'iterative'
-$ifi not setglobal country      $SetGlobal country      'DK'
-$ifi not setglobal policytype   $SetGlobal policytype   'taxation'
+$ifi "%manual_run%"=='true' $SetGlobal scenario     'default'
+$ifi "%manual_run%"=='true' $SetGlobal override     'none'
+$ifi "%manual_run%"=='true' $SetGlobal solve_mode   'static'
+$ifi "%manual_run%"=='true' $SetGlobal country      'DK'
+$ifi "%manual_run%"=='true' $SetGlobal policytype   'taxation'
 
 
 * ======================================================================
@@ -111,6 +129,9 @@ $if not "%override%" == 'none' $ifi %system.filesys% == msnt   $call   'dir ".\d
 $ifi %system.filesys% == msnt   $call 'mkdir    ".\results\%scenario%\gdx"';  !! Windows
 $ifi %system.filesys% == unix   $call 'mkdir -p "./results/%scenario%/gdx"';  !! Unix
 
+$ifi %system.filesys% == msnt   $call 'mkdir    ".\results\%scenario%\csv"';  !! Windows
+$ifi %system.filesys% == unix   $call 'mkdir -p "./results/%scenario%/csv"';  !! Unix
+
 
 * ======================================================================
 *  MODEL EXECUTION
@@ -127,12 +148,18 @@ $call gams ./scripts/gams/model_reference   --scenario="%scenario%" --override="
 $eval error_reference errorLevel
 $if not %error_reference%==0                $abort "model_reference.gms did not execute successfully. Errorlevel: %error_reference%"
 
-* ----- Case with possible WHR (model.gms) -----
-$call gams ./scripts/gams/model             --scenario="%scenario%" --override="%override%" --country="%country%" --policytype="%policytype%" --solve_mode="%solve_mode%" o=./results/"%scenario%"/model_integrated.lst  
+* ----- Case with possible WHR (model_integrated.gms) -----
+$call gams ./scripts/gams/model_integrated  --scenario="%scenario%" --override="%override%" --country="%country%" --policytype="%policytype%" --solve_mode="%solve_mode%" o=./results/"%scenario%"/model_integrated.lst  
 $eval error_integrated errorLevel
-$if not %error_integrated%==0               $abort "model.gms did not execute successfully. Errorlevel: %error_integrated%"
+$if not %error_integrated%==0               $abort "model_integrated.gms did not execute successfully. Errorlevel: %error_integrated%"
 
 * ----- post-processing script (postprocessing.gms) -----
 $call gams ./scripts/gams/postprocessing    --scenario="%scenario%" --override="%override%" --country="%country%" --policytype="%policytype%"   o=./results/"%scenario%"/post_processing.lst
 $eval error_postprocessing errorLevel
 $if not %error_postprocessing%==0           $abort "post_processing.gms did not execute successfully. Errorlevel: %error_postprocessing%"
+
+* ======================================================================
+* CSV EXPORT (MANUAL RUN ONLY)
+* ======================================================================
+* GDX to CSV export is handled here for manual runs. For automated runs, the Python pipeline handles exports.
+$ifi "%manual_run%"=='true' $include "./scripts/gams/csv_export.inc"  !! If running manually, print results to log for quick inspection.

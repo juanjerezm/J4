@@ -2,7 +2,17 @@
 * DESCRIPTION
 * ======================================================================
 * ----- INFO -----
-* # TODO: fill this in
+* Written by Juan Jerez, jujmo@dtu.dk, 2024.
+*
+* This script solves the reference case without waste-heat recovery (WHR).
+* It imports the full parameter set from parameters.gdx and optimizes
+* operating expenditure for DHN and WHS under independent operation.
+*
+* Main outputs:
+* - ./results/%scenario%/gdx/results-reference.gdx
+* - ./results/%scenario%/gdx/transfer-reference.gdx
+*   (marginal costs, emissions intensities, and warm-start trajectories used by
+*   model_integrated.gms).
 
 
 * ======================================================================

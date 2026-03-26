@@ -2,7 +2,17 @@
 * DESCRIPTION
 * ======================================================================
 * ----- INFO -----
-* # TODO: fill this in
+* Written by Juan Jerez, jujmo@dtu.dk, 2024.
+*
+* This script consolidates and enriches outputs from the reference and
+* integrated optimization runs. It merges economic and operational variables
+* from both cases, computes comparative KPIs (for example OPEX savings), and
+* derives policy-relevant accounting terms (tariffs, taxes, ETS quotas,
+* support), plus IRR and payback time.
+*
+* Main output:
+* - ./results/%scenario%/gdx/results-postprocessing.gdx
+*   (single source for downstream CSV export and analysis scripts).
 
 
 
@@ -172,8 +182,8 @@ $ifi     "%policytype%" == 'support' $ifi "%country%" == 'DK' Support('WHS','int
 SET
 ITER /I01*I99/
 ;
-$include './scripts/gams/out_IRR.gms'
-$include './scripts/gams/out_PBT.gms'
+$include './scripts/gams/IRR.inc'
+$include './scripts/gams/PBT.inc'
 
 * ----- Ensuring all elements of variables/parameters directly imported appear in final file, even if all values are zero -----
 NPV_all                 = EPS + NPV_all;

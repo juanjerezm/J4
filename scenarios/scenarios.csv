@@ -1,4 +1,4 @@
-scenario_id,override,solve_mode,country,policytype
+id,override,solve_mode,country,policytype
 DEsoc,none,iterative,DE,socioeconomic
 DEtax,none,iterative,DE,taxation
 DEsup,none,iterative,DE,support
@@ -100,4 +100,4 @@ SAEPmax_FRtax,EPmax,iterative,FR,taxation
 SAEPmax_FRsup,EPmax,iterative,FR,support
 test-model-pipeline,none,static,DE,support
 test-common,none,static,DE,support
-test-override,OVRRD,static,DE,support
+test-override,TEST,static,FR,taxation

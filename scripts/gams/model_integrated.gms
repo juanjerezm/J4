@@ -2,8 +2,17 @@
 * DESCRIPTION
 * ======================================================================
 * ----- INFO -----
-* # TODO: fill this in
-* # TODO: rename this file to model-integrated.gms, and fix all references to it in run.gms 
+* Written by Juan Jerez, jujmo@dtu.dk, 2024.
+*
+* This script solves the integrated case with potential waste-heat recovery.
+* It imports core inputs from parameters.gdx and baseline transfer values from
+* transfer-reference.gdx, then maximizes total project NPV across DHN and WHS.
+* Depending on solve_mode, the model is solved once (static) or iteratively
+* while updating full-load-hour dependent mark-ups.
+*
+* Main output:
+* - ./results/%scenario%/gdx/results-integrated.gdx
+*   (economic KPIs, prices, capacities, and dispatch variables).
 
 
 * ======================================================================

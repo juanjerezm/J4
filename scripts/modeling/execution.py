@@ -1,4 +1,3 @@
-import csv
 import shutil
 import subprocess
 import time
@@ -6,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from scripts.modeling.export import export_to_csv
+from scripts.modeling.scenario_loader import load_scenarios
 from scripts.modeling.schemas import ExecutionOutcome, ExecutionStatus, Runset, Scenario
 
 
@@ -52,34 +52,6 @@ def run_scenario(root_path: Path, scenario: Scenario, purge: bool) -> None:
     print("--------------------------------------------------")
     print(f"--> Scenario {scenario.id} executed successfully.")
     print("--------------------------------------------------")
-
-
-def load_scenarios(catalog_path: Path, runset: Runset) -> list[Scenario]:
-    """Load and return the ordered list of Scenario objects from catalog_path for the given runset."""
-    with catalog_path.open("r", newline="") as f:
-        reader = csv.DictReader(f)
-        raw_rows = list(reader)
-
-    missing_cols = sorted(set(Scenario.model_fields) - set(reader.fieldnames or []))
-    if missing_cols:
-        raise ValueError(f"Scenario catalog is missing columns: {missing_cols}")
-
-    index = {row["id"]: row for row in raw_rows}
-
-    missing_ids = set(runset.scenario_ids) - index.keys()
-    if missing_ids:
-        missing_str = ", ".join(sorted(missing_ids))
-        raise ValueError(f"Scenarios not found in {catalog_path}: {missing_str}")
-
-    scenarios = []
-
-    for scenario_id in runset.scenario_ids:
-        try:
-            scenarios.append(Scenario(**index[scenario_id]))
-        except ValueError as exc:
-            raise ValueError(f"Invalid scenario '{scenario_id}': {exc}") from exc
-
-    return scenarios
 
 
 def save_summary(

@@ -103,11 +103,11 @@ def load_gdx(
     return data
 
 
-def export_to_csv(root_dir: Path, scenario: Scenario) -> None:
+def export_to_csv(scenario: Scenario, results_dir: Path) -> None:
     """Export postprocessing GDX results to CSV for a completed scenario."""
 
-    gdx_dir = root_dir / "results" / scenario.id / "gdx"
-    csv_dir = root_dir / "results" / scenario.id / "csv"
+    gdx_dir = results_dir / scenario.id / "gdx"
+    csv_dir = results_dir / scenario.id / "csv"
     gdx_path = gdx_dir / "results-postprocessing.gdx"
 
     csv_dir.mkdir(parents=True, exist_ok=True)

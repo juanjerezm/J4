@@ -2,7 +2,8 @@
 # Ignore all files within result directories, but keep .gitkeep to keep empty directories
 results/**
 results-consolidated/**
-
+analysis/**
+legacy-stuff-do-not-touch/**
 !results/.gitkeep
 !results-consolidated/.gitkeep
 

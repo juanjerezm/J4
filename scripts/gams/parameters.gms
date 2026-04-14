@@ -6,7 +6,7 @@
 *
 * This script builds the model input dataset and exports it to GDX.
 * It reads default data from ./data/common/, applies optional scenario-specific
-* overrides from ./data/%override%/, derives model subsets and parameters, and
+* overrides from ./data/overrides/%override%/, derives model subsets and parameters, and
 * computes policy-dependent cost terms used by the optimization models.
 *
 * Main outputs:
@@ -64,24 +64,24 @@ SET E                   'Entity'
 SET G(*)                'Generators'
 /
 $onDelim
-$if     EXIST './data/%override%/name-generator.csv' $include './data/%override%/name-generator.csv'
-$if not EXIST './data/%override%/name-generator.csv' $include './data/common/name-generator.csv'
+$if     EXIST './data/overrides/%override%/name-generator.csv' $include './data/overrides/%override%/name-generator.csv'
+$if not EXIST './data/overrides/%override%/name-generator.csv' $include './data/common/name-generator.csv'
 $offDelim
 /;
 
 SET S(*)                'Storages'
 /
 $onDelim
-$if     EXIST './data/%override%/name-storage.csv' $include './data/%override%/name-storage.csv'
-$if not EXIST './data/%override%/name-storage.csv' $include './data/common/name-storage.csv'
+$if     EXIST './data/overrides/%override%/name-storage.csv' $include './data/overrides/%override%/name-storage.csv'
+$if not EXIST './data/overrides/%override%/name-storage.csv' $include './data/common/name-storage.csv'
 $offDelim
 /;
 
 SET F(*)                'Fuels'
 /
 $onDelim
-$if     EXIST './data/%override%/name-fuel.csv' $include './data/%override%/name-fuel.csv'
-$if not EXIST './data/%override%/name-fuel.csv' $include './data/common/name-fuel.csv'
+$if     EXIST './data/overrides/%override%/name-fuel.csv' $include './data/overrides/%override%/name-fuel.csv'
+$if not EXIST './data/overrides/%override%/name-fuel.csv' $include './data/common/name-fuel.csv'
 $offDelim
 /;
 
@@ -102,8 +102,8 @@ $offDelim
 SET GF(G,F)             'Generator-fuel mapping'
 /
 $onDelim
-$if     EXIST './data/%override%/map-generator-fuel.csv' $include './data/%override%/map-generator-fuel.csv'
-$if NOT EXIST './data/%override%/map-generator-fuel.csv' $include './data/common/map-generator-fuel.csv'
+$if     EXIST './data/overrides/%override%/map-generator-fuel.csv' $include './data/overrides/%override%/map-generator-fuel.csv'
+$if NOT EXIST './data/overrides/%override%/map-generator-fuel.csv' $include './data/common/map-generator-fuel.csv'
 $offDelim
 /;
 
@@ -156,36 +156,36 @@ $offDelim
 * --- Load data values --- *
 TABLE ENTT_DATA(E,EnttAttrs)    'Entity data'
 $onDelim
-$if     EXIST './data/%override%/data-entity.csv' $include './data/%override%/data-entity.csv'
-$if NOT EXIST './data/%override%/data-entity.csv' $include './data/common/data-entity.csv'
+$if     EXIST './data/overrides/%override%/data-entity.csv' $include './data/overrides/%override%/data-entity.csv'
+$if NOT EXIST './data/overrides/%override%/data-entity.csv' $include './data/common/data-entity.csv'
 $offDelim
 ;
 
 TABLE GNRT_DATA(G,GnrtAttrs)    'Generator data'
 $onDelim
-$if     EXIST './data/%override%/data-generator.csv' $include './data/%override%/data-generator.csv'
-$if NOT EXIST './data/%override%/data-generator.csv' $include './data/common/data-generator.csv'
+$if     EXIST './data/overrides/%override%/data-generator.csv' $include './data/overrides/%override%/data-generator.csv'
+$if NOT EXIST './data/overrides/%override%/data-generator.csv' $include './data/common/data-generator.csv'
 $offDelim
 ;
 
 TABLE STRG_DATA(S,StrgAttrs)    'Storage data'
 $onDelim
-$if     EXIST './data/%override%/data-storage.csv' $include './data/%override%/data-storage.csv'
-$if NOT EXIST './data/%override%/data-storage.csv' $include './data/common/data-storage.csv'
+$if     EXIST './data/overrides/%override%/data-storage.csv' $include './data/overrides/%override%/data-storage.csv'
+$if NOT EXIST './data/overrides/%override%/data-storage.csv' $include './data/common/data-storage.csv'
 $offDelim
 ;
 
 TABLE CNCT_DATA(G,CnctAttrs)    'Connection data'
 $onDelim
-$if     EXIST './data/%override%/data-connection.csv' $include './data/%override%/data-connection.csv'
-$if NOT EXIST './data/%override%/data-connection.csv' $include './data/common/data-connection.csv'
+$if     EXIST './data/overrides/%override%/data-connection.csv' $include './data/overrides/%override%/data-connection.csv'
+$if NOT EXIST './data/overrides/%override%/data-connection.csv' $include './data/common/data-connection.csv'
 $offDelim
 ;
 
 TABLE FUEL_DATA(F,FuelAttrs)    'Fuel data'
 $onDelim
-$if     EXIST './data/%override%/data-fuel-%country%.csv' $include './data/%override%/data-fuel-%country%.csv'
-$if NOT EXIST './data/%override%/data-fuel-%country%.csv' $include './data/common/data-fuel-%country%.csv'
+$if     EXIST './data/overrides/%override%/data-fuel-%country%.csv' $include './data/overrides/%override%/data-fuel-%country%.csv'
+$if NOT EXIST './data/overrides/%override%/data-fuel-%country%.csv' $include './data/common/data-fuel-%country%.csv'
 $offDelim
 ;
 
@@ -294,40 +294,40 @@ PARAMETERS
 D_h(T)
 /
 $onDelim
-$if     EXIST './data/%override%/ts-demand-heat.csv' $include './data/%override%/ts-demand-heat.csv'
-$if NOT EXIST './data/%override%/ts-demand-heat.csv' $include './data/common/ts-demand-heat.csv' 
+$if     EXIST './data/overrides/%override%/ts-demand-heat.csv' $include './data/overrides/%override%/ts-demand-heat.csv'
+$if NOT EXIST './data/overrides/%override%/ts-demand-heat.csv' $include './data/common/ts-demand-heat.csv' 
 $offDelim
 /
 
 D_c(T)
 /
 $onDelim
-$if     EXIST './data/%override%/ts-demand-cold.csv' $include './data/%override%/ts-demand-cold.csv'
-$if NOT EXIST './data/%override%/ts-demand-cold.csv' $include './data/common/ts-demand-cold.csv'
+$if     EXIST './data/overrides/%override%/ts-demand-cold.csv' $include './data/overrides/%override%/ts-demand-cold.csv'
+$if NOT EXIST './data/overrides/%override%/ts-demand-cold.csv' $include './data/common/ts-demand-cold.csv'
 $offDelim
 /
 
 pi_e(T)
 /
 $onDelim
-$if     EXIST './data/%override%/ts-electricity-price.csv' $include './data/%override%/ts-electricity-price.csv'
-$if NOT EXIST './data/%override%/ts-electricity-price.csv' $include './data/common/ts-electricity-price.csv'
+$if     EXIST './data/overrides/%override%/ts-electricity-price.csv' $include './data/overrides/%override%/ts-electricity-price.csv'
+$if NOT EXIST './data/overrides/%override%/ts-electricity-price.csv' $include './data/common/ts-electricity-price.csv'
 $offDelim
 /
 
 qc_e(T)
 /
 $onDelim
-$if     EXIST './data/%override%/ts-electricity-carbon.csv' $include './data/%override%/ts-electricity-carbon.csv'
-$if NOT EXIST './data/%override%/ts-electricity-carbon.csv' $include './data/common/ts-electricity-carbon.csv'
+$if     EXIST './data/overrides/%override%/ts-electricity-carbon.csv' $include './data/overrides/%override%/ts-electricity-carbon.csv'
+$if NOT EXIST './data/overrides/%override%/ts-electricity-carbon.csv' $include './data/common/ts-electricity-carbon.csv'
 $offDelim
 /
 
 tax_fuel_g(G)
 /
 $onDelim
-$if     EXIST './data/%override%/data-fueltax-generator-%country%.csv' $include './data/%override%/data-fueltax-generator-%country%.csv'
-$if NOT EXIST './data/%override%/data-fueltax-generator-%country%.csv' $include './data/common/data-fueltax-generator-%country%.csv'
+$if     EXIST './data/overrides/%override%/data-fueltax-generator-%country%.csv' $include './data/overrides/%override%/data-fueltax-generator-%country%.csv'
+$if NOT EXIST './data/overrides/%override%/data-fueltax-generator-%country%.csv' $include './data/common/data-fueltax-generator-%country%.csv'
 $OffDelim
 /
 ;
@@ -335,22 +335,22 @@ $OffDelim
 * - Multi-dimensional parameters -
 TABLE F_a(T,G)
 $onDelim
-$if     EXIST './data/%override%/ts-generator-availability.csv' $include './data/%override%/ts-generator-availability.csv'
-$if NOT EXIST './data/%override%/ts-generator-availability.csv' $include './data/common/ts-generator-availability.csv'
+$if     EXIST './data/overrides/%override%/ts-generator-availability.csv' $include './data/overrides/%override%/ts-generator-availability.csv'
+$if NOT EXIST './data/overrides/%override%/ts-generator-availability.csv' $include './data/common/ts-generator-availability.csv'
 $offDelim
 ;
 
 TABLE eta_g(T,G)
 $onDelim
-$if     EXIST './data/%override%/ts-generator-efficiency.csv' $include './data/%override%/ts-generator-efficiency.csv'
-$if NOT EXIST './data/%override%/ts-generator-efficiency.csv' $include './data/common/ts-generator-efficiency.csv'
+$if     EXIST './data/overrides/%override%/ts-generator-efficiency.csv' $include './data/overrides/%override%/ts-generator-efficiency.csv'
+$if NOT EXIST './data/overrides/%override%/ts-generator-efficiency.csv' $include './data/common/ts-generator-efficiency.csv'
 $offDelim
 ;
 
 TABLE tariff_schedule_v(H,M)
 $onDelim
-$if     EXIST './data/%override%/data-tariffschedule-vol-%country%.csv' $include './data/%override%/data-tariffschedule-vol-%country%.csv'¨
-$if NOT EXIST './data/%override%/data-tariffschedule-vol-%country%.csv' $include './data/common/data-tariffschedule-vol-%country%.csv'
+$if     EXIST './data/overrides/%override%/data-tariffschedule-vol-%country%.csv' $include './data/overrides/%override%/data-tariffschedule-vol-%country%.csv'
+$if NOT EXIST './data/overrides/%override%/data-tariffschedule-vol-%country%.csv' $include './data/common/data-tariffschedule-vol-%country%.csv'
 $offDelim
 ;
 

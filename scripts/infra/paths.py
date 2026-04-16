@@ -57,6 +57,14 @@ class FilePaths:
     def mapping_policies(self) -> Path:
         return self.dir.mappings / "policies.yml"
 
+    @property
+    def mapping_entities(self) -> Path:
+        return self.dir.mappings / "entities.yml"
+
+    @property
+    def plot_styles(self) -> Path:
+        return self.dir.analysis / "plot_styles.yml"
+
 
 @dataclass(frozen=True)
 class RepoPaths:

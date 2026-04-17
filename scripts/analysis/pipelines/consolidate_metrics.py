@@ -49,21 +49,26 @@ def collect_results(
     return pd.concat(frames, ignore_index=True)
 
 
-def main(scope: str, runset_path: Path, catalog_path: Path) -> None:
+def main(
+    scope: str,
+    consolidation_job_path: Path,
+    runset_path: Path,
+    catalog_path: Path,
+) -> None:
 
     analysis_scope = PATHS.analysis.scope(scope)
-    mappings = Mappings.from_dir(PATHS.analysis.mappings)
+    resolved_spec_path = analysis_scope.resolve(consolidation_job_path)
+    consolidation_jobs = load_consolidation_jobs(resolved_spec_path)
 
     runset = Runset.from_yaml(runset_path)
     scenarios = load_scenarios(catalog_path, runset)
 
-    # TODO: rename var below after inputs are handled
-    metrics_path = analysis_scope.config / "consolidations.yml"
-    consolidation_jobs = load_consolidation_jobs(metrics_path)
+    mappings = Mappings.from_dir(PATHS.analysis.mappings)
 
-    print("===== Metric Consolidation Pipeline =====\n")
+    print("\n===== Metric Consolidation Pipeline =====\n")
     print(f"Selected runset: {runset_path}")
-    print(f"Selected scenario catalog: {catalog_path}\n")
+    print(f"Selected scenario catalog: {catalog_path}")
+    print(f"Selected consolidation spec: {resolved_spec_path}\n")
     print(f"Consolidating across {len(scenarios)} scenarios:")
     for idx, scenario in enumerate(scenarios, start=1):
         print(f"  {idx}. {scenario.id}")
@@ -82,8 +87,10 @@ def main(scope: str, runset_path: Path, catalog_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    scope = "saep"
-    runset_path = Path(f"scenarios/runsets/{scope}.yml")
-    catalog_path = Path("scenarios/scenarios.csv")
-
-    main(scope=scope, runset_path=runset_path, catalog_path=catalog_path)
+    scope = "main"
+    main(
+        scope=scope,
+        runset_path=Path(f"scenarios/runsets/{scope}.yml"),
+        catalog_path=Path("scenarios/scenarios.csv"),
+        consolidation_job_path=Path("config/consolidations.yml"),
+    )

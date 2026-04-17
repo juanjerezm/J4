@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -480,7 +479,7 @@ def save_plot(
     *,
     dpi: int | str | None = None,
     bbox_inches: str | None = None,
-) -> None:
+) -> None:  # TODO: check if this should go to io.py, or where
     """Save a Matplotlib figure, creating the output directory if needed."""
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -494,8 +493,4 @@ def save_plot(
         save_kwargs["bbox_inches"] = bbox_inches
 
     fig.savefig(output_path, **save_kwargs)
-
-
-def show_plot() -> None:
-    """Display all open Matplotlib figures."""
-    plt.show()
+    print(f"Saved plot to {output_path}")

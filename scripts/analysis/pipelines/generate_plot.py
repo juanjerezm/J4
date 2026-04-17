@@ -6,10 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 
 from scripts.analysis.core.io import apply_matplotlib_style, load_plot_spec
-from scripts.analysis.core.schemas import Mappings, PlotSpec
-from scripts.analysis.core.tables import DIMENSION_CONFIG, order_dataframe
-from scripts.analysis.core.transforms import run_transform
-from scripts.analysis.plotting.plotting_helpers import (
+from scripts.analysis.core.plotting_helpers import (
     AxesBounds,
     SubplotEdges,
     build_plot_table,
@@ -22,8 +19,10 @@ from scripts.analysis.plotting.plotting_helpers import (
     legend_entries,
     prepare_panel_data,
     save_plot,
-    show_plot,
 )
+from scripts.analysis.core.schemas import Mappings, PlotSpec
+from scripts.analysis.core.tables import DIMENSION_CONFIG, order_dataframe
+from scripts.analysis.core.transforms import run_transform
 from scripts.infra.paths_2 import PATHS
 
 
@@ -126,23 +125,18 @@ def get_legend_title(series_col: str) -> str:
     return DIMENSION_CONFIG.get(series_col, {}).get("legend_title", series_col.title())
 
 
-def main(scope: str, plot_file: str) -> None:
-    # TODO: check input handling
-    # TODO: check docstring
-    """
-    Run the plotting pipeline end-to-end.
-
-    Loads plot spec and style, reads and transforms data inputs,
-    builds the canonical plot table, renders the panel figure, and
-    optionally saves outputs or shows the plot.
-    """
+def main(scope: str, plot_spec_path: str) -> None:
 
     # Resolve paths and load configurations
     analysis_scope = PATHS.analysis.scope(scope)
-    mappings = Mappings.from_dir(PATHS.analysis.mappings)
+    resolved_spec_path = analysis_scope.resolve(plot_spec_path)
+    plot_spec = load_plot_spec(resolved_spec_path)
 
-    plot_spec = load_plot_spec(analysis_scope.config / plot_file)
+    mappings = Mappings.from_dir(PATHS.analysis.mappings)
     apply_matplotlib_style(plot_spec.style, PATHS.analysis.plot_styles)
+
+    print("\n===== Plotting =====\n")
+    print(f"Selected plot spec: {resolved_spec_path}")
 
     # Load and prepare plot input data
     dfs = []
@@ -172,37 +166,23 @@ def main(scope: str, plot_file: str) -> None:
         table.to_csv(table_path, index=False)
 
     if plot_spec.show:
-        show_plot()
+        plt.show()
 
 
 if __name__ == "__main__":
-    # scope = "main"
-    # plot_file = "plot-NPV.yml"
-    # plot_file = "plot-Carbon-Emissions-Change.yml"
-    # plot_file = "plot-Fuel-Consumption-Change.yml"
-    # plot_file = "plot-Fuel-Consumption-Change-withCHP.yml"
-    # plot_file = "plot-Electricity-Production-Change.yml"
-
-    # scope = "saep"
-    # plot_file = "plot-SAEP-NPV.yml"
-    # plot_file = "plot-SAEP-Heat-Production.yml"
-
-    # scope = "sadr"
-    # plot_file = "plot-SADR-NPV.yml"
-    # plot_file = "plot-SADR-Heat-Production.yml"
-
-    # main(scope, plot_file)
-
     PLOTS_TO_RUN = [
-        {"scope": "main", "plot_file": "plot-NPV.yml"},
-        {"scope": "main", "plot_file": "plot-Carbon-Emissions-Change.yml"},
-        {"scope": "main", "plot_file": "plot-Fuel-Consumption-Change.yml"},
-        {"scope": "main", "plot_file": "plot-Fuel-Consumption-Change-withCHP.yml"},
-        {"scope": "main", "plot_file": "plot-Electricity-Production-Change.yml"},
-        {"scope": "saep", "plot_file": "plot-SAEP-NPV.yml"},
-        {"scope": "saep", "plot_file": "plot-SAEP-Heat-Production.yml"},
-        {"scope": "sadr", "plot_file": "plot-SADR-NPV.yml"},
-        {"scope": "sadr", "plot_file": "plot-SADR-Heat-Production.yml"},
+        {"scope": "main", "plot_file": "config/plot-NPV.yml"},
+        {"scope": "main", "plot_file": "config/plot-Carbon-Emissions-Change.yml"},
+        {"scope": "main", "plot_file": "config/plot-Fuel-Consumption-Change.yml"},
+        {
+            "scope": "main",
+            "plot_file": "config/plot-Fuel-Consumption-Change-includingCHP.yml",
+        },
+        {"scope": "main", "plot_file": "config/plot-Electricity-Production-Change.yml"},
+        {"scope": "saep", "plot_file": "config/plot-SAEP-NPV.yml"},
+        {"scope": "saep", "plot_file": "config/plot-SAEP-Heat-Production.yml"},
+        {"scope": "sadr", "plot_file": "config/plot-SADR-NPV.yml"},
+        {"scope": "sadr", "plot_file": "config/plot-SADR-Heat-Production.yml"},
     ]
 
     for item in PLOTS_TO_RUN:

@@ -3,31 +3,40 @@ from pathlib import Path
 import pandas as pd
 
 from scripts.analysis.core.io import load_consolidation_jobs, save_consolidated_results
-from scripts.analysis.core.schemas import Mappings
+from scripts.analysis.core.schemas import ConsolidationJob, Mappings
 from scripts.analysis.core.tables import order_dataframe, relabel_dimensions
 from scripts.analysis.core.transforms import run_transform
 from scripts.infra.paths_2 import PATHS
 from scripts.modeling.scenario_loader import load_scenarios
 from scripts.modeling.schemas import Runset, Scenario
 
+SCENARIO_ATTRS = {
+    "ID": "id",
+    "OVERRIDE": "override",
+    "COUNTRY": "country",
+    "POLICY": "policytype",
+}
+
 
 def collect_results(
     scenarios: list[Scenario],
-    metric: str,
+    job: ConsolidationJob,
     results_dir: Path = PATHS.model.results,
 ) -> pd.DataFrame:
     """Load one metric CSV for each scenario and append scenario metadata columns."""
     frames: list[pd.DataFrame] = []
 
     for s in scenarios:
-        metric_path = results_dir / s.id / "csv" / f"{metric}.csv"
+        metric_path = results_dir / s.id / "csv" / f"{job.name}.csv"
         if not metric_path.is_file():
             raise FileNotFoundError(f"Metric file not found: {metric_path}")
 
         df = pd.read_csv(metric_path)
-        df = df.assign(
-            ID=s.id, COUNTRY=s.country, POLICY=s.policytype, OVERRIDE=s.override
-        )
+
+        scenario_metadata = {
+            k: getattr(s, SCENARIO_ATTRS[k]) for k in job.scenario_metadata
+        }
+        df = df.assign(**scenario_metadata)
 
         if "Val" in df.columns:  # if csv produced by gdxdump pipeline
             df = df.rename(columns={"Val": "value"})
@@ -40,15 +49,9 @@ def collect_results(
     return pd.concat(frames, ignore_index=True)
 
 
-def main(runset_path: Path, catalog_path: Path) -> None:
-    # TODO: Check inputting strategy for the following:
-    # - runset_path,
-    # - catalog_path,
-    # - metrics_path,
-    # - analysis "MAIN",
-    # - and "consolidations.yml"
+def main(scope: str, runset_path: Path, catalog_path: Path) -> None:
 
-    analysis_scope = PATHS.analysis.scope("sadr")
+    analysis_scope = PATHS.analysis.scope(scope)
     mappings = Mappings.from_dir(PATHS.analysis.mappings)
 
     runset = Runset.from_yaml(runset_path)
@@ -68,12 +71,19 @@ def main(runset_path: Path, catalog_path: Path) -> None:
 
     for idx, job in enumerate(consolidation_jobs, start=1):
         print(f"[{idx}/{len(consolidation_jobs)}] Consolidating '{job.name}'")
-        df = collect_results(scenarios, metric=job.name)
 
-        # Relabeling before transform (aggregation) to ensure correct grouping
-        df = relabel_dimensions(df, mappings)
+        df = collect_results(scenarios, job=job)
+        df = relabel_dimensions(df, mappings)  # Before transform to for correct aggr.
         df = run_transform(df, job.transform)
         df = order_dataframe(df, mappings, sort_by=job.transform.groupby)
 
         output_path = save_consolidated_results(df, analysis_scope.tables, job.name)
         print(f"[{idx}/{len(consolidation_jobs)}] Saved to: {output_path}\n")
+
+
+if __name__ == "__main__":
+    scope = "saep"
+    runset_path = Path(f"scenarios/runsets/{scope}.yml")
+    catalog_path = Path("scenarios/scenarios.csv")
+
+    main(scope=scope, runset_path=runset_path, catalog_path=catalog_path)

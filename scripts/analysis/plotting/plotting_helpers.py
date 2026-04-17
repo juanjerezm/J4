@@ -1,7 +1,6 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -13,7 +12,7 @@ from matplotlib.legend import Legend
 from matplotlib.ticker import FuncFormatter
 from matplotlib.transforms import Bbox
 
-from scripts.analysis.core.schemas import AxisSpec, Mappings
+from scripts.analysis.core.schemas import AxisSpec, Mappings, PlotSpec
 from scripts.analysis.core.tables import DIMENSION_CONFIG
 
 # ===== GRID STYLE CONFIGURATION =====
@@ -22,6 +21,186 @@ GRID_STYLES = {
     "major": {"linestyle": ":", "linewidth": 0.5, "alpha": 0.9},
     "minor": {"linestyle": ":", "linewidth": 0.5, "alpha": 0.5},
 }
+
+
+def format_xaxis(
+    ax: Axes,
+    spec: AxisSpec | None,
+    show_label: bool = True,
+    show_ticklabels: bool = True,
+    ticklabels: Sequence[str] | None = None,
+) -> None:
+    """
+    Configure the y-axis from an `AxisSpec`.
+
+    Supports two axis kinds:
+    - `categorical`: tick positions are derived from `ticklabels`.
+    - `numerical`: manual limits/ticks/formatter are applied unless `autoscale` is enabled.
+    """
+
+    if spec is None:
+        return
+
+    # --- Validation of ticklabel source ---
+    if spec.kind == "numerical" and ticklabels is not None:
+        raise ValueError("Ticklabels not allowed for numeric axis")
+
+    # --- Axis label ---
+    if show_label and spec.label is not None:
+        ax.set_xlabel(spec.label, **(spec.label_kwargs or {}))
+        ax.xaxis.label.set_visible(True)
+    else:
+        ax.xaxis.label.set_visible(False)
+
+    # --- Categorical axis ---
+    if spec.kind == "categorical":
+        # --- Tick positions (major only) ---
+        if ticklabels is None:
+            raise ValueError("Categorical axis requires ticklabels")
+        if len(ticklabels) == 0:
+            raise ValueError("Categorical axis requires at least one ticklabel")
+
+        positions = np.arange(len(ticklabels), dtype=float)
+        ax.set_xticks(positions)
+        ax.set_xticklabels(ticklabels)
+
+        # --- Axis limits ---
+        if positions.size > 0:
+            pad = 0.5 if spec.pad is None else spec.pad
+            ax.set_xlim(left=positions[0] - pad, right=positions[-1] + pad)
+
+    # --- Numeric axis ---
+    elif spec.kind == "numerical":
+        if spec.autoscale:  # Automatic limits and tick positions
+            pass
+        else:  # Manual limits and tick positions
+            # --- Tick positions ---
+            if spec.major_ticks is not None:
+                ax.set_xticks(spec.major_ticks)
+            if spec.minor_ticks is not None:
+                ax.set_xticks(spec.minor_ticks, minor=True)
+
+            # --- Axis limits ---
+            if spec.min is not None or spec.max is not None:
+                pad = 0.0 if spec.pad is None else spec.pad
+                left = None if spec.min is None else spec.min - pad
+                right = None if spec.max is None else spec.max + pad
+                ax.set_xlim(left=left, right=right)
+
+    else:
+        raise ValueError(f"Unsupported axis kind: {spec.kind}")
+
+    # --- Ticklabel visibility ---
+    which = "major" if spec.kind == "categorical" else "both"
+    ax.tick_params(axis="x", which=which, labelbottom=show_ticklabels)
+
+    # --- Ticklabel formatting and styling ---
+    if spec.kind == "numerical" and spec.ticklabel_format is not None:
+        fmt = spec.ticklabel_format
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda value, _: fmt.format(value)))
+
+    if spec.ticklabel_kwargs is not None:
+        for lbl in ax.get_xticklabels():
+            lbl.update(spec.ticklabel_kwargs)
+
+    # --- Grid ---
+    if spec.major_grid:
+        ax.grid(True, axis="x", which="major", **GRID_STYLES["major"])
+
+    if spec.minor_grid:
+        ax.grid(True, axis="x", which="minor", **GRID_STYLES["minor"])
+
+    ax.set_axisbelow(True)
+
+
+def format_yaxis(
+    ax: Axes,
+    spec: AxisSpec | None,
+    show_label: bool = True,
+    show_ticklabels: bool = True,
+    ticklabels: Sequence[str] | None = None,
+) -> None:
+    """
+    Configure the y-axis from an `AxisSpec`.
+
+    Supports two axis kinds:
+    - `categorical`: tick positions are derived from `ticklabels`.
+    - `numerical`: manual limits/ticks/formatter are applied unless `autoscale` is enabled.
+    """
+
+    if spec is None:
+        return
+
+    # --- Validation of ticklabel source ---
+    if spec.kind == "numerical" and ticklabels is not None:
+        raise ValueError("Ticklabels not allowed for numeric axis")
+
+    # --- Axis label ---
+    if show_label and spec.label is not None:
+        ax.set_ylabel(spec.label, **(spec.label_kwargs or {}))
+        ax.yaxis.label.set_visible(True)
+    else:
+        ax.yaxis.label.set_visible(False)
+
+    # --- Categorical axis ---
+    if spec.kind == "categorical":
+        # --- Tick positions (major only) ---
+        if ticklabels is None:
+            raise ValueError("Categorical axis requires ticklabels")
+        if len(ticklabels) == 0:
+            raise ValueError("Categorical axis requires at least one ticklabel")
+
+        positions = np.arange(len(ticklabels), dtype=float)
+        ax.set_yticks(positions)
+        ax.set_yticklabels(ticklabels)
+
+        # --- Axis limits ---
+        if positions.size > 0:
+            pad = 0.5 if spec.pad is None else spec.pad
+            ax.set_ylim(bottom=positions[0] - pad, top=positions[-1] + pad)
+
+    # --- Numeric axis ---
+    elif spec.kind == "numerical":
+        if spec.autoscale:  # Automatic limits and tick positions
+            pass
+        else:  # Manual limits and tick positions
+            # --- Tick positions ---
+            if spec.major_ticks is not None:
+                ax.set_yticks(spec.major_ticks)
+            if spec.minor_ticks is not None:
+                ax.set_yticks(spec.minor_ticks, minor=True)
+
+            # --- Axis limits ---
+            if spec.min is not None or spec.max is not None:
+                pad = 0.0 if spec.pad is None else spec.pad
+                bottom = None if spec.min is None else spec.min - pad
+                top = None if spec.max is None else spec.max + pad
+                ax.set_ylim(bottom=bottom, top=top)
+
+    else:
+        raise ValueError(f"Unsupported axis kind: {spec.kind}")
+
+    # --- Ticklabel visibility ---
+    which = "major" if spec.kind == "categorical" else "both"
+    ax.tick_params(axis="y", which=which, labelleft=show_ticklabels)
+
+    # --- Ticklabel formatting and styling ---
+    if spec.kind == "numerical" and spec.ticklabel_format is not None:
+        fmt = spec.ticklabel_format
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: fmt.format(value)))
+
+    if spec.ticklabel_kwargs is not None:
+        for lbl in ax.get_yticklabels():
+            lbl.update(spec.ticklabel_kwargs)
+
+    # --- Grid ---
+    if spec.major_grid:
+        ax.grid(True, axis="y", which="major", **GRID_STYLES["major"])
+
+    if spec.minor_grid:
+        ax.grid(True, axis="y", which="minor", **GRID_STYLES["minor"])
+
+    ax.set_axisbelow(True)
 
 
 def prepare_panel_data(
@@ -89,6 +268,87 @@ def build_plot_table(
     return table.reset_index()
 
 
+def draw_subplot_clusters(
+    df: pd.DataFrame,
+    ax: Axes,
+    panel_label: str,
+    colors: dict[str, str] | None,
+    plot_spec: PlotSpec,
+    on_edge: "SubplotEdges",
+) -> None:
+    """Draw clustered bars in a subplot."""
+
+    group_names = df.index
+    series_names = df.columns
+    n_groups = len(group_names)
+    n_series = len(series_names)
+
+    group_width = 0.8
+    bar_width = group_width / n_series
+    group_positions = np.arange(n_groups)
+    series_offsets = (np.arange(n_series) - (n_series - 1) / 2) * bar_width
+
+    for offset, name in zip(series_offsets, series_names, strict=True):
+        bar_kwargs = {"width": bar_width, "label": name}
+        if colors and (color := colors.get(name)):
+            bar_kwargs["color"] = color
+
+        ax.bar(group_positions + offset, df[name].to_numpy(), **bar_kwargs)
+
+    ax.set_title(panel_label, fontweight="bold")
+    format_xaxis(ax, plot_spec.x1, on_edge.bottom, on_edge.bottom, list(group_names))
+    format_yaxis(ax, plot_spec.y1, on_edge.left, on_edge.left, None)
+
+
+def draw_subplot_stack(
+    df: pd.DataFrame,
+    ax: Axes,
+    panel_label: str,
+    colors: dict[str, str] | None,
+    plot_spec: PlotSpec,
+    on_edge: "SubplotEdges",
+) -> None:
+    """Draw stacked bars in a subplot."""
+
+    df.plot(kind="bar", stacked=True, ax=ax, legend=False, color=colors)
+
+    ax.set_title(panel_label, fontweight="bold")
+    format_xaxis(ax, plot_spec.x1, on_edge.bottom, on_edge.bottom, list(df.index))
+    format_yaxis(ax, plot_spec.y1, on_edge.left, on_edge.left, None)
+
+
+def draw_subplot_line(
+    df: pd.DataFrame,
+    ax: Axes,
+    panel_label: str,
+    colors: dict[str, str] | None,
+    markers: dict[str, str] | None,
+    plot_spec: PlotSpec,
+    on_edge: "SubplotEdges",
+) -> None:
+    """Draw lines in a subplot."""
+
+    linewidth = 1
+    markersize = 4
+    markerfacecolor = "white"
+
+    for col in df.columns:
+        ax.plot(
+            df.index,
+            df[col],
+            linewidth=linewidth,
+            marker=markers.get(col, None) if markers else None,
+            markersize=markersize,
+            markerfacecolor=markerfacecolor,
+            color=colors.get(col, None) if colors else None,
+            label=col,
+        )
+
+    ax.set_title(panel_label, fontweight="bold")
+    format_xaxis(ax, plot_spec.x1, on_edge.bottom, on_edge.bottom, list(df.index))
+    format_yaxis(ax, plot_spec.y1, on_edge.left, on_edge.left, None)
+
+
 @dataclass(frozen=True)
 class SubplotEdges:
     """Flags indicating whether a subplot lies on the outer edges of a grid."""
@@ -107,86 +367,6 @@ class SubplotEdges:
         right = col == n_cols - 1
 
         return cls(top=top, bottom=bottom, left=left, right=right)
-
-
-def format_numeric_axis(
-    ax: Axes,
-    axis: str,
-    spec: AxisSpec | None,
-    show_label: bool = True,
-    show_ticklabels: bool = True,
-) -> None:
-    """Configure either the x- or y-axis of a plot from an AxisSpec.
-
-    This function supports two modes based on the `autoscale` parameter:
-        1. Presentation mode (autoscale=False): limits, ticks, and tick
-           formatting from the spec are applied.
-        2. Exploratory mode (autoscale=True): matplotlib chooses limits
-           and ticks automatically.
-
-    """
-    if spec is None:
-        return
-
-    # Determine axis-specific functions and parameters
-    if axis == "x":
-        set_label: Callable[..., Any] = ax.set_xlabel
-        set_limits: Callable[..., Any] = ax.set_xlim
-        set_ticks: Callable[..., Any] = ax.set_xticks
-        axis_obj = ax.xaxis
-        hide_ticklabels_kwargs = {"axis": "x", "labelbottom": False}
-        limit_keys = ("left", "right")
-        grid_axis = "x"
-    elif axis == "y":
-        set_label = ax.set_ylabel
-        set_limits = ax.set_ylim
-        set_ticks = ax.set_yticks
-        axis_obj = ax.yaxis
-        hide_ticklabels_kwargs = {"axis": "y", "labelleft": False}
-        limit_keys = ("bottom", "top")
-        grid_axis = "y"
-    else:
-        raise ValueError("axis must be 'x' or 'y'")
-
-    # Axis label
-    if show_label:
-        set_label(spec.label, **(spec.label_kwargs or {}))
-    else:
-        axis_obj.label.set_visible(False)
-
-    # Presentation mode: apply manual limits, ticks, and formatting
-    if not spec.autoscale:
-        # Limits with optional padding
-        pad = 0.0 if spec.pad is None else spec.pad
-        bottom = None if spec.min is None else spec.min - pad
-        top = None if spec.max is None else spec.max + pad
-
-        if spec.min is not None or spec.max is not None:
-            set_limits(**{limit_keys[0]: bottom, limit_keys[1]: top})
-
-        # Ticks positions
-        if spec.major_ticks is not None:
-            set_ticks(spec.major_ticks)
-
-        if spec.minor_ticks is not None:
-            set_ticks(spec.minor_ticks, minor=True)
-
-    # Ticklabel formatting and visibility
-    if spec.ticklabel_format is not None:
-        fmt = spec.ticklabel_format
-        axis_obj.set_major_formatter(FuncFormatter(lambda value, _: fmt.format(value)))
-
-    if not show_ticklabels:
-        ax.tick_params(**hide_ticklabels_kwargs)
-
-    # Grid
-    if spec.major_grid:
-        ax.grid(True, axis=grid_axis, which="major", **GRID_STYLES["major"])
-
-    if spec.minor_grid:
-        ax.grid(True, axis=grid_axis, which="minor", **GRID_STYLES["minor"])
-
-    ax.set_axisbelow(True)
 
 
 def normalize_axes(axes: Axes | Iterable[Axes] | np.ndarray) -> list[Axes]:
@@ -261,8 +441,7 @@ def legend_bbox(fig: Figure, legend: Legend) -> Bbox:
 
 
 def legend_entries(
-    axes: Axes | Iterable[Axes] | np.ndarray,
-    order: list[str] | None = None,
+    axes: Axes | Iterable[Axes] | np.ndarray, order: list[str] | None = None
 ) -> tuple[list[Artist], list[str]]:
     """
     Collect unique legend handles and labels from one or more axes.
@@ -293,46 +472,6 @@ def legend_entries(
     legend_handles = [handles_by_label[label] for label in legend_labels]
 
     return legend_handles, legend_labels
-
-
-# def choose_legend_ncol(
-#     fig: Figure,
-#     handles: list[Artist],
-#     labels: list[str],
-#     axes_bounds: AxesBounds,
-#     legend_kwargs: dict[str, Any],
-# ) -> int:
-#     """
-#     Pick the largest ncol whose rendered legend stays inside the axis span.
-
-#     Falls back to 1 column if no candidate fits.
-#     """
-#     if not labels:
-#         return 1
-
-#     max_cols = len(labels)
-#     legend: Legend | None = None
-
-#     for ncol in range(max_cols, 0, -1):
-#         if legend is not None:
-#             legend.remove()
-
-#         legend = fig.legend(handles=handles, labels=labels, ncol=ncol, **legend_kwargs)
-
-#         fig.canvas.draw()
-#         bbox = legend_bbox(fig, legend)
-
-#         fits_left = axes_bounds.left <= bbox.xmin
-#         fits_right = bbox.xmax <= axes_bounds.right
-
-#         if fits_left and fits_right:
-#             legend.remove()
-#             return ncol
-
-#     if legend is not None:
-#         legend.remove()
-
-#     return 1
 
 
 def save_plot(

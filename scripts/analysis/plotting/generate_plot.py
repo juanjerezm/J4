@@ -3,7 +3,6 @@ from dataclasses import asdict
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from scripts.analysis.core.io import apply_matplotlib_style, load_plot_spec
@@ -14,8 +13,11 @@ from scripts.analysis.plotting.plotting_helpers import (
     AxesBounds,
     SubplotEdges,
     build_plot_table,
-    format_numeric_axis,
+    draw_subplot_clusters,
+    draw_subplot_line,
+    draw_subplot_stack,
     get_series_colors,
+    get_series_markers,
     legend_bbox,
     legend_entries,
     prepare_panel_data,
@@ -49,8 +51,22 @@ def build_figure(data: pd.DataFrame, plot_spec: PlotSpec, mappings: Mappings) ->
     # Compute panel data matrices
     panel_matrices = prepare_panel_data(data, panel_col, group_col)
 
-    # Prepare colors
-    colors = get_series_colors(mappings, series_col)
+    # Prepare subplot call
+    if plot_spec.kind == "cluster_bar":
+        colors = get_series_colors(mappings, series_col)
+        draw_kwargs = {"colors": colors}
+        draw_panel = draw_subplot_clusters
+    elif plot_spec.kind == "stacked_bar":
+        colors = get_series_colors(mappings, series_col)
+        draw_kwargs = {"colors": colors}
+        draw_panel = draw_subplot_stack
+    elif plot_spec.kind == "line":
+        markers = get_series_markers(mappings, series_col)
+        colors = get_series_colors(mappings, series_col)
+        draw_kwargs = {"colors": colors, "markers": markers}
+        draw_panel = draw_subplot_line
+    else:
+        raise ValueError(f"Unsupported plot kind: {plot_spec.kind}")
 
     # Create figure grid
     nrows, ncols = 1, len(panel_matrices)
@@ -63,8 +79,8 @@ def build_figure(data: pd.DataFrame, plot_spec: PlotSpec, mappings: Mappings) ->
     # Draw each panel, still assumes 1 row of panels
     for (r_idx, c_idx), ax in np.ndenumerate(axes):
         on_edge = SubplotEdges.from_grid(r_idx, c_idx, nrows, ncols)
-        panel_label, panel_data = panel_matrices[c_idx]
-        draw_subplot_clusters(panel_data, ax, panel_label, colors, plot_spec, on_edge)
+        label, data = panel_matrices[c_idx]
+        draw_panel(data, ax, label, **draw_kwargs, plot_spec=plot_spec, on_edge=on_edge)
 
     # Get axes bounds in figure coords
     fig.tight_layout()
@@ -110,72 +126,9 @@ def get_legend_title(series_col: str) -> str:
     return DIMENSION_CONFIG.get(series_col, {}).get("legend_title", series_col.title())
 
 
-def draw_subplot_clusters(
-    df: pd.DataFrame,
-    ax: Axes,
-    panel_label: str,
-    colors: dict[str, str] | None,
-    plot_spec: PlotSpec,
-    on_edge: SubplotEdges,
-) -> None:
-    """
-    Draw clustered bars (side-by-side) in a subplot.
-
-    Renders series as side-by-side bars, grouped by index values.
-    Skips series with all-zero values to keep visualization clean.
-
-    Applies axis formatting over a categorical x-axis and a numeric y-axis.
-    """
-
-    # Extract data dimensions
-    group_names = df.index
-    series_names = df.columns
-    n_groups = len(group_names)
-    n_series = len(series_names)
-
-    # Calculate bar geometry
-    group_width = 0.8
-    bar_width = group_width / n_series
-    group_positions = np.arange(n_groups)
-    series_offsets = (np.arange(n_series) - (n_series - 1) / 2) * bar_width
-
-    # Draw each series
-    for offset, name in zip(series_offsets, series_names, strict=True):
-        # Prepare bar styling, adding color if available
-        bar_kwargs = {"width": bar_width, "label": name}
-        if colors and (color := colors.get(name)):
-            bar_kwargs["color"] = color
-
-        # Calculate bar positions and heights
-        x = group_positions + offset
-        y = df[name].to_numpy()
-
-        ax.bar(x, y, **bar_kwargs)
-
-    # Configure subplot appeareance
-    ax.set_title(panel_label, fontweight="bold")
-
-    # Configure x-axis
-    ax.set_xlim(group_positions[0] - 0.5, group_positions[-1] + 0.5)
-    ax.set_xticks(group_positions)
-    ax.set_xlabel("Electricity Price")
-    ax.set_xticklabels(group_names)
-    # ax.set_xticklabels(group_names, rotation=90)
-    # ax.xaxis.label.set_visible(False)
-
-    # Configure y-axis
-    on_left = on_edge.left
-    format_numeric_axis(
-        ax, axis="y", spec=plot_spec.y1, show_label=on_left, show_ticklabels=on_left
-    )
-
-
-def main() -> None:
-    # TODO: input handling for:
-    # - analysis "SAEP",
-    # - plot spec "plot-SAEP-NPV.yml",
-
-    # check docstirng again when all pipelines are finished
+def main(scope: str, plot_file: str) -> None:
+    # TODO: check input handling
+    # TODO: check docstring
     """
     Run the plotting pipeline end-to-end.
 
@@ -185,15 +138,8 @@ def main() -> None:
     """
 
     # Resolve paths and load configurations
-    analysis_scope = PATHS.analysis.scope("saep")
-
+    analysis_scope = PATHS.analysis.scope(scope)
     mappings = Mappings.from_dir(PATHS.analysis.mappings)
-
-    plot_file = "plot-SAEP-Heat-Production.yml"
-    # plot_file = "plot-Carbon-Emissions-Change.yml"
-    # plot_file = "plot-Fuel-Consumption-Change.yml"
-    # plot_file = "plot-Electricity-Production-Change.yml"
-    # plot_file = "plot-Fuel-Consumption-Change-withCHP.yml"
 
     plot_spec = load_plot_spec(analysis_scope.config / plot_file)
     apply_matplotlib_style(plot_spec.style, PATHS.analysis.plot_styles)
@@ -230,4 +176,34 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # scope = "main"
+    # plot_file = "plot-NPV.yml"
+    # plot_file = "plot-Carbon-Emissions-Change.yml"
+    # plot_file = "plot-Fuel-Consumption-Change.yml"
+    # plot_file = "plot-Fuel-Consumption-Change-withCHP.yml"
+    # plot_file = "plot-Electricity-Production-Change.yml"
+
+    # scope = "saep"
+    # plot_file = "plot-SAEP-NPV.yml"
+    # plot_file = "plot-SAEP-Heat-Production.yml"
+
+    # scope = "sadr"
+    # plot_file = "plot-SADR-NPV.yml"
+    # plot_file = "plot-SADR-Heat-Production.yml"
+
+    # main(scope, plot_file)
+
+    PLOTS_TO_RUN = [
+        {"scope": "main", "plot_file": "plot-NPV.yml"},
+        {"scope": "main", "plot_file": "plot-Carbon-Emissions-Change.yml"},
+        {"scope": "main", "plot_file": "plot-Fuel-Consumption-Change.yml"},
+        {"scope": "main", "plot_file": "plot-Fuel-Consumption-Change-withCHP.yml"},
+        {"scope": "main", "plot_file": "plot-Electricity-Production-Change.yml"},
+        {"scope": "saep", "plot_file": "plot-SAEP-NPV.yml"},
+        {"scope": "saep", "plot_file": "plot-SAEP-Heat-Production.yml"},
+        {"scope": "sadr", "plot_file": "plot-SADR-NPV.yml"},
+        {"scope": "sadr", "plot_file": "plot-SADR-Heat-Production.yml"},
+    ]
+
+    for item in PLOTS_TO_RUN:
+        main(item["scope"], item["plot_file"])

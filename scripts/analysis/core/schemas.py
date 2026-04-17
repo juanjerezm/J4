@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 import matplotlib as mpl
 import numpy as np
@@ -36,12 +36,14 @@ class TransformSpec:
 @dataclass(frozen=True)
 class ConsolidationJob:
     name: str
+    scenario_metadata: list[str]
     transform: TransformSpec
 
     @classmethod
     def from_dict(cls, data: dict) -> "ConsolidationJob":
-        transform = TransformSpec(**data.get("transform", {}))
-        return cls(name=data["name"], transform=transform)
+        data = dict(data)  # avoid mutating caller-owned dict
+        data["transform"] = TransformSpec(**(data.get("transform") or {}))
+        return cls(**data)
 
 
 # ----- Mapping Schemas -----
@@ -132,18 +134,23 @@ class Mappings:
 # ----- Plotting -----
 @dataclass(frozen=True)
 class AxisSpec:
-    min: float | None = None
-    max: float | None = None
-    pad: float | None = None
-    major_ticks: list[int | float] | None = None
-    minor_ticks: list[int | float] | None = None
-    major_grid: bool = False
-    minor_grid: bool = False
-    label: str = ""
-    label_kwargs: dict[str, Any] | None = None
-    ticklabel_format: str | None = None
-    ticklabel_kwargs: dict[str, Any] | None = None
-    autoscale: bool = False
+    kind: Literal["numerical", "categorical"]
+
+    label: str | None = None  # both
+    label_kwargs: dict[str, Any] | None = None  # both
+
+    autoscale: bool = False  # numeric
+    min: float | None = None  # numeric
+    max: float | None = None  # numeric
+    pad: float | None = None  # both
+
+    major_ticks: list[int | float] | None = None  # numeric
+    minor_ticks: list[int | float] | None = None  # numeric
+    ticklabel_format: str | None = None  # numeric, e.g. "{:.1f}M"
+    ticklabel_kwargs: dict[str, Any] | None = None  # both
+
+    major_grid: bool = False  # both
+    minor_grid: bool = False  # both
 
     @classmethod
     def from_dict(cls, data: dict) -> "AxisSpec":
@@ -193,6 +200,7 @@ class PlotSpec:
     name: str
     inputs: list[PlotInput]
     structure: PlotStructure
+    kind: Literal["cluster_bar", "stacked_bar", "line"]
     style: str | None = None
     figsize: tuple[float, float] | None = None
     save: bool = False

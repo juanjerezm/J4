@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from scripts.infra.paths import PATHS
+from scripts.infra.dirs import DIRS
 from scripts.modeling.export import export_to_csv
 from scripts.modeling.scenario_loader import load_scenarios
 from scripts.modeling.schemas import ExecutionOutcome, ExecutionStatus, Runset, Scenario
@@ -28,7 +28,7 @@ def check_override_dir(override: str, overrides_dir: Path) -> None:
 
 def run_scenario(scenario: Scenario, purge: bool) -> None:
     """Run a single scenario by executing the GAMS model with the appropriate command-line arguments."""
-    outdir = PATHS.dir.results / scenario.id
+    outdir = DIRS.results / scenario.id
 
     if purge:
         shutil.rmtree(outdir, ignore_errors=True)
@@ -49,7 +49,7 @@ def run_scenario(scenario: Scenario, purge: bool) -> None:
     ]
 
     print(f"Running {scenario.id} (override={scenario.override})")
-    subprocess.run(cmd, check=True, cwd=PATHS.root)
+    subprocess.run(cmd, check=True, cwd=DIRS.root)
     print("--------------------------------------------------")
     print(f"--> Scenario {scenario.id} executed successfully.")
     print("--------------------------------------------------")
@@ -110,7 +110,7 @@ def main(
     scenarios = load_scenarios(catalog_path, runset)
 
     for scn in scenarios:
-        check_override_dir(scn.override, PATHS.dir.overrides)
+        check_override_dir(scn.override, DIRS.overrides)
 
     print(f"Selected {len(scenarios)} scenario(s)")
 
@@ -128,7 +128,7 @@ def main(
 
         if export_csv:
             try:
-                export_to_csv(scn, PATHS.dir.results)
+                export_to_csv(scn, DIRS.results)
             except Exception as exc:
                 scn_elapsed = time.monotonic() - start_scenario
                 logs.append(ExecutionOutcome.export_fail(scn.id, scn_elapsed, exc))
@@ -138,4 +138,4 @@ def main(
         logs.append(ExecutionOutcome.passed(scn.id, scn_elapsed))
 
     total_elapsed = time.monotonic() - start_all
-    save_summary(scenarios, PATHS.dir.results, logs, total_elapsed)
+    save_summary(scenarios, DIRS.results, logs, total_elapsed)

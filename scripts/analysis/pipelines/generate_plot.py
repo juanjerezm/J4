@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -23,7 +24,7 @@ from scripts.analysis.core.plotting_helpers import (
 from scripts.analysis.core.schemas import Mappings, PlotSpec
 from scripts.analysis.core.tables import DIMENSION_CONFIG, order_dataframe
 from scripts.analysis.core.transforms import run_transform
-from scripts.infra.paths_2 import PATHS
+from scripts.infra.dirs import DIRS
 
 
 def build_figure(data: pd.DataFrame, plot_spec: PlotSpec, mappings: Mappings) -> Figure:
@@ -125,23 +126,23 @@ def get_legend_title(series_col: str) -> str:
     return DIMENSION_CONFIG.get(series_col, {}).get("legend_title", series_col.title())
 
 
-def main(scope: str, plot_spec_path: str) -> None:
+def main(analysis: str, plotspec_path: Path) -> None:
 
     # Resolve paths and load configurations
-    analysis_scope = PATHS.analysis.scope(scope)
-    resolved_spec_path = analysis_scope.resolve(plot_spec_path)
-    plot_spec = load_plot_spec(resolved_spec_path)
+    analysis_dirs = DIRS.get_analysis_dirs(analysis)
+    plotspec_path = analysis_dirs.resolve(plotspec_path)
+    plot_spec = load_plot_spec(plotspec_path)
 
-    mappings = Mappings.from_dir(PATHS.analysis.mappings)
-    apply_matplotlib_style(plot_spec.style, PATHS.analysis.plot_styles)
+    mappings = Mappings.from_dir(DIRS.analysis_shared / "mappings")
+    apply_matplotlib_style(plot_spec.style, DIRS.analysis_shared / "plot-styles.yml")
 
     print("\n===== Plotting =====\n")
-    print(f"Selected plot spec: {resolved_spec_path}")
+    print(f"Selected plot spec: {plotspec_path}")
 
     # Load and prepare plot input data
     dfs = []
     for input_spec in plot_spec.inputs:
-        input_path = analysis_scope.resolve(input_spec.path)
+        input_path = analysis_dirs.resolve(input_spec.path)
         df = pd.read_csv(input_path)
 
         if input_spec.transform is not None:
@@ -159,10 +160,10 @@ def main(scope: str, plot_spec_path: str) -> None:
 
     # Handle output
     if plot_spec.save:
-        plot_path = analysis_scope.figures / f"{plot_spec.name}.png"
+        plot_path = analysis_dirs.figures / f"{plot_spec.name}.png"
         save_plot(fig, plot_path)
 
-        table_path = analysis_scope.figures / f"{plot_spec.name}.csv"
+        table_path = analysis_dirs.figures / f"{plot_spec.name}.csv"
         table.to_csv(table_path, index=False)
 
     if plot_spec.show:
@@ -171,19 +172,22 @@ def main(scope: str, plot_spec_path: str) -> None:
 
 if __name__ == "__main__":
     PLOTS_TO_RUN = [
-        {"scope": "main", "plot_file": "config/plot-NPV.yml"},
-        {"scope": "main", "plot_file": "config/plot-Carbon-Emissions-Change.yml"},
-        {"scope": "main", "plot_file": "config/plot-Fuel-Consumption-Change.yml"},
+        {"analysis": "main", "plot_file": "config/plot-NPV.yml"},
+        {"analysis": "main", "plot_file": "config/plot-Carbon-Emissions-Change.yml"},
+        {"analysis": "main", "plot_file": "config/plot-Fuel-Consumption-Change.yml"},
         {
-            "scope": "main",
+            "analysis": "main",
             "plot_file": "config/plot-Fuel-Consumption-Change-includingCHP.yml",
         },
-        {"scope": "main", "plot_file": "config/plot-Electricity-Production-Change.yml"},
-        {"scope": "saep", "plot_file": "config/plot-SAEP-NPV.yml"},
-        {"scope": "saep", "plot_file": "config/plot-SAEP-Heat-Production.yml"},
-        {"scope": "sadr", "plot_file": "config/plot-SADR-NPV.yml"},
-        {"scope": "sadr", "plot_file": "config/plot-SADR-Heat-Production.yml"},
+        {
+            "analysis": "main",
+            "plot_file": "config/plot-Electricity-Production-Change.yml",
+        },
+        {"analysis": "saep", "plot_file": "config/plot-SAEP-NPV.yml"},
+        {"analysis": "saep", "plot_file": "config/plot-SAEP-Heat-Production.yml"},
+        {"analysis": "sadr", "plot_file": "config/plot-SADR-NPV.yml"},
+        {"analysis": "sadr", "plot_file": "config/plot-SADR-Heat-Production.yml"},
     ]
 
     for item in PLOTS_TO_RUN:
-        main(item["scope"], item["plot_file"])
+        main(item["analysis"], Path(item["plot_file"]))

@@ -6,7 +6,7 @@ from scripts.analysis.core.io import load_consolidation_jobs, save_consolidated_
 from scripts.analysis.core.schemas import ConsolidationJob, Mappings
 from scripts.analysis.core.tables import order_dataframe, relabel_dimensions
 from scripts.analysis.core.transforms import run_transform
-from scripts.infra.paths_2 import PATHS
+from scripts.infra.dirs import DIRS
 from scripts.modeling.scenario_loader import load_scenarios
 from scripts.modeling.schemas import Runset, Scenario
 
@@ -21,7 +21,7 @@ SCENARIO_ATTRS = {
 def collect_results(
     scenarios: list[Scenario],
     job: ConsolidationJob,
-    results_dir: Path = PATHS.model.results,
+    results_dir: Path = DIRS.results,
 ) -> pd.DataFrame:
     """Load one metric CSV for each scenario and append scenario metadata columns."""
     frames: list[pd.DataFrame] = []
@@ -50,25 +50,25 @@ def collect_results(
 
 
 def main(
-    scope: str,
-    consolidation_job_path: Path,
+    analysis: str,
+    job_path: Path,
     runset_path: Path,
     catalog_path: Path,
 ) -> None:
 
-    analysis_scope = PATHS.analysis.scope(scope)
-    resolved_spec_path = analysis_scope.resolve(consolidation_job_path)
-    consolidation_jobs = load_consolidation_jobs(resolved_spec_path)
+    analysis_dirs = DIRS.get_analysis_dirs(analysis)
+    job_path = analysis_dirs.resolve(job_path)
+    consolidation_jobs = load_consolidation_jobs(job_path)
 
     runset = Runset.from_yaml(runset_path)
     scenarios = load_scenarios(catalog_path, runset)
 
-    mappings = Mappings.from_dir(PATHS.analysis.mappings)
+    mappings = Mappings.from_dir(DIRS.analysis_shared / "mappings")
 
     print("\n===== Metric Consolidation Pipeline =====\n")
     print(f"Selected runset: {runset_path}")
     print(f"Selected scenario catalog: {catalog_path}")
-    print(f"Selected consolidation spec: {resolved_spec_path}\n")
+    print(f"Selected consolidation spec: {job_path}\n")
     print(f"Consolidating across {len(scenarios)} scenarios:")
     for idx, scenario in enumerate(scenarios, start=1):
         print(f"  {idx}. {scenario.id}")
@@ -82,15 +82,15 @@ def main(
         df = run_transform(df, job.transform)
         df = order_dataframe(df, mappings, sort_by=job.transform.groupby)
 
-        output_path = save_consolidated_results(df, analysis_scope.tables, job.name)
+        output_path = save_consolidated_results(df, analysis_dirs.tables, job.name)
         print(f"[{idx}/{len(consolidation_jobs)}] Saved to: {output_path}\n")
 
 
 if __name__ == "__main__":
-    scope = "main"
+    analysis = "main"
     main(
-        scope=scope,
-        runset_path=Path(f"scenarios/runsets/{scope}.yml"),
-        catalog_path=Path("scenarios/scenarios.csv"),
-        consolidation_job_path=Path("config/consolidations.yml"),
+        analysis=analysis,
+        job_path=Path("config/consolidations.yml"),
+        runset_path=DIRS.runsets / f"{analysis}.yml",
+        catalog_path=DIRS.scenarios / "scenarios.csv",
     )

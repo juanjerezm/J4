@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from scripts.infra.paths import PATHS, resolve_cli_path
+from scripts.infra.dirs import DIRS, resolve_cli_path
 from scripts.modeling.execution import main
 
 
@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--scenario-catalog",
         type=Path,
-        default=PATHS.file.scenario_catalog,
+        default=DIRS.scenarios / "scenarios.csv",
         help="Path to scenario catalog (default: scenarios/scenarios.csv).",
     )
     parser.add_argument(
@@ -44,14 +44,14 @@ if __name__ == "__main__":
 
     if args.runset:
         runset_path = resolve_cli_path(
-            default_dir=PATHS.dir.runsets,
+            default_dir=DIRS.runsets,
             input_path=args.runset,
         )
     else:
         runset_path = None
 
     catalog_path = resolve_cli_path(
-        default_dir=PATHS.dir.scenarios,
+        default_dir=DIRS.scenarios,
         input_path=args.scenario_catalog,
     )
 

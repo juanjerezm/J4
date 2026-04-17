@@ -2,9 +2,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from scripts.analysis.core.dataframe_ops import order_dataframe, relabel_dimensions
 from scripts.analysis.core.io import load_consolidation_jobs, save_consolidated_results
-from scripts.analysis.core.schemas import ConsolidationJob, Mappings
-from scripts.analysis.core.tables import order_dataframe, relabel_dimensions
+from scripts.analysis.core.mappings import Mappings
+from scripts.analysis.core.schemas import ConsolidationJob
 from scripts.analysis.core.transforms import run_transform
 from scripts.infra.dirs import DIRS
 from scripts.modeling.scenario_loader import load_scenarios
@@ -86,13 +87,3 @@ def main(
             df, analysis_dirs.consolidated, job.name
         )
         print(f"[{idx}/{len(consolidation_jobs)}] Saved to: {output_path}\n")
-
-
-if __name__ == "__main__":
-    analysis = "main"
-    main(
-        analysis=analysis,
-        job_path=Path("config/consolidations.yml"),
-        runset_path=DIRS.runsets / f"{analysis}.yml",
-        catalog_path=DIRS.scenarios / "scenarios.csv",
-    )

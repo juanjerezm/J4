@@ -1,35 +1,7 @@
 import pandas as pd
 
-from scripts.analysis.core.schemas import Mappings
-
-# Metadata for known dimensions used across relabeling, categoricals, and plotting.
-DIMENSION_CONFIG = {
-    "COUNTRY": {
-        "mapping": "countries",
-        "categorical": True,
-        "legend_title": "Country",
-    },
-    "POLICY": {
-        "mapping": "policies",
-        "categorical": True,
-        "legend_title": "Policy Scenario",
-    },
-    "F": {
-        "mapping": "fuels",
-        "categorical": False,
-        "legend_title": "Fuel Category",
-    },
-    "E": {
-        "mapping": "entities",
-        "categorical": True,
-        "legend_title": "Entity",
-    },
-    "OVERRIDE": {
-        "mapping": "overrides",
-        "categorical": True,
-        "legend_title": "Sensitivity",
-    },
-}
+from scripts.analysis.core.dimensions import DIMENSION_CONFIG
+from scripts.analysis.core.mappings import Mappings
 
 
 def relabel_dimensions(df: pd.DataFrame, mappings: Mappings) -> pd.DataFrame:

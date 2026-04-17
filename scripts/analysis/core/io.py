@@ -11,8 +11,6 @@ from scripts.analysis.core.schemas import ConsolidationJob, PlotSpec
 def load_consolidation_jobs(path: Path) -> list[ConsolidationJob]:
     with path.open("r", encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
-        # TODO: check if or {} is needed above, it helps handling empty files but may mask other issues
-
     return [ConsolidationJob.from_dict(item) for item in raw["consolidations"]]
 
 
@@ -27,8 +25,6 @@ def save_consolidated_results(df: pd.DataFrame, outdir: Path, metric_name: str) 
 def load_plot_spec(path: Path) -> PlotSpec:
     with path.open("r", encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
-        # TODO: check if or {} is needed above, it helps handling empty files but may mask other issues
-
     return PlotSpec.from_dict(raw["plot"])
 
 

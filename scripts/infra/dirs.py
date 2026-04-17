@@ -13,8 +13,8 @@ class AnalysisDirs:
         return self.root / "config"
 
     @property
-    def tables(self) -> Path:
-        return self.root / "tables"
+    def consolidated(self) -> Path:
+        return self.root / "consolidated"
 
     @property
     def figures(self) -> Path:

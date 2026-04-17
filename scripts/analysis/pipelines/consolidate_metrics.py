@@ -82,7 +82,9 @@ def main(
         df = run_transform(df, job.transform)
         df = order_dataframe(df, mappings, sort_by=job.transform.groupby)
 
-        output_path = save_consolidated_results(df, analysis_dirs.tables, job.name)
+        output_path = save_consolidated_results(
+            df, analysis_dirs.consolidated, job.name
+        )
         print(f"[{idx}/{len(consolidation_jobs)}] Saved to: {output_path}\n")
 
 

@@ -15,7 +15,6 @@ from scripts.analysis.core.schemas import AxisSpec, Mappings, PlotSpec
 from scripts.analysis.core.tables import DIMENSION_CONFIG
 
 # ===== GRID STYLE CONFIGURATION =====
-# TODO: check where they should live and how should be applied
 GRID_STYLES = {
     "major": {"linestyle": ":", "linewidth": 0.5, "alpha": 0.9},
     "minor": {"linestyle": ":", "linewidth": 0.5, "alpha": 0.5},
@@ -30,7 +29,7 @@ def format_xaxis(
     ticklabels: Sequence[str] | None = None,
 ) -> None:
     """
-    Configure the y-axis from an `AxisSpec`.
+    Configure the x-axis from an `AxisSpec`.
 
     Supports two axis kinds:
     - `categorical`: tick positions are derived from `ticklabels`.
@@ -479,7 +478,7 @@ def save_plot(
     *,
     dpi: int | str | None = None,
     bbox_inches: str | None = None,
-) -> None:  # TODO: check if this should go to io.py, or where
+) -> None:
     """Save a Matplotlib figure, creating the output directory if needed."""
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

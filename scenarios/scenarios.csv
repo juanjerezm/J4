@@ -98,5 +98,5 @@ SAEPmax_DKsup,EPmax,iterative,DK,support
 SAEPmax_FRsoc,EPmax,iterative,FR,socioeconomic
 SAEPmax_FRtax,EPmax,iterative,FR,taxation
 SAEPmax_FRsup,EPmax,iterative,FR,support
-test-common,none,static,DE,support
-test-override,TEST,static,FR,taxation
+test-common,none,static,DE,taxation
+test-override,TEST,static,DE,taxation

@@ -285,8 +285,12 @@ pi_h_ceil(G)            'Waste-heat ceiling price (EUR/MWh)'
 ;
 
 * ----- Parameter definition -----
-* - Direct assignment - (This should, ideally, be done in a separate data file)
-pi_q            = 0.0853;   !! Price of carbon quota (EUR/kg)
+* - Scalar parameters -
+pi_q =
+$if     EXIST './data/overrides/%override%/carbon-quota-price.csv' $include './data/overrides/%override%/carbon-quota-price.csv'
+$if NOT EXIST './data/overrides/%override%/carbon-quota-price.csv' $include './data/common/carbon-quota-price.csv'
+;
+
 
 * - One-dimensional parameters -
 $offlisting

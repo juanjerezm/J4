@@ -1,9 +1,9 @@
 ,'fuel price','carbon content','fuel tax','capacity tariff'
-'biogas',67.731,0,2.0617,0
+'biogas',93.78,0,2.0617,0
+'gas oil',61.17,266.76,37.378,0
 'electricity',timeVar,timeVar,92.473,0
 'industrial heat',0,0,0,0
-'gas oil',62.226,266.76,37.378,0
-'municipal waste',-19.122,153,0,0
-'natural gas',53.626,203.4,35.889,0
-'wood chips',47.697,0,0,0
-'wood pellets',76.662,0,0,0
+'municipal waste',-22.51,133.20,0,0
+'natural gas',71.52,205.56,35.889,0
+'wood chips',36.32,0,0,0
+'wood pellets',41.10,0,0,0

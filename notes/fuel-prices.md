@@ -42,7 +42,7 @@ Gasoil-consuming generators in `energy-producer-census-2024.xlsx` are classified
 
 Unlike conventional fuels, municipal waste carries a negative fuel price as incineration plants receive a gate fee (*modtagelsespris*) for accepting waste.
 
-The gate fee is estimated at **−22.51 €/MWh**, derived from the estimated Danish import price of approximately **490 kr./ton** (KF26, in 2026 prices) and a representative lower heating value of **10.5 GJ/ton** for Danish municipal solid waste (Technology Catalogue, Chapter 08). It is noted that gate fees vary considerably across plants and are subject to significant uncertainty, as acknowledged in KF26, with a typical range between **340-610 kr./ton**.
+The gate fee is estimated at **20.20 €/MWh**, derived from the estimated Danish import price of approximately **490 kr./ton** (KF26, in 2026 prices) and a representative lower heating value of **11.7 GJ/ton** for Danish municipal solid waste (SØB25, Table 1a). It is noted that gate fees vary considerably across plants and are subject to significant uncertainty, as acknowledged in KF26, with a typical range between **340-610 kr./ton**.
 
 ### Natural Gas
 

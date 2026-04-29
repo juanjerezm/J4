@@ -15,11 +15,11 @@ Several taxes differentiate between fuel used for heat production and fuel used 
 1. Thermal efficiency rule (120%)
 2. Electrical efficiency rule (67%)
 
-For this analysis, the first method is chosen and is applied as follows:
+Their details are provided in [*Common rules for the distribution of fuels between electricity and heat production*](https://info.skat.dk/data.aspx?oid=2061647&chk=220619). **For the purpose of this analysis, the electrical efficiency rule is followed**:
 
 > ```text
-> Fuel_to_heat = Heat Produced / 1.2
-> Fuel_to_electricity = Total Fuel - Fuel_to_heat
+> Fuel_to_electricity = Electricity / 0.67
+> Fuel_to_heat        = Fuel - Fuel_to_electricity
 > ```
 
 ---
@@ -36,29 +36,34 @@ The electricity tax for 2025 is 0.720 DKK/kWh [(PwC Overview - Annex 1)](https:/
 
 ---
 
-### Energy tax (*mineralolie-, kul-, gas-, affaldafgift*)
+### Energy taxes (*mineralolie-, kul-, gas-, affaldafgift*)
 
 #### Sources
 
-1. **PwC Denmark** (2025). *Tax Guide 2026: Overview of energy tax settlement and reimbursement in Denmark* (Afgiftsvejledning 2026). Available at: [https://www.pwc.dk/da/afgifter](https://www.pwc.dk/da/afgifter).
-2. **Skatteministeriet** (2024). *Electricity and cogeneration production* (El- og kraftvarmeproduktion
-Indhold). Available at: [https://info.skat.dk/data.aspx?oid=2061646](https://info.skat.dk/data.aspx?oid=2061646).
-3. **Folketinget** (2024). *Act amending the CO₂ tax act, the mineral oil energy tax act, the natural gas and town gas tax act, the coal tax act, and various other acts — implementing parts of the Green Tax Reform for industry* (Lov om ændring af lov om kuldioxidafgift af visse energiprodukter m.fl. — Grøn skattereform for industri mv.). Bill no. L 183, Folketinget 2023-24. Adopted 4 June 2024. Skatteministeriet, Copenhagen. j.nr. 2022-14171. Available at: [https://www.retsinformation.dk/eli/lta/2024/683](https://www.retsinformation.dk/eli/lta/2024/683).
-
-#### Rates
-
-Excise tax rates on various fuels are sourced from [(PwC Overview - Annex 1)](https://www.pwc.dk/da/afgiftsvejledningen/godtgorelse-satser.html#bilag-1).
-
-For waste-incineration plants, two tax elements apply [(PwC - Afgift på affald)](https://www.pwc.dk/da/afgiftsvejledningen/afgift-paa-affald.html):
-
-- *Affaldsvarmeafgift*: charged per unit of output heat.
-- *Tillægsafgift*: charged per unit of input energy in fuel
+1. **PwC Denmark**, *Tax Guide 2026: Overview of energy tax settlement and reimbursement in Denmark*, [Afgiftsvejledning 2026](https://www.pwc.dk/da/afgifter).
+2. **Skatteministeriet**, *Rules for electricity and cogeneration production according to the energy tax laws*, [El- og kraftvarmeproduktion](https://info.skat.dk/data.aspx?oid=2061646).
 
 #### Coverage and exemptions
 
-Fuels used for heat production delivered to the district heating network are not eligible for energy tax reimbursement, as this energy is not consumed internally [(PwC - Energiafgifter)](https://www.pwc.dk/da/afgiftsvejledningen/energiafgifter.html).
+Fuel used for heat production delivered to the district heating network is not eligible for energy tax reimbursement, as the heat is not consumed internally [(PwC - Energiafgifter)](https://www.pwc.dk/da/afgiftsvejledningen/energiafgifter.html).
 
-For CHP plants, the fuel share allocated to electricity production is fully exempt from energy tax [(PwC CHP page)](https://www.pwc.dk/da/afgiftsvejledningen/kraftvarmevaerker-og-fjernvarmevaerker.html).
+Fuel used for electricity production in CHP plants is fully exempt from energy tax [(PwC CHP page)](https://www.pwc.dk/da/afgiftsvejledningen/kraftvarmevaerker-og-fjernvarmevaerker.html). Allocation rules apply as described in the introduction to this section.
+
+Excise taxes on municipal waste cover only the non-biodegradable fraction of waste used as fuel. **For the purpose of this analysis, it is assumed that 50% of the municipal waste used is non-biodegradable and therefore subject to excise tax** [(PwC - Afgift på affald)](https://www.pwc.dk/da/afgiftsvejledningen/afgift-paa-affald.html).
+
+#### Rates
+
+Excise tax rates are sourced from:
+
+- [Elafgiftsloven](https://skm.dk/tal-og-metode/satser/satser-og-beloebsgraenser-i-lovgivningen/elafgiftsloven) for rates on electricity consumption.
+- [Kulafgiftslove](https://skm.dk/tal-og-metode/satser/satser-og-beloebsgraenser-i-lovgivningen/kulafgiftsloven) for rates on municipal waste consumption.
+- [Gasafgiftslove](https://skm.dk/tal-og-metode/satser/satser-og-beloebsgraenser-i-lovgivningen/gasafgiftsloven) for rates on natural gas and biogas consumption.
+- [Mineralolieafgiftslove](https://skm.dk/tal-og-metode/satser/satser-og-beloebsgraenser-i-lovgivningen/mineralolieafgiftsloven) for rates on gas oil consumption.
+
+It is worth noting that municipal waste is exposed to two types of excise taxes [(PwC - Afgift på affald)](https://www.pwc.dk/da/afgiftsvejledningen/afgift-paa-affald.html):
+
+- *Affaldsvarmeafgift*: charged per unit of output heat.
+- *Tillægsafgift*: charged per unit of input energy in fuel.
 
 ---
 
@@ -66,25 +71,43 @@ For CHP plants, the fuel share allocated to electricity production is fully exem
 
 #### Sources
 
-1. **PwC Denmark** (2025). *Tax Guide 2026: Overview of energy tax settlement and reimbursement in Denmark* (Afgiftsvejledning 2026). Available at: [https://www.pwc.dk/da/afgifter](https://www.pwc.dk/da/afgifter).
-2. **Folketinget** (2024). *Act amending the CO₂ tax act, the mineral oil energy tax act, the natural gas and town gas tax act, the coal tax act, and various other acts — implementing parts of the Green Tax Reform for industry* (Lov om ændring af lov om kuldioxidafgift af visse energiprodukter m.fl. — Grøn skattereform for industri mv.). Bill no. L 183, Folketinget 2023-24. Adopted 4 June 2024. Skatteministeriet, Copenhagen. j.nr. 2022-14171. Available at: [https://www.retsinformation.dk/eli/lta/2024/683](https://www.retsinformation.dk/eli/lta/2024/683).
-3. **Skatteministeriet** (2024). *CO₂ tax on fuels* (CO₂-afgift på brændstoffer). Available at: [https://info.skat.dk/data.aspx?oid=2061646](https://info.skat.dk/data.aspx?oid=2061646).
+1. **eLov**, *CO₂ tax law*, [CO2-afgiftsloven](https://www.elov.dk/co2-afgiftsloven/).
+2. **Skatteministeriet**, *CO₂ tax rates on fuels*, [CO2-afgiftsloven](https://skm.dk/tal-og-metode/satser/satser-og-beloebsgraenser-i-lovgivningen/co2-afgiftsloven).
+3. **Skatteministeriet**, *Rules for electricity and cogeneration production according to the energy tax laws*, [El- og kraftvarmeproduktion](https://info.skat.dk/data.aspx?oid=2061646).
+4. **PwC Denmark**, *Tax Guide 2026: Overview of energy tax settlement and reimbursement in Denmark*, [Afgiftsvejledning 2026](https://www.pwc.dk/da/afgifter).
 
-#### Rates and coverage
+#### Description
 
-Rates for CO₂ tax on fuels are sourced from [(PwC Overview - Annex 1)](https://www.pwc.dk/da/afgiftsvejledningen/godtgorelse-satser.html#bilag-1). Applicability and reimbursement rates vary by end use and ETS status of the plant.
+A carbon tax levied on fuel consumption, with rates calibrated to the CO₂ emissions associated with each fuel type.
 
-For waste-incineration plants, the CO₂ tax is levied on the share of non-biodegradable waste used as fuel [(PwC - Afgift på affald)](https://www.pwc.dk/da/afgiftsvejledningen/afgift-paa-affald.html).
+#### Coverage
 
-**Fuel allocated to heat production** (heat-only and CHP heat share):
+In terms of fuels, the law provides the following considerations:
 
-- ETS plants: 10% reimbursement [(L183 §9a stk. 2)](https://www.retsinformation.dk/eli/lta/2024/683)
-- Non-ETS plants: no reimbursement [(L183 §9e)](https://www.retsinformation.dk/eli/lta/2024/683)
+- Liquid and gaseous biofuels are exempt (*§7 stk. 3*) and are excluded from this analysis.
+- For waste incineration, the tax is not levied on the fuel quantity itself but on the actual non-biogenic CO₂ emissions (*§2 stk. 1 nr. 14*).
 
-**Fuel allocated to electricity production** (CHP only):
+The law also provides different treatment according to plant type, quota coverage, and output type.
 
-- ETS plants: fully exempt [(CO₂-afgiftsloven §7 stk. 1 nr. 2-3)](https://www.elov.dk/co2-afgiftsloven/paragraf/7/)
-- Non-ETS plants: no reimbursement [(CO₂-afgiftsloven §7 stk. 1 nr. 2-3)](https://www.elov.dk/co2-afgiftsloven/paragraf/7/)
+##### ETS-covered plants
+
+> **Heat output (HO and CHP units)**
+> The tax applies, but a partial refund is granted: 10% in 2025, rising to 50% from 2030 onwards (*§9a stk. 2*).
+>
+> **Electricity output (CHP units)**
+> Full exemption applies (*§7 stk. 1 nr. 2–3*).
+
+##### Non-ETS plants
+
+> **Heat output (HO and CHP units)**
+> The tax applies with no refund (*§9*). The transitional refund mechanism (*§9e*) does not apply, as it mirrors the eligibility conditions of the energy tax laws, which explicitly exclude heat delivered to external networks.
+>
+> **Electricity output (CHP units)**
+> No refund or exemption applies. *§7 stk. 4 nr. 1* explicitly excludes plants not covered by the CO₂ Quotas Act, and the full exemption under *§7 stk. 1 nr. 2* equally requires ETS membership.
+
+#### Rates
+
+Rates are obtained from the [Skatteministeriet website](https://skm.dk/tal-og-metode/satser/satser-og-beloebsgraenser-i-lovgivningen/co2-afgiftsloven).
 
 ---
 
@@ -92,14 +115,19 @@ For waste-incineration plants, the CO₂ tax is levied on the share of non-biode
 
 #### Sources
 
-1. **PwC Denmark** (2025). *Tax Guide 2026: Overview of energy tax settlement and reimbursement in Denmark* (Afgiftsvejledning 2026). Available at: [https://www.pwc.dk/da/afgifter](https://www.pwc.dk/da/afgifter).
-2. **Folketinget** (2024). *Act on taxation of CO₂e emissions from quota-covered sectors (Emissions Tax Act)* (Lov om afgift af CO₂e-emissioner fra kvoteomfattede sektorer — emissionsafgiftsloven). Bill no. L 182, Folketinget 2023-24. Adopted 4 June 2024. Skatteministeriet, Copenhagen. j.nr. 2022-14171. Available at: [https://www.retsinformation.dk/eli/lta/2024/683](https://www.retsinformation.dk/eli/lta/2024/683).
+1. **eLov**, *Emissions tax law*, [Emissionsafgiftsloven](https://www.elov.dk/emissionsafgiftsloven/).
+2. **Skatteministeriet**, *Emissions tax rates*, [Emissionsafgiftsloven](https://skm.dk/tal-og-metode/satser/satser-og-beloebsgraenser-i-lovgivningen/emissionsafgiftsloven).
+3. **PwC Denmark**, *Tax Guide 2026: Overview of energy tax settlement and reimbursement in Denmark*, [(Afgiftsvejledning 2026)](https://www.pwc.dk/da/afgifter).
 
-#### Coverage and rates
+#### Coverage
 
-The emissions tax applies exclusively to ETS-covered plants [(L182 §1-2)](https://www.retsinformation.dk/eli/lta/2024/683). It is levied on actual CO₂ emissions, calculated per ton of CO₂ for which ETS quotas must be surrendered, regardless of whether the fuel is used for heat or electricity production.
+The emissions tax applies exclusively to ETS-covered plants (*§1-2*). It is levied on actual CO₂ emissions, calculated per ton of CO₂-equivalent for which ETS quotas must be surrendered, regardless of whether the fuel is used for heat or electricity production.
 
-Tax rates are sourced from [(PwC overview - Annex 4)](https://www.pwc.dk/da/afgiftsvejledningen/godtgorelse-satser.html#bilag-4).
+This tax also applies to sustainable biogas, even though it is usually exempt from ETS quota return obligations, when the biogas is blended with natural gas. **For the purpose of this analysis, it is assumed that all biogas used in the model not blended and therefore is exempt to the emissions tax**.
+
+#### Rates
+
+Tax rates are sourced from the [Skatteministeriet website](https://skm.dk/tal-og-metode/satser/satser-og-beloebsgraenser-i-lovgivningen/emissionsafgiftsloven).
 
 ---
 

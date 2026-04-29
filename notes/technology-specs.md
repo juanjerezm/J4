@@ -23,13 +23,13 @@ Technical parameters are obtained from different sources depending on the type o
 
 Technical parameters (heating efficiency, VO&M and ramping) are taken from the [Technology Catalogue - Generation](https://ens.dk/en/our-services/projections-and-models/technology-data/technology-data-generation-electricity-and). The following spreadsheets are used:
 
-- HOB_BG: 44 DH boiler, gas fired
+- HOB_BG-S: 44 DH boiler, gas fired
 - HOB_EL: 41 electric boiler, large
-- HOB_GO: 44 DH boiler, gas fired
-- HOB_GO_NOETS: 44 DH boiler, gas fired
-- HOB_NG: 44 DH boiler, gas fired
-- HOB_NG_NOETS: 44 DH boiler, gas fired
-- HOB_WP: 09b Wood Pellets HOP
+- HOB_GO-L: 44 DH boiler, gas fired
+- HOB_GO-S: 44 DH boiler, gas fired
+- HOB_NG-L: 44 DH boiler, gas fired
+- HOB_NG-S: 44 DH boiler, gas fired
+- HOB_WP-S: 09b Wood Pellets HOP
 
 #### Heat Pumps
 
@@ -97,7 +97,7 @@ Their efficiencies are calculated by `scripts/python/compute_COP.py`, according 
 
 The cost are obtained from from [Technology Catalogue - Generation](https://ens.dk/en/our-services/projections-and-models/technology-data/technology-data-generation-electricity-and):
 
-- HR_DC: 40 Comp. hp, excess heat 3 MW.
+- HP_RECOVERY: 40 Comp. hp, excess heat 3 MW.
 - ELECTRIC_CHILLER: 40 - Comp. hp, airsource 3 MW, with costs adjusted as indicated below.
 - FREE_COOLING: Assumed free.
 

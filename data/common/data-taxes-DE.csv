@@ -1,0 +1,26 @@
+,'fuel input','heat output','electricity output','cold output','emissions','ets quota'
+AMV1,0.00,,,,,0.07343
+AMV4,0.00,,,,,0.07343
+ARC,0.00,,,,0.055,
+ARGO5,0.00,,,,0.055,
+ARGO6,0.00,,,,0.055,
+AVV1,0.00,,,,,0.07343
+AVV2,0.00,,,,,0.07343
+HCV7,0.00,,,,,0.07343
+HCV8,0.00,,,,,0.07343
+KKV8,0.00,,,,,0.07343
+VF5,0.00,,,,0.055,
+VF6,0.00,,,,0.055,
+HOB_BG-S,0.00,,,,0.055,
+HOB_EL,20.50,,,,,
+HOB_GO-L,6.15,,,,,0.07343
+HOB_GO-S,6.15,,,,0.055,
+HOB_NG-L,5.50,,,,,0.07343
+HOB_NG-S,5.50,,,,0.055,
+HOB_WP-S,0.00,,,,0.055,
+HP_AMBIENT,20.50,,,,,
+HP_PROCESS,20.50,,,,,
+INDUSTRY,0.00,,,,,
+ELECTRIC_CHILLER,20.50,,,,,
+FREE_COOLING,20.50,,,,,
+HP_RECOVERY,20.50,,,,,

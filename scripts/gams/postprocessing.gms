@@ -56,8 +56,8 @@ REF(CASE)               'Case identifier for reference case'    /reference/
 
 $gdxin './results/%scenario%/gdx/parameters.gdx'
 SETS
-        T, E, G, S, SS, F, G_ETS(G), G_HR(G), G_DH(G), G_WH(G), G_CHP(G), F_EL(F), GF(G,F);
-$load   T, E, G, S, SS, F, G_ETS   , G_HR   , G_DH   , G_WH   , G_CHP   , F_EL   , GF
+        T, E, G, S, SS, F, G_HR(G), G_DH(G), G_WH(G), G_CHP(G), F_EL(F), GF(G,F);
+$load   T, E, G, S, SS, F, G_HR   , G_DH   , G_WH   , G_CHP   , F_EL   , GF
 $gdxin 
 
 
@@ -153,8 +153,8 @@ HeatRecoveryCapacity(G,CASE)$G_HR(G)                            = EPS           
 * ----- Calculate tariffs, taxes, ETS quotas, and support schemes -----
 $gdxin './results/%scenario%/gdx/parameters.gdx'
 PARAMETERS 
-        tariff_v, tariff_c, tax_fuel_f, tax_fuel_g, pi_q, qc_f, C_p_inv, C_g_inv, L_p, k_inv_p, k_inv_g, k_op_g, AF, N, r;
-$load   tariff_v, tariff_c, tax_fuel_f, tax_fuel_g, pi_q, qc_f, C_p_inv, C_g_inv, L_p, k_inv_p, k_inv_g, k_op_g, AF, N=lifetime, r
+        tariff_v, tariff_c, tau_f, tau_h, tau_e, tau_c, tau_w, pi_q, C_p_inv, C_g_inv, L_p, k_inv_p, k_inv_g, k_op_g, AF, N, r;
+$load   tariff_v, tariff_c, tau_f, tau_h, tau_e, tau_c, tau_w, pi_q, C_p_inv, C_g_inv, L_p, k_inv_p, k_inv_g, k_op_g, AF, N=lifetime, r
 $gdxin 
 
 $ifi     "%policytype%" == 'socioeconomic'  Tariffs('WHS',CASE) = EPS;
@@ -162,12 +162,12 @@ $ifi not "%policytype%" == 'socioeconomic'  Tariffs('WHS',CASE) = EPS + sum((T,G
                                             Tariffs('DHN',CASE) = EPS + sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * FuelConsumption(T,G_DH,F,CASE)) + sum(F, tariff_c(F) * FuelMaxCapacity('DHN',F,CASE));
 
 $ifi     "%policytype%" == 'socioeconomic'  Taxes('WHS',CASE) = EPS;
-$ifi not "%policytype%" == 'socioeconomic'  Taxes('WHS',CASE) = EPS + sum((T,G_WH,F)$GF(G_WH,F), FuelConsumption(T,G_WH,F,CASE) * (tax_fuel_f(F) + tax_fuel_g(G_WH)));
-                                            Taxes('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), FuelConsumption(T,G_DH,F,CASE) * (tax_fuel_f(F) + tax_fuel_g(G_DH)));
+$ifi not "%policytype%" == 'socioeconomic'  Taxes('WHS',CASE) = EPS + sum((T,G_WH,F)$GF(G_WH,F), FuelConsumption(T,G_WH,F,CASE) * tau_f(G_WH) + HeatProduction(T,G_WH,F,CASE) * tau_h(G_WH) + ElectricityProduction(T,G_WH,F,CASE) * tau_e(G_WH) + ColdProduction(T,G_WH,F,CASE) * tau_c(G_WH) + CarbonEmissions(T,G_WH,F,CASE) * tau_w(G_WH));
+                                            Taxes('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), FuelConsumption(T,G_DH,F,CASE) * tau_f(G_DH) + HeatProduction(T,G_DH,F,CASE) * tau_h(G_DH) + ElectricityProduction(T,G_DH,F,CASE) * tau_e(G_DH) + ColdProduction(T,G_DH,F,CASE) * tau_c(G_DH) + CarbonEmissions(T,G_DH,F,CASE) * tau_w(G_DH));
 
 $ifi     "%policytype%" == 'socioeconomic'  ETSQuota('WHS',CASE) = EPS;
-$ifi not "%policytype%" == 'socioeconomic'  ETSQuota('WHS',CASE) = EPS + sum((T,G_WH,F)$(GF(G_WH,F) AND G_ETS(G_WH) AND NOT F_EL(F)), FuelConsumption(T,G_WH,F,CASE) * pi_q*qc_f(T,F));
-                                            ETSQuota('DHN',CASE) = EPS + sum((T,G_DH,F)$(GF(G_DH,F) AND G_ETS(G_DH) AND NOT F_EL(F)), FuelConsumption(T,G_DH,F,CASE) * pi_q*qc_f(T,F));
+$ifi not "%policytype%" == 'socioeconomic'  ETSQuota('WHS',CASE) = EPS + sum((T,G_WH,F)$GF(G_WH,F), CarbonEmissions(T,G_WH,F,CASE) * pi_q(G_WH));
+                                            ETSQuota('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), CarbonEmissions(T,G_DH,F,CASE) * pi_q(G_DH));
 
 $ifi not "%policytype%" == 'support'                          Support(E,CASE)             = EPS;
 $ifi     "%policytype%" == 'support'                          Support(E,'reference')      = EPS;

@@ -68,7 +68,6 @@ GF(G,F)                 'Generator-fuel mapping'
 * ======================================================================
 * ----- Subset declaration -----
 SETS
-G_ETS(G)                'Generators subject to emissions trading system (ETS)'
 G_BP(G)                 'Backpressure generators'
 G_EX(G)                 'Extraction generators'  
 G_HO(G)                 'Heat-only generators'
@@ -92,17 +91,15 @@ C_f(T,G,F)              'Cost of fuel consumption (EUR/MWh)'
 C_h(G)                  'Cost of heat production (EUR/MWh)'
 C_c(G)                  'Cost of cold production (EUR/MWh)'
 C_e(G)                  'Cost of electricity production (EUR/MWh)'
+C_w(G)                  'Cost of emissions (EUR/kg-CO2)'
 C_s(S)                  'Storage variable cost (EUR/MWh)'
 
 pi_e(T)                 'Price of electricity (EUR/MWh)'
 pi_f(T,F)               'Price of fuel (EUR/MWh)'
-pi_q                    'Price of carbon quota (EUR/kg)'
-tax_fuel_f(F)           'Fuel taxes - by fuel (EUR/MWh)'
-tax_fuel_g(G)           'Fuel taxes - by generator (EUR/MWh)'
 tariff_v(T)             'Volumetric electricity tariff - time-of-use (EUR/MWh)'
 tariff_c(F)             'Capacity electricity tariff - constant (EUR/MW)'
-qc_e(T)                 'Carbon content of electricity (kg/MWh)'
-qc_f(T,F)               'Carbon content of fuel (kg/MWh)'
+w_e(T)                  'Carbon content of electricity (kg/MWh)'
+w_f(T,F)                'Carbon content of fuel (kg/MWh)'
 
 D_h(T)                  'Demand of heat (MW)'
 D_c(T)                  'Demand of cold (MW)'
@@ -126,11 +123,11 @@ eta_s(S)                'Storage throughput efficiency (-)'
 * ----- Parameter definition -----
 $gdxin './results/%scenario%/gdx/parameters.gdx'
 $load T, H, M, G, S, SS, E, F, TM, TH, GF                                       !! Load sets
-$load G_ETS, G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL  !! Load subsets
+$load G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL  !! Load subsets
 $load D_h, D_c                                                                  !! Load system parameters
 $load C_e, C_h, C_c, Y_c, Y_f, F_a, eta_g, beta_b, beta_v                       !! Load generator parameters
-$load C_f, pi_f, qc_f, pi_q, pi_e, qc_e                                         !! Load fuel parameters
-$load tax_fuel_f, tariff_c, tariff_v, tax_fuel_g                                !! Load tax-and-tariff parameters
+$load C_f, C_w, pi_f, w_f, pi_e, w_e                                         !! Load fuel parameters
+$load tariff_c, tariff_v                                !! Load tax-and-tariff parameters
 $load C_s, Y_s, eta_s, rho_s, F_s_flo, F_s_end, F_s_min, F_s_max                !! Load storage parameters
 $gdxin
 
@@ -198,15 +195,17 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 * Variable cost of storages are negligible
 eq_obj..                                    obj         =e= OPX('DHN') + OPX('WHS');
 eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
-                                                            + sum((T,G_HO),              C_h(G_HO)     * x_h(T,G_HO))
-                                                            + sum((T,S_DH),              C_s(S_DH)     * x_s(T,S_DH,'discharge'))
+                                                            + sum((T,G_DH),              C_h(G_DH)     * x_h(T,G_DH))
                                                             + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
+                                                            + sum((T,G_DH,F)$GF(G_DH,F), C_w(G_DH)     * w(T,G_DH,F))
+                                                            + sum((T,S_DH),              C_s(S_DH)     * x_s(T,S_DH,'discharge'))
                                                             - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
 $ifi not "%policytype%" == 'socioeconomic'                  + sum(F,                     tariff_c(F)   * y_f_used('DHN',F))
                                                             ;
 
 eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f(T,G_CO,F))
                                                             + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
+                                                            + sum((T,G_CO,F)$GF(G_CO,F), C_w(G_CO)     * w(T,G_CO,F))
 $ifi not "%policytype%" == 'socioeconomic'                  + sum(F,                     tariff_c(F)   * y_f_used('WHS',F))
                                                             ;
 
@@ -225,7 +224,7 @@ eq_max_CO(T,G)$G_CO(G)..                                                x_c(T,G)
 eq_max_fueluse_DHN(T,F)..                       sum(G_DH$GF(G_DH,F), x_f(T,G_DH,F)) =l= y_f_used('DHN',F);
 eq_max_fueluse_WHS(T,F)..                       sum(G_CO$GF(G_CO,F), x_f(T,G_CO,F)) =l= y_f_used('WHS',F);
 
-eq_carbon_emissions(T,G,F)$GF(G,F)..                           qc_f(T,F)*x_f(T,G,F) =e= w(T,G,F);
+eq_carbon_emissions(T,G,F)$GF(G,F)..                            w_f(T,F)*x_f(T,G,F) =e= w(T,G,F);
 
 eq_sto_balance(T,S)..                       z(T,S)      =e= (1-rho_s(S)) * z(T--1,S) + eta_s(S)*x_s(T,S,'charge') - x_s(T,S,'discharge')/eta_s(S);
 eq_sto_end(T,S)$(ord(T)=card(T))..          z(T,S)      =e= F_s_end(S)*Y_s(S);

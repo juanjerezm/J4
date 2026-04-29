@@ -153,6 +153,13 @@ $include    './data/common/attribute-fuel.csv'
 $offDelim
 /;
 
+SET TaxAttrs(*)         'Auxiliary set to load tax data'
+/
+$onDelim
+$include    './data/common/attribute-taxes.csv'
+$offDelim
+/;
+
 * --- Load data values --- *
 TABLE ENTT_DATA(E,EnttAttrs)    'Entity data'
 $onDelim
@@ -189,12 +196,18 @@ $if NOT EXIST './data/overrides/%override%/data-fuel-%country%.csv' $include './
 $offDelim
 ;
 
+TABLE TAX_DATA(*,TaxAttrs)     'Tax data'
+$onDelim
+$if     EXIST './data/overrides/%override%/data-taxes-%country%.csv' $include './data/overrides/%override%/data-taxes-%country%.csv'
+$if NOT EXIST './data/overrides/%override%/data-taxes-%country%.csv' $include './data/common/data-taxes-%country%.csv'
+$offDelim
+;
+
 * ======================================================================
 * SUBSETS
 * ======================================================================
 * ----- Subset declaration -----
 SETS
-G_ETS(G)                'Generators subject to emissions trading system (ETS)'
 G_BP(G)                 'Backpressure generators'
 G_EX(G)                 'Extraction generators'  
 G_HO(G)                 'Heat-only generators'
@@ -209,8 +222,6 @@ F_EL(F)                 'Electricity fuel'
 ;
 
 * --- Subset definition ---
-G_ETS(G)    = YES$(GNRT_DATA(G,'ETS') EQ TRUE);
-
 G_BP(G)     = YES$(GNRT_DATA(G,'TYPE') EQ BP);
 G_EX(G)     = YES$(GNRT_DATA(G,'TYPE') EQ EX);
 G_HO(G)     = YES$(GNRT_DATA(G,'TYPE') EQ HO);
@@ -238,25 +249,31 @@ lifetime(E)             'Lifetime of investment (years)'
 r(E)                    'Discount rate of investment (-)'
 AF(E)                   'Project annuity factor (-)'
 
+pi_e(T)                 'Price of electricity (EUR/MWh)'
+pi_f(T,F)               'Price of fuel (EUR/MWh)'
+pi_q(G)                 'Emission quota cost (EUR/kg-CO2)'
+
+tau_f(G)                'Tax on fuel consumption (EUR/MWh)'
+tau_h(G)                'Tax on heat production (EUR/MWh)'
+tau_c(G)                'Tax on cold production (EUR/MWh)'
+tau_e(G)                'Tax on electricity production (EUR/MWh)'
+tau_w(G)                'Tax on emissions (EUR/kg-CO2)'
+
 C_f(T,G,F)              'Cost of fuel consumption (EUR/MWh)'
 C_h(G)                  'Cost of heat production (EUR/MWh)'
 C_c(G)                  'Cost of cold production (EUR/MWh)'
 C_e(G)                  'Cost of electricity production (EUR/MWh)'
+C_w(G)                  'Cost of emissions (EUR/kg-CO2)'
 C_g_fix(G)              'Fixed cost of generator (EUR/MW)'
 C_g_inv(G)              'Investment cost of generator (EUR/MW)'
-C_s(S)                  'Storage variable cost (EUR/MWh)'
 C_p_inv(G)              'Investment cost of pipe connection (EUR/MW-m)'
+C_s(S)                  'Storage variable cost (EUR/MWh)'
 
-pi_e(T)                 'Price of electricity (EUR/MWh)'
-pi_f(T,F)               'Price of fuel (EUR/MWh)'
-pi_q                    'Price of carbon quota (EUR/kg)'
-tax_fuel_f(F)           'Fuel taxes - by fuel (EUR/MWh)'
-tax_fuel_g(G)           'Fuel taxes - by generator (EUR/MWh)'
 tariff_schedule_v(H,M)  'Volumetric electricity tariff - time-of-use (EUR/MWh)'
 tariff_v(T)             'Volumetric electricity tariff - time-of-use (EUR/MWh)'
 tariff_c(F)             'Capacity electricity tariff - constant (EUR/MW)'
-qc_e(T)                 'Carbon content of electricity (kg/MWh)'
-qc_f(T,F)               'Carbon content of fuel (kg/MWh)'
+w_e(T)                  'Carbon content of electricity (kg/MWh)'
+w_f(T,F)                'Carbon content of fuel (kg/MWh)'
 
 D_h(T)                  'Demand of heat (MW)'
 D_c(T)                  'Demand of cold (MW)'
@@ -286,10 +303,6 @@ pi_h_ceil(G)            'Waste-heat ceiling price (EUR/MWh)'
 
 * ----- Parameter definition -----
 * - Scalar parameters -
-pi_q =
-$if     EXIST './data/overrides/%override%/carbon-quota-price.csv' $include './data/overrides/%override%/carbon-quota-price.csv'
-$if NOT EXIST './data/overrides/%override%/carbon-quota-price.csv' $include './data/common/carbon-quota-price.csv'
-;
 
 
 * - One-dimensional parameters -
@@ -319,7 +332,7 @@ $if NOT EXIST './data/overrides/%override%/ts-electricity-price.csv' $include '.
 $offDelim
 /
 
-qc_e(T)
+w_e(T)
 /
 $onDelim
 $if     EXIST './data/overrides/%override%/ts-electricity-carbon.csv' $include './data/overrides/%override%/ts-electricity-carbon.csv'
@@ -327,14 +340,6 @@ $if NOT EXIST './data/overrides/%override%/ts-electricity-carbon.csv' $include '
 $offDelim
 /
 
-tax_fuel_g(G)
-/
-$onDelim
-$if     EXIST './data/overrides/%override%/data-fueltax-generator-%country%.csv' $include './data/overrides/%override%/data-fueltax-generator-%country%.csv'
-$if NOT EXIST './data/overrides/%override%/data-fueltax-generator-%country%.csv' $include './data/common/data-fueltax-generator-%country%.csv'
-$OffDelim
-/
-;
 
 * - Multi-dimensional parameters -
 TABLE F_a(T,G)
@@ -362,16 +367,24 @@ $offDelim
 lifetime(E)             = ENTT_DATA(E,'lifetime');
 r(E)                    = ENTT_DATA(E,'discount rate');
 
-C_e(G)$(G_CHP(G))       = GNRT_DATA(G,'variable cost - electricity');
-C_h(G)$(G_HO(G))        = GNRT_DATA(G,'variable cost - heat');
-C_h(G)$(G_HR(G))        = GNRT_DATA(G,'variable cost - heat');
-C_c(G)$(G_CO(G))        = GNRT_DATA(G,'variable cost - cold');
+pi_f(T,F)               = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
+pi_q(G)                 = TAX_DATA(G,'ets quota');
+
+tau_f(G)                = TAX_DATA(G,'fuel input');
+tau_h(G)                = TAX_DATA(G,'heat output');
+tau_e(G)                = TAX_DATA(G,'electricity output');
+tau_c(G)                = TAX_DATA(G,'cold output');
+tau_w(G)                = TAX_DATA(G,'emissions');
+
+* #TODO: these should apply to all DH generators, but for WHR units it must be depending on the policytype...
+C_h(G)                  = GNRT_DATA(G,'variable cost - heat')           + tau_h(G);
+C_e(G)                  = GNRT_DATA(G,'variable cost - electricity')    + tau_e(G);
+C_c(G)                  = GNRT_DATA(G,'variable cost - cold')           + tau_c(G);
+C_w(G)                  = tau_w(G) + pi_q(G);
 C_g_inv(G)$(G_HR(G))    = GNRT_DATA(G,'capital cost');
 C_g_fix(G)$(G_HR(G))    = GNRT_DATA(G,'fixed cost');
 
-pi_f(T,F)               = FUEL_DATA(F,'fuel price')$(NOT F_EL(F))       + pi_e(T)$(F_EL(F));
-qc_f(T,F)               = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + qc_e(T)$(F_EL(F));
-tax_fuel_f(F)           = FUEL_DATA(F,'fuel tax');
+w_f(T,F)                = FUEL_DATA(F,'carbon content')$(NOT F_EL(F))   + w_e(T)$(F_EL(F));
 tariff_c(F)             = FUEL_DATA(F,'capacity tariff');
 
 Y_f(G_DH)               = GNRT_DATA(G_DH,'capacity');  
@@ -397,13 +410,14 @@ AF(E)               = r(E) * (1 + r(E)) ** lifetime(E) / ((1 + r(E)) ** lifetime
 Y_c(G_CO)           = smax(T, D_c(T));                                          !! Cold-only capacity defined by peak demand
 tariff_v(T)         = SUM((H,M)$(TM(T,M) AND TH(T,H)), tariff_schedule_v(H,M)); !! mapping hour-month schedule to timesteps
 
-*  Calculate fuel cost from fuel price, taxes (per fuel and generator), electricity tariffs and ETS quotas
-C_f(T,G,F)$(GF(G,F) AND G_DH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
+* Calculate cost of fuel for DH units
+* #TODO: add tariff component for DH units, ets no longer applies here but in emissions cost
+C_f(T,G,F)$(GF(G,F) AND G_DH(G))  = pi_f(T,F) + tau_f(G);
 
-* Fuel costs for WHS depend on the policy type
+* Calculate cost of fuel for WH units based on policy type
 $ifi "%policytype%" == 'socioeconomic'    C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F);
-$ifi "%policytype%" == 'taxation'         C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
-$ifi "%policytype%" == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tax_fuel_f(F) + tax_fuel_g(G) + tariff_v(T)$(F_EL(F)) + pi_q*qc_f(T,F)$(G_ETS(G) AND NOT F_EL(F));
+$ifi "%policytype%" == 'taxation'         C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tau_f(G) + tariff_v(T)$(F_EL(F));
+$ifi "%policytype%" == 'support'          C_f(T,G,F)$(GF(G,F) AND G_WH(G))  = pi_f(T,F) + tau_f(G) + tariff_v(T)$(F_EL(F));
 
 * - Policy parameters -
 $ifi NOT "%policytype%" == 'support'  k_inv_g(G)      = EPS + 0;                        !! default value w/o support policy

@@ -20,7 +20,7 @@ loop(ITER,
     );
 
     IRR_Estimation = (IRR_Low + IRR_High) / 2;
-    NPV_Estimation = - CAPEX('DHN') + OPEX_Savings('DHN') * (1 - (1 + IRR_Estimation)**(-N('DHN'))) / (IRR_Estimation + D6);
+    NPV_Estimation = - CAPEX('DHN') + OPEX_savings('DHN') * (1 - (1 + IRR_Estimation)**(-N('DHN'))) / (IRR_Estimation + D6);
         
     if (abs(IRR_Low-IRR_High) < tolerance,
         IRR('DHN') = IRR_Estimation;
@@ -50,7 +50,7 @@ loop(ITER,
     );
 
     IRR_Estimation = (IRR_Low + IRR_High) / 2;
-    NPV_Estimation = - CAPEX('WHS') + OPEX_Savings('WHS') * (1 - (1 + IRR_Estimation)**(-N('WHS'))) / (IRR_Estimation + D6);
+    NPV_Estimation = - CAPEX('WHS') + OPEX_savings('WHS') * (1 - (1 + IRR_Estimation)**(-N('WHS'))) / (IRR_Estimation + D6);
         
     if (abs(IRR_Low-IRR_High) < tolerance,
         IRR('WHS') = IRR_Estimation;

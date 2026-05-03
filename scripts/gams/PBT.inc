@@ -20,10 +20,10 @@ loop(ITER,
         break;
     );
 
-    CummulativeSavings = CummulativeSavings + OPEX_Savings('DHN')/(1+r('DHN'))**ORD(ITER);
+    CummulativeSavings = CummulativeSavings + OPEX_savings('DHN')/(1+r('DHN'))**ORD(ITER);
 
     if (CummulativeSavings > CAPEX('DHN'),
-        PBT('DHN') = EPS + ORD(ITER) - (CummulativeSavings - CAPEX('DHN'))/OPEX_Savings('DHN');
+        PBT('DHN') = EPS + ORD(ITER) - (CummulativeSavings - CAPEX('DHN'))/OPEX_savings('DHN');
         break;
     );
 )
@@ -41,10 +41,10 @@ loop(ITER,
         break;
     );
 
-    CummulativeSavings = CummulativeSavings + OPEX_Savings('WHS')/(1+r('WHS'))**ORD(ITER);
+    CummulativeSavings = CummulativeSavings + OPEX_savings('WHS')/(1+r('WHS'))**ORD(ITER);
 
     if (CummulativeSavings > CAPEX('WHS'),
-        PBT('WHS') = EPS + ORD(ITER) - (CummulativeSavings - CAPEX('WHS'))/OPEX_Savings('WHS');
+        PBT('WHS') = EPS + ORD(ITER) - (CummulativeSavings - CAPEX('WHS'))/OPEX_savings('WHS');
         break;
     );
 )

@@ -43,6 +43,7 @@ option EpsToZero = on   !! Outputs Eps values as zero
 SCALAR
 M3                      'Thousand multiplier'   /1E3/
 M6                      'Million multiplier'    /1E6/
+D0                      'Unitary divisor'       /1E0/
 D3                      'Thousand divisor'      /1E-3/
 D6                      'Million divisor'       /1E-6/
 ;
@@ -215,7 +216,7 @@ BidPrice(T,G_HR)            = BidMarginal(T)      - BidFixed(G_HR);
 AskPrice(T,G_HR)            = AskMarginal(T,G_HR) + AskFixed(G_HR);
 pi_h(T,G_HR)                = 0.5*(BidPrice(T,G_HR) + AskPrice(T,G_HR));  !! Waste-heat price is assumed midrange between bid and ask prices
 
-* If ask price is lower than the bid price, availability of HR units is set to zero.
+* If bid price is lower than the ask price, availability of HR units is set to zero.
 F_a(T,G_HR)$(AskPrice(T,G_HR) GE BidPrice(T,G_HR)) = 0;
 
 
@@ -316,8 +317,8 @@ eq_sto_flo(T,S,SS)          'Storage throughput limit'
 eq_NPV_all..                                NPV_all     =e= NPV('DHN') + NPV('WHS');
 
 * Added small tolerance so the MIP solver doesn't complain
-eq_NPV_DHN..                                NPV('DHN')  =e= - CAPEX('DHN') + (OPEX_REF('DHN') - OPEX('DHN') - HeatTransaction)/AF('DHN') + D6;
-eq_NPV_WHS..                                NPV('WHS')  =e= - CAPEX('WHS') + (OPEX_REF('WHS') - OPEX('WHS') + HeatTransaction)/AF('WHS') + D6;
+eq_NPV_DHN..                                NPV('DHN')  =e= - CAPEX('DHN') + (OPEX_REF('DHN') - OPEX('DHN') - HeatTransaction)/AF('DHN') + D0;
+eq_NPV_WHS..                                NPV('WHS')  =e= - CAPEX('WHS') + (OPEX_REF('WHS') - OPEX('WHS') + HeatTransaction)/AF('WHS') + D0;
 
 eq_CAPEX_DHN..                              CAPEX('DHN')=e= + sum(G_HR, L_p(G_HR) * K_p(G_HR) * y_hr(G_HR) * (1 - psi_k_p(G_HR)));  !! CAPEX support applied
 eq_CAPEX_WHS..                              CAPEX('WHS')=e= + sum(G_HR,             K_g(G_HR) * y_hr(G_HR) * (1 - psi_k_g(G_HR)));  !! CAPEX support applied

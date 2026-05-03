@@ -7,7 +7,7 @@ $call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv s
 $call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv symb=NPV             output="./results/%scenario%/csv/NPV.csv"
 $call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv symb=CAPEX           output="./results/%scenario%/csv/CAPEX.csv"
 $call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv symb=OPEX            output="./results/%scenario%/csv/OPEX.csv"
-$call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv symb=OPEX_Savings    output="./results/%scenario%/csv/OPEX_Savings.csv"
+$call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv symb=OPEX_savings    output="./results/%scenario%/csv/OPEX_savings.csv"
 $call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv symb=HeatTransaction  output="./results/%scenario%/csv/HeatTransaction.csv"
 $call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv symb=IRR             output="./results/%scenario%/csv/IRR.csv"
 $call gdxdump "./results/%scenario%/gdx/results-postprocessing.gdx" format=csv symb=PBT             output="./results/%scenario%/csv/PBT.csv"

@@ -23,10 +23,10 @@ loop(IDX,
         break;
     );
 
-    FixedBid(G_HR)     = FixedBid(G_HR) * log_n(IDX,G_HR,'input')/log_n(IDX,G_HR,'output');
-    FixedAsk(G_HR)     = FixedAsk(G_HR) * log_n(IDX,G_HR,'input')/log_n(IDX,G_HR,'output');
-    BidPrice(T,G_HR)   = MarginalBid(T)      - FixedBid(G_HR);
-    AskPrice(T,G_HR)   = MarginalAsk(T,G_HR) + FixedAsk(G_HR);
+    BidFixed(G_HR)     = BidFixed(G_HR) * log_n(IDX,G_HR,'input')/log_n(IDX,G_HR,'output');
+    AskFixed(G_HR)     = AskFixed(G_HR) * log_n(IDX,G_HR,'input')/log_n(IDX,G_HR,'output');
+    BidPrice(T,G_HR)   = BidMarginal(T)      - BidFixed(G_HR);
+    AskPrice(T,G_HR)   = AskMarginal(T,G_HR) + AskFixed(G_HR);
 
     pi_h(T,G_HR)       = (BidPrice(T,G_HR) + AskPrice(T,G_HR))/2;
     F_a(T,G_HR)$( AskPrice(T,G_HR) GE BidPrice(T,G_HR) ) = 0;
@@ -48,13 +48,13 @@ loop(IDX,
 *         break;
 *     );
 
-*     FixedBid(G_HR)     = FixedBid(G_HR) * log_n(IDX,G_HR,'input')/log_n(IDX,G_HR,'output');
-*     FixedAsk(G_HR)     = FixedAsk(G_HR) * log_n(IDX,G_HR,'input')/log_n(IDX,G_HR,'output');
-*     BidPrice(T,G_HR)   = MarginalBid(T)      - FixedBid(G_HR);
-*     AskPrice(T,G_HR)   = MarginalAsk(T,G_HR) + FixedAsk(G_HR);
+*     BidFixed(G_HR)     = BidFixed(G_HR) * log_n(IDX,G_HR,'input')/log_n(IDX,G_HR,'output');
+*     AskFixed(G_HR)     = AskFixed(G_HR) * log_n(IDX,G_HR,'input')/log_n(IDX,G_HR,'output');
+*     BidPrice(T,G_HR)   = BidMarginal(T)      - BidFixed(G_HR);
+*     AskPrice(T,G_HR)   = AskMarginal(T,G_HR) + AskFixed(G_HR);
 
 *     pi_h(T,G_HR)       = (BidPrice(T,G_HR) + AskPrice(T,G_HR))/2;
-*     pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-FixedBid(G_HR))) = pi_h_ceil(G_HR)-FixedBid(G_HR);
+*     pi_h(T,G_HR)$(pi_h(T,G_HR) GE (pi_h_ceil(G_HR)-BidFixed(G_HR))) = pi_h_ceil(G_HR)-BidFixed(G_HR);
 *     F_a(T,G_HR)$( AskPrice(T,G_HR) GE BidPrice(T,G_HR) ) = 0;
 * );
 * $label end_loop

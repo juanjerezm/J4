@@ -6,6 +6,8 @@ PARAMETER
 PBT(E)
 ;
 
+PBT(E) = EPS;
+
 * DHN
 loop(ITER,
     if (ORD(ITER) = 1,

@@ -1,0 +1,5 @@
+$SetGlobal scenario     'default'
+$SetGlobal override     'none'
+$SetGlobal solve_mode   'static'
+$SetGlobal country      'DE'
+$SetGlobal policytype   'support'

@@ -79,11 +79,7 @@ $ifi "%manual_run%"=='false' $log "Launch type: automated (Python pipeline)"
 * Control flags can be set here if this script is launched manually.
 
 * ----- Control flag definition -----
-$ifi "%manual_run%"=='true' $SetGlobal scenario     'default'
-$ifi "%manual_run%"=='true' $SetGlobal override     'none'
-$ifi "%manual_run%"=='true' $SetGlobal solve_mode   'static'
-$ifi "%manual_run%"=='true' $SetGlobal country      'DK'
-$ifi "%manual_run%"=='true' $SetGlobal policytype   'taxation'
+$ifi "%manual_run%"=='true' $include './scripts/gams/manual-control-flag-definition.inc'   !! Manual control flag definition
 
 
 * ======================================================================

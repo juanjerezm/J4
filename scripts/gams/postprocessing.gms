@@ -32,6 +32,9 @@ option optcr = 1e-4     !! Relative optimality tolerance
 option EpsToZero = on   !! Outputs Eps values as zero
 ;
 
+* ----- Control flag definition -----
+* $include './scripts/gams/manual-control-flag-definition.inc'   !! Manual control flag definition
+
 
 * ======================================================================
 * SCALARS
@@ -56,8 +59,8 @@ REF(CASE)               'Case identifier for reference case'    /reference/
 
 $gdxin './results/%scenario%/gdx/parameters.gdx'
 SETS
-        T, E, G, S, SS, F, G_HR(G), G_DH(G), G_WH(G), G_CHP(G), F_EL(F), GF(G,F);
-$load   T, E, G, S, SS, F, G_HR   , G_DH   , G_WH   , G_CHP   , F_EL   , GF
+        T, E, G, S, SS, F, G_HR(G), G_DH(G), G_WH(G), G_CHP(G), F_EL(F), G_EL(G), GF(G,F);
+$load   T, E, G, S, SS, F, G_HR   , G_DH   , G_WH   , G_CHP   , F_EL   , G_EL   , GF
 $gdxin 
 
 
@@ -66,117 +69,115 @@ $gdxin
 * ======================================================================
 * ----- Parameter declaration -----
 PARAMETERS
-NPV_all                             'Net present value of project - total (EUR)'
-NPV(E)                              'Net present value for entity (stakeholder) (EUR)'
+NPV_all                             'Net present value of project across all stakeholders (EUR)'
+NPV(E)                              'Net present value (EUR)'
 CAPEX(E)                            'Capital expenditure (EUR)'
 OPEX(E,CASE)                        'Operating expenditure (EUR)'
-OPEX_Savings(E)                     'Operating expenditure savings (EUR)'
-WH_transaction                      'Transaction value of waste-heat (EUR)'
-FLH(G_HR)                           'Full-load hours of heat-recovery generators (hours)'
+OPEX_savings(E)                     'Operating expenditure savings (EUR)'
+HeatTransaction                     'Transaction value of waste-heat (EUR)'
 
 WasteHeatPrice(T,G_HR)              'Price of recovered heat (EUR/MWh)'
+AskMarginal(T,G)                    'Marginal component of ask-price, from HR unit marginal operation cost (EUR/MWh)'
+BidMarginal(T)                      'Marginal component of bid price, from DH marginal cost in reference case (EUR/MWh)'
+AskFixed(G)                         'Fixed component of ask-price, from HR investments (EUR/MWh)'
+BidFixed(G)                         'Fixed component of bid-price, from DH investments (EUR/MWh)'
 AskPrice(T,G_HR)                    'Minimum feasible price for WHS (EUR/MWh)'
-BidPrice(T,G_HR)                    'Maximum feasible price for DHU (EUR/MWh)'
-MarginalAsk(T,G_HR)                 'Marginal cost-component of ask-price, monthly average (EUR/MWh)'
-MarginalBid(T)                      'Marginal cost-component of bid-price, monthly average (EUR/MWh)'
-FixedAsk(G_HR)                      'Fixed cost-component of ask-price, from HR investments (EUR/MWh)'
-FixedBid(G_HR)                      'Fixed cost-component of bid-price, from DH investments (EUR/MWh)'
-* MarginalAsk_Hourly
-* MarginalBid_Hourly
+BidPrice(T,G_HR)                    'Maximum feasible price for DHN (EUR/MWh)'
+FLH(G_HR)                           'Full-load hours equivalent (hours)'
 
-HeatRecoveryCapacity(G,CASE)        'Heating capacity of heat-recovery generators (MWh)'
-FuelMaxCapacity(E,F,CASE)           'Maximum fuel consumption across timesteps (MW)'
+FuelConsumption(T,G,F,CASE)         'Consumption of fuel (MWh)'
 HeatProduction(T,G,F,CASE)          'Production of heat (MWh)'
 ColdProduction(T,G,F,CASE)          'Production of cold (MWh)'
 ElectricityProduction(T,G,F,CASE)   'Production of electricity (MWh)'
-FuelConsumption(T,G,F,CASE)         'Consumption of fuel (MWh)'
 StorageFlow(T,S,SS,CASE)            'Storage charge/discharge flow (MWh)'
 StorageLevel(T,S,CASE)              'State-of-charge of storage (MWh)'
 CarbonEmissions(T,G,F,CASE)         'Carbon emissions (kg)'
+HeatRecoveryCapacity(G,CASE)        'Heating capacity of heat-recovery generators (MWh)'
 
+Taxes(E,CASE)                       'Energy and carbon taxes (EUR/year)'
 Tariffs(E,CASE)                     'Grid tariffs (EUR/year)'   
 ETSQuota(E,CASE)                    'ETS quota (EUR/year)'
-Taxes(E,CASE)                       'Energy and carbon taxes (EUR/year)'
 Support(E,CASE)                     'Support schemes (EUR/year)'
 ;
 
 
-* ----- Load economic variables from each case -----
-* Load OPEX from reference case
-$gdxin './results/%scenario%/gdx/results-reference.gdx'
-PARAMETERS opex_r;
-$load opex_r=OPX.l
+* ----- Load parameters and variables from each case and merge -----
+* - Parameters for calculating support schemes and comparative KPIs -
+$gdxin './results/%scenario%/gdx/parameters.gdx'
+PARAMETERS 
+        L_p, K_p, K_g, psi_k_p, psi_k_g, psi_c_h, AF, N, r;
+$load   L_p, K_p, K_g, psi_k_p, psi_k_g, psi_c_h, AF, N=lifetime, r
 $gdxin
 
-* Load economic KPIs and prices from integrated case
+* - Variables that do not need to be merged -
 $gdxin './results/%scenario%/gdx/results-integrated.gdx'
-PARAMETERS opex_i;
-$load opex_i=OPX.l
-$load NPV_all=NPV_all.l, NPV=NPV.l, CAPEX=CAPEX.l, WH_transaction=WH_transaction.l
-$load WasteHeatPrice=pi_h, AskPrice, BidPrice, MarginalAsk, MarginalBid, FixedAsk, FixedBid
+$load NPV_all=NPV_all.l, NPV=NPV.l, CAPEX=CAPEX.l, HeatTransaction=HeatTransaction.l
+$load WasteHeatPrice=pi_h, AskPrice, BidPrice, AskMarginal, BidMarginal, AskFixed, BidFixed
 $load FLH=N
 $gdxin
 
-* Merge OPEX from each case, calculate savings
-OPEX(E,CASE)        = EPS + opex_r(E)$REF(CASE) + opex_i(E)$INT(CASE);
-OPEX_Savings('DHN') = EPS + OPEX('DHN','reference') - OPEX('DHN','integrated') - WH_transaction;
-OPEX_Savings('WHS') = EPS + OPEX('WHS','reference') - OPEX('WHS','integrated') + WH_transaction;
+
+PARAMETERS x_f_tmp(T,G,F), x_h_tmp(T,G), x_c_tmp(T,G), x_e_tmp(T,G), x_s_tmp(T,S,SS), z_tmp(T,S), w_tmp(T,G,F), y_hr_tmp(G);
+PARAMETERS OPEX_tmp(E), Tariffs_tmp(E), Taxes_tmp(E), ETSQuota_tmp(E);
+
+* - Variables to be merged from reference case -
+$onMultiR                                                       !! Allows repeated definitions of same parameter, which are overwritten
+execute_load './results/%scenario%/gdx/results-reference.gdx',
+x_f_tmp=x_f.l, x_h_tmp=x_h.l, x_c_tmp=x_c.l, x_e_tmp=x_e.l, x_s_tmp=x_s.l, z_tmp=z.l, w_tmp=w.l,
+OPEX_tmp=OPEX.l, Tariffs_tmp=TariffPayment.l, Taxes_tmp=TaxPayment.l, ETSQuota_tmp=QuotaPayment.l;
+* $gdxin './results/%scenario%/gdx/results-reference.gdx'
+* $load x_f_tmp=x_f.l, x_h_tmp=x_h.l, x_c_tmp=x_c.l, x_e_tmp=x_e.l, x_s_tmp=x_s.l, z_tmp=z.l, w_tmp=w.l
+* $load OPEX_tmp=OPEX.l, Tariffs_tmp=TariffPayment.l, Taxes_tmp=TaxPayment.l, ETSQuota_tmp=QuotaPayment.l
+* $gdxin
+
+FuelConsumption(T,G,F,REF)$GF(G,F)                              = EPS + x_f_tmp(T,G,F);
+HeatProduction(T,G,F,REF)$((G_HR(G) OR G_DH(G)) AND GF(G,F))    = EPS + x_h_tmp(T,G);
+ColdProduction(T,G,F,REF)$(G_WH(G) AND GF(G,F))                 = EPS + x_c_tmp(T,G);
+ElectricityProduction(T,G,F,REF)$(G_CHP(G) AND GF(G,F))         = EPS + x_e_tmp(T,G);
+StorageFlow(T,S,SS,REF)                                         = EPS + x_s_tmp(T,S,SS);
+StorageLevel(T,S,REF)                                           = EPS + z_tmp(T,S);
+CarbonEmissions(T,G,F,REF)$GF(G,F)                              = EPS + w_tmp(T,G,F);
+HeatRecoveryCapacity(G,REF)$G_HR(G)                             = EPS;
+
+OPEX(E,REF)                                                     = EPS + OPEX_tmp(E);
+Taxes(E,REF)                                                    = EPS + Taxes_tmp(E);
+Tariffs(E,REF)                                                  = EPS + Tariffs_tmp(E);
+ETSQuota(E,REF)                                                 = EPS + ETSQuota_tmp(E);
+
+* - Variables to be merged from integrated case -
+* $gdxin './results/%scenario%/gdx/results-integrated.gdx'
+* $load x_f_tmp=x_f.l, x_h_tmp=x_h.l, x_c_tmp=x_c.l, x_e_tmp=x_e.l, x_s_tmp=x_s.l, z_tmp=z.l, w_tmp=w.l, y_hr_tmp=y_hr.l
+* $load OPEX_tmp=OPEX.l, Tariffs_tmp=TariffPayment.l, Taxes_tmp=TaxPayment.l, ETSQuota_tmp=QuotaPayment.l
+* $gdxin
+execute_load './results/%scenario%/gdx/results-integrated.gdx',
+x_f_tmp=x_f.l, x_h_tmp=x_h.l, x_c_tmp=x_c.l, x_e_tmp=x_e.l, x_s_tmp=x_s.l, z_tmp=z.l, w_tmp=w.l, y_hr_tmp=y_hr.l,
+OPEX_tmp=OPEX.l, Tariffs_tmp=TariffPayment.l, Taxes_tmp=TaxPayment.l, ETSQuota_tmp=QuotaPayment.l;
 
 
-* ----- Load variables from each case and merge -----
-* Load operational variables from reference case
-$gdxin './results/%scenario%/gdx/results-reference.gdx'
-PARAMETERS
-xh_r, xc_r, xe_r, xf_r, xs_r, z_r, w_r, yfmax_r;
-$load xh_r=x_h.l, xc_r=x_c.l, xe_r=x_e.l, xf_r=x_f.l, xs_r=x_s.l, z_r=z.l, w_r=w.l, yfmax_r=y_f_used.l
-$gdxin
+FuelConsumption(T,G,F,INT)$GF(G,F)                              = EPS + x_f_tmp(T,G,F);
+HeatProduction(T,G,F,INT)$((G_HR(G) OR G_DH(G)) AND GF(G,F))    = EPS + x_h_tmp(T,G);
+ColdProduction(T,G,F,INT)$(G_WH(G) AND GF(G,F))                 = EPS + x_c_tmp(T,G);
+ElectricityProduction(T,G,F,INT)$(G_CHP(G) AND GF(G,F))         = EPS + x_e_tmp(T,G);
+StorageFlow(T,S,SS,INT)                                         = EPS + x_s_tmp(T,S,SS);
+StorageLevel(T,S,INT)                                           = EPS + z_tmp(T,S);
+CarbonEmissions(T,G,F,INT)$GF(G,F)                              = EPS + w_tmp(T,G,F);
+HeatRecoveryCapacity(G,INT)$G_HR(G)                             = EPS + y_hr_tmp(G);
 
-* Load operational variables from integrated case
-$gdxin './results/%scenario%/gdx/results-integrated.gdx'
-PARAMETERS
-xh_i, xc_i, xe_i, xf_i, xs_i, z_i, w_i, yfmax_i, yhr_i;
-$load xh_i=x_h.l, xc_i=x_c.l, xe_i=x_e.l, xf_i=x_f.l, xs_i=x_s.l, z_i=z.l, w_i=w.l, yfmax_i=y_f_used.l, yhr_i=y_hr.l
-$gdxin
+OPEX(E,INT)                                                     = EPS + OPEX_tmp(E);
+Taxes(E,INT)                                                    = EPS + Taxes_tmp(E);
+Tariffs(E,INT)                                                  = EPS + Tariffs_tmp(E);
+ETSQuota(E,INT)                                                 = EPS + ETSQuota_tmp(E);
 
-* Merge values from each case
-HeatProduction(T,G,F,CASE)$((G_HR(G) OR G_DH(G)) AND GF(G,F))   = EPS + xh_r(T,G)$REF(CASE)    + xh_i(T,G)$INT(CASE);
-ColdProduction(T,G,F,CASE)$(G_WH(G) AND GF(G,F))                = EPS + xc_r(T,G)$REF(CASE)    + xc_i(T,G)$INT(CASE);
-ElectricityProduction(T,G,F,CASE)$(G_CHP(G) AND GF(G,F))        = EPS + xe_r(T,G)$REF(CASE)    + xe_i(T,G)$INT(CASE);
-FuelConsumption(T,G,F,CASE)$GF(G,F)                             = EPS + xf_r(T,G,F)$REF(CASE)  + xf_i(T,G,F)$INT(CASE);
-StorageFlow(T,S,SS,CASE)                                        = EPS + xs_r(T,S,SS)$REF(CASE) + xs_i(T,S,SS)$INT(CASE);
-StorageLevel(T,S,CASE)                                          = EPS + z_r(T,S)$REF(CASE)     + z_i(T,S)$INT(CASE);
-CarbonEmissions(T,G,F,CASE)$GF(G,F)                             = EPS + w_r(T,G,F)$REF(CASE)   + w_i(T,G,F)$INT(CASE);
-FuelMaxCapacity(E,F,CASE)                                       = EPS + yfmax_r(E,F)$REF(CASE) + yfmax_i(E,F)$INT(CASE);
-HeatRecoveryCapacity(G,CASE)$G_HR(G)                            = EPS                          + yhr_i(G)$INT(CASE);
+$offMulti                                                       !! Deactivate repeated parameter definition
 
+* - Calculate annual value of support schemes
+Support(E,REF)      = EPS;
+Support('DHN',INT)  = EPS + sum(G_HR, L_p(G_HR) * K_p(G_HR) * HeatRecoveryCapacity(G_HR,INT) * psi_k_p(G_HR)) * AF('WHS') + sum((T,G_HR,F), psi_c_h(T,G_HR) * HeatProduction(T,G_HR,F,INT));
+Support('WHS',INT)  = EPS + sum(G_HR,             K_g(G_HR) * HeatRecoveryCapacity(G_HR,INT) * psi_k_g(G_HR)) * AF('DHN');
 
-* ----- Calculate tariffs, taxes, ETS quotas, and support schemes -----
-$gdxin './results/%scenario%/gdx/parameters.gdx'
-PARAMETERS 
-        tariff_v, tariff_c, tau_f, tau_h, tau_e, tau_c, tau_w, pi_q, C_p_inv, C_g_inv, L_p, k_inv_p, k_inv_g, k_op_g, AF, N, r;
-$load   tariff_v, tariff_c, tau_f, tau_h, tau_e, tau_c, tau_w, pi_q, C_p_inv, C_g_inv, L_p, k_inv_p, k_inv_g, k_op_g, AF, N=lifetime, r
-$gdxin 
-
-$ifi     "%policytype%" == 'socioeconomic'  Tariffs('WHS',CASE) = EPS;
-$ifi not "%policytype%" == 'socioeconomic'  Tariffs('WHS',CASE) = EPS + sum((T,G_WH,F)$(GF(G_WH,F) AND F_EL(F)), tariff_v(T) * FuelConsumption(T,G_WH,F,CASE)) + sum(F, tariff_c(F) * FuelMaxCapacity('WHS',F,CASE));
-                                            Tariffs('DHN',CASE) = EPS + sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T) * FuelConsumption(T,G_DH,F,CASE)) + sum(F, tariff_c(F) * FuelMaxCapacity('DHN',F,CASE));
-
-$ifi     "%policytype%" == 'socioeconomic'  Taxes('WHS',CASE) = EPS;
-$ifi not "%policytype%" == 'socioeconomic'  Taxes('WHS',CASE) = EPS + sum((T,G_WH,F)$GF(G_WH,F), FuelConsumption(T,G_WH,F,CASE) * tau_f(G_WH) + HeatProduction(T,G_WH,F,CASE) * tau_h(G_WH) + ElectricityProduction(T,G_WH,F,CASE) * tau_e(G_WH) + ColdProduction(T,G_WH,F,CASE) * tau_c(G_WH) + CarbonEmissions(T,G_WH,F,CASE) * tau_w(G_WH));
-                                            Taxes('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), FuelConsumption(T,G_DH,F,CASE) * tau_f(G_DH) + HeatProduction(T,G_DH,F,CASE) * tau_h(G_DH) + ElectricityProduction(T,G_DH,F,CASE) * tau_e(G_DH) + ColdProduction(T,G_DH,F,CASE) * tau_c(G_DH) + CarbonEmissions(T,G_DH,F,CASE) * tau_w(G_DH));
-
-$ifi     "%policytype%" == 'socioeconomic'  ETSQuota('WHS',CASE) = EPS;
-$ifi not "%policytype%" == 'socioeconomic'  ETSQuota('WHS',CASE) = EPS + sum((T,G_WH,F)$GF(G_WH,F), CarbonEmissions(T,G_WH,F,CASE) * pi_q(G_WH));
-                                            ETSQuota('DHN',CASE) = EPS + sum((T,G_DH,F)$GF(G_DH,F), CarbonEmissions(T,G_DH,F,CASE) * pi_q(G_DH));
-
-$ifi not "%policytype%" == 'support'                          Support(E,CASE)             = EPS;
-$ifi     "%policytype%" == 'support'                          Support(E,'reference')      = EPS;
-$ifi     "%policytype%" == 'support' $ifi "%country%" == 'DE' Support('DHN','integrated') = EPS + sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_p      ) * AF('DHN');
-$ifi     "%policytype%" == 'support' $ifi "%country%" == 'DE' Support('WHS','integrated') = EPS + sum(G_HR,             C_g_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_g(G_HR)) * AF('WHS') + sum((T, G_HR,F), HeatProduction(T,G_HR,F,'integrated') * k_op_g(T,G_HR));
-$ifi     "%policytype%" == 'support' $ifi "%country%" == 'FR' Support('DHN','integrated') = EPS + sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_p      ) * AF('DHN');
-$ifi     "%policytype%" == 'support' $ifi "%country%" == 'FR' Support('WHS','integrated') = EPS + sum(G_HR,             C_g_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_g(G_HR)) * AF('WHS') + sum((T, G_HR,F), HeatProduction(T,G_HR,F,'integrated') * k_op_g(T,G_HR));
-$ifi     "%policytype%" == 'support' $ifi "%country%" == 'DK' Support('DHN','integrated') = EPS + sum(G_HR, L_p(G_HR) * C_p_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_p      ) * AF('DHN'); 
-$ifi     "%policytype%" == 'support' $ifi "%country%" == 'DK' Support('WHS','integrated') = EPS + sum(G_HR,             C_g_inv(G_HR) * HeatRecoveryCapacity(G_HR,'integrated') * k_inv_g(G_HR)) * AF('WHS') + sum((T, G_HR,F), HeatProduction(T,G_HR,F,'integrated') * k_op_g(T,G_HR));
+* - Calculate annual OPEX savings
+OPEX_savings('DHN') = EPS + OPEX('DHN','reference') - OPEX('DHN','integrated') - HeatTransaction;
+OPEX_savings('WHS') = EPS + OPEX('WHS','reference') - OPEX('WHS','integrated') + HeatTransaction;
 
 * ----- Calculate internal rate of return and payback-time -----
 SET
@@ -189,27 +190,25 @@ $include './scripts/gams/PBT.inc'
 NPV_all                 = EPS + NPV_all;
 NPV(E)                  = EPS + NPV(E);
 CAPEX(E)                = EPS + CAPEX(E);
-WH_transaction          = EPS + WH_transaction;
-FLH(G_HR)               = EPS + FLH(G_HR);
-IRR(E)                  = EPS + IRR(E);  
-PBT(E)                  = EPS + PBT(E);
+HeatTransaction         = EPS + HeatTransaction;
 WasteHeatPrice(T,G_HR)  = EPS + WasteHeatPrice(T,G_HR);
 AskPrice(T,G_HR)        = EPS + AskPrice(T,G_HR);
 BidPrice(T,G_HR)        = EPS + BidPrice(T,G_HR);
-MarginalAsk(T,G_HR)     = EPS + MarginalAsk(T,G_HR);
-MarginalBid(T)          = EPS + MarginalBid(T);
-FixedAsk(G_HR)          = EPS + FixedAsk(G_HR);
-FixedBid(G_HR)          = EPS + FixedBid(G_HR);
+AskMarginal(T,G_HR)     = EPS + AskMarginal(T,G_HR);
+BidMarginal(T)          = EPS + BidMarginal(T);
+AskFixed(G_HR)          = EPS + AskFixed(G_HR);
+BidFixed(G_HR)          = EPS + BidFixed(G_HR);
+FLH(G_HR)               = EPS + FLH(G_HR);
 
 
 * ======================================================================
 * OUTPUT
 * ======================================================================
 execute_unload  './results/%scenario%/gdx/results-postprocessing.gdx',
-NPV_all, NPV, CAPEX, OPEX, OPEX_Savings, WH_transaction, IRR, PBT, FLH
-WasteHeatPrice, AskPrice, BidPrice, MarginalAsk, MarginalBid, FixedAsk, FixedBid
-HeatProduction, ColdProduction, ElectricityProduction, FuelConsumption, StorageFlow, StorageLevel, CarbonEmissions, FuelMaxCapacity, HeatRecoveryCapacity
-Tariffs, Taxes, ETSQuota, Support
+NPV_all, NPV, CAPEX, OPEX, OPEX_savings, Tariffs, Taxes, ETSQuota, Support, HeatTransaction,
+IRR, PBT, FLH,
+WasteHeatPrice, AskPrice, BidPrice, AskMarginal, BidMarginal, AskFixed, BidFixed,
+FuelConsumption, HeatProduction, ColdProduction, ElectricityProduction, StorageFlow, StorageLevel, CarbonEmissions, HeatRecoveryCapacity
 ;
 
 * ======================================================================

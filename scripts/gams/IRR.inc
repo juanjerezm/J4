@@ -10,6 +10,8 @@ PARAMETER
 IRR(E)
 ;
 
+IRR(E) = EPS;
+
 loop(ITER,
 
     if (sum(G_HR, HeatRecoveryCapacity(G_HR,'integrated')) < tolerance,

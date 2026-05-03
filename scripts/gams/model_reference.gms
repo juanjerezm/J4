@@ -32,6 +32,10 @@ option EpsToZero = on   !! Outputs Eps values as zero
 ;
 
 
+* ----- Control flag definition -----
+* $include './scripts/gams/manual-control-flag-definition.inc'   !! Manual control flag definition
+
+
 * ======================================================================
 * SCALARS
 * ======================================================================
@@ -50,7 +54,6 @@ D6                      'Million divisor'       /1E-6/
 * ----- Set declaration -----
 SET
 T                       'Timesteps'
-H                       'Hours'
 M                       'Months'
 E                       'Entity'
 G                       'Generators'
@@ -58,7 +61,6 @@ S                       'Storages'
 SS                      'Storage state (SOS1 set)'
 F                       'Fuels'
 TM(T,M)                 'Timestep-month mapping'
-TH(T,H)                 'Timestep-hour mapping'
 GF(G,F)                 'Generator-fuel mapping'
 ;
 
@@ -79,6 +81,7 @@ G_WH(G)                 'WH generators'
 S_DH(S)                 'DH storages'
 S_WH(S)                 'WH storages'
 F_EL(F)                 'Electricity fuel'
+G_EL(G)                 'Electricity-consuming generators'
 ;
 
 
@@ -87,67 +90,83 @@ F_EL(F)                 'Electricity fuel'
 * ======================================================================
 * ----- Parameter declaration -----
 PARAMETERS
+D_h(T)                  'Demand of heat (MW)'
+D_c(T)                  'Demand of cold (MW)'
+
+w_f(T,F)                'Carbon content of fuel (kg/MWh)'
+
+pi_e(T)                 'Price of electricity (EUR/MWh)'
+pi_q(G)                 'Price of ETS emission quota (EUR/kg-CO2)'
+
+tax_f(G)                'Tax on fuel consumption (EUR/MWh)'
+tax_h(G)                'Tax on heat production (EUR/MWh)'
+tax_c(G)                'Tax on cold production (EUR/MWh)'
+tax_e(G)                'Tax on electricity production (EUR/MWh)'
+tax_w(G)                'Tax on emissions (EUR/kg-CO2)'
+
+tariff_v(T,G)           'Volumetric electricity tariff (EUR/MWh)'
+tariff_c(G)             'Capacity electricity tariff (EUR/MW)'
+tariff_c_WHS            'Capacity electricity tariff - single grid connection (EUR/MW)'
+
 C_f(T,G,F)              'Cost of fuel consumption (EUR/MWh)'
 C_h(G)                  'Cost of heat production (EUR/MWh)'
 C_c(G)                  'Cost of cold production (EUR/MWh)'
 C_e(G)                  'Cost of electricity production (EUR/MWh)'
-C_w(G)                  'Cost of emissions (EUR/kg-CO2)'
-C_s(S)                  'Storage variable cost (EUR/MWh)'
 
-pi_e(T)                 'Price of electricity (EUR/MWh)'
-pi_f(T,F)               'Price of fuel (EUR/MWh)'
-tariff_v(T)             'Volumetric electricity tariff - time-of-use (EUR/MWh)'
-tariff_c(F)             'Capacity electricity tariff - constant (EUR/MW)'
-w_e(T)                  'Carbon content of electricity (kg/MWh)'
-w_f(T,F)                'Carbon content of fuel (kg/MWh)'
-
-D_h(T)                  'Demand of heat (MW)'
-D_c(T)                  'Demand of cold (MW)'
-
-Y_c(G)                  'Cold output capacity (MW)'
-Y_f(G)                  'Firing capacity (MW), (DH generators)'
+Y_c(G)                  'Cooling capacity - cold-only units (MW)'
+Y_f(G)                  'Firing capacity - DH units (MW)'
 F_a(T,G)                'Generator availabity factor (-)'
 eta_g(T,G)              'Generator efficiency (-), (BP: total, EX: condensing)'
-beta_b(G)               'Cb coefficient of CHPs (-)'
-beta_v(G)               'Cv coefficient of CHPs (-)'
+beta_b(G)               'CHP Cb coefficient (-)'
+beta_v(G)               'CHP Cv coefficient (-)'
 
+C_s(S)                  'Variable cost of storage (EUR/MWh)'
 Y_s(S)                  'Storage capacity (MWh)'
-F_s_flo(S)              'Storage throughput capacity factor (-)'  
-F_s_end(S)              'Final storage state-of-charge factor (-)'
-F_s_min(S)              'Minimum storage state-of-charge factor (-)'
-F_s_max(S)              'Maximum storage state-of-charge factor (-)'
-rho_s(S)                'Storage self-discharge factor (-)'
 eta_s(S)                'Storage throughput efficiency (-)'
+rho_s(S)                'Storage self-discharge factor (-)'
+F_s_flo(S)              'Storage throughput factor (-)'  
+F_s_end(S)              'Storage final state-of-charge factor (-)'
+F_s_min(S)              'Storage minimum state-of-charge factor (-)'
+F_s_max(S)              'Storage maximum state-of-charge factor (-)'
 ;
 
 * ----- Parameter definition -----
 $gdxin './results/%scenario%/gdx/parameters.gdx'
-$load T, H, M, G, S, SS, E, F, TM, TH, GF                                       !! Load sets
-$load G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL  !! Load subsets
-$load D_h, D_c                                                                  !! Load system parameters
-$load C_e, C_h, C_c, Y_c, Y_f, F_a, eta_g, beta_b, beta_v                       !! Load generator parameters
-$load C_f, C_w, pi_f, w_f, pi_e, w_e                                         !! Load fuel parameters
-$load tariff_c, tariff_v                                !! Load tax-and-tariff parameters
-$load C_s, Y_s, eta_s, rho_s, F_s_flo, F_s_end, F_s_min, F_s_max                !! Load storage parameters
+$load T, M, G, S, SS, E, F, TM, GF                                              !! sets
+$load G_BP, G_EX, G_HO, G_CO, G_HR, G_CHP, G_DH, G_WH, S_DH, S_WH, F_EL, G_EL   !! subsets
+$load C_f, C_h, C_c, C_e, Y_c, Y_f, F_a, eta_g, beta_b, beta_v                  !! generator parameters
+$load C_s, Y_s, eta_s, rho_s, F_s_flo, F_s_end, F_s_min, F_s_max                !! storage parameters
+$load tariff_v, tariff_c, tariff_c_WHS                                          !! tariff parameters      
+$load tax_f, tax_h, tax_c, tax_e, tax_w                                         !! tax parameters
+$load D_h, D_c, w_f, pi_e, pi_q                                                 !! others
 $gdxin
+
+* ----- Parameter operations -----
+
 
 * ======================================================================
 * VARIABLES
 * ======================================================================
 * ----- Variable declaration -----
 FREE VARIABLES
-obj                         'Auxiliary objective variable (EUR), to optimize either OPX(DHN) or OPX(WHS)'
-OPX(E)                      'Operating cost for entity (stakeholder) (EUR)'
+obj                         'Auxiliary objective variable (EUR), to optimize both DHN and WHS OPEXs'
+OPEX(E)                     'Operating expenditure (EUR)'
 ;
 
 POSITIVE VARIABLES
-x_f(T,G,F)                  'Consumption of fuel by generator (MWh)'
+x_f(T,G,F)                  'Consumption of fuel (MWh)'
 x_h(T,G)                    'Production of heat (MWh)'
 x_e(T,G)                    'Production of electricity (MWh)'
 x_c(T,G)                    'Production of cold (MWh)'
-w(T,G,F)                    'Carbon emissions of generator (kg)'
+w(T,G,F)                    'Carbon emissions (kg)'
 z(T,S)                      'State-of-charge of storage (MWh)'
-y_f_used(E,F)               'Maximum fuel consumption of fuel per entity at any timestep (MW)'
+
+x_f_max_DHN(G)              'Maximum fuel (electricity) consumption of DHN generators (MW)'
+x_f_max_WHS                 'Maximum fuel (electricity) consumption at WHS (MW)'
+
+QuotaPayment(E)             'ETS quota payments (EUR)'
+TaxPayment(E)               'Tax payments (EUR)'
+TariffPayment(E)            'Tariff payments (EUR)'
 ;
 
 SOS1 VARIABLES
@@ -163,8 +182,15 @@ x_s(T,S,SS)                 'Storage charge/discharge flow (MWh)'
 * ----- Equation declaration -----
 EQUATIONS
 eq_obj                      'Objective function of joint OPEX'
-eq_OPX_DHN                  'Operating cost of DH system'
-eq_OPX_WHS                  'Operating cost of WH source'
+eq_OPEX_DHN                 'Operating expenditure of DHN'
+eq_OPEX_WHS                 'Operating expenditure of WHS'
+
+eq_taxes_DHN                'Tax payments of DHN'
+eq_taxes_WHS                'Tax payments of WHS'
+eq_tariffs_DHN              'Tariff payments of DHN'
+eq_tariffs_WHS              'Tariff payments of WHS'
+eq_quotas_DHN               'ETS quota payments of DHN'
+eq_quotas_WHS               'ETS quota payments of WHS'
 
 eq_load_heat(T)             'Heat load in DHN'
 eq_load_cold(T)             'Cold load in WHS'
@@ -178,8 +204,8 @@ eq_conversion_EX_2(T,G)     'Conversion constraint for extraction generators (el
 
 eq_max_DH(T,G)              'Capacity constraint for DH generators (input-based)'
 eq_max_CO(T,G)              'Capacity constraint for cold-only generators (output-based)'
-eq_max_fueluse_DHN(T,F)     'Maximum fuel consumption by DHN at any timestep'
-eq_max_fueluse_WHS(T,F)     'Maximum fuel consumption by WHS at any timestep'
+eq_max_elec_DHN(T,G,F)      'Maximum individual electricity consumption of DHN generators'
+eq_max_elec_WHS(T)          'Maximum joint electricity consumption of WHS generators'
 
 eq_carbon_emissions(T,G,F)  'Carbon emissions of generators'
 
@@ -190,27 +216,47 @@ eq_sto_max(T,S)             'Storage maximum state-of-charge'
 eq_sto_flo(T,S,SS)          'Storage throughput limit'
 ;
 
-
 * ----- Equation definition -----
 * Variable cost of storages are negligible
-eq_obj..                                    obj         =e= OPX('DHN') + OPX('WHS');
-eq_OPX_DHN..                                OPX('DHN')  =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
+eq_obj..                                    obj         =e= OPEX('DHN') + OPEX('WHS');
+eq_OPEX_DHN..                               OPEX('DHN') =e= + sum((T,G_DH,F)$GF(G_DH,F), C_f(T,G_DH,F) * x_f(T,G_DH,F))
                                                             + sum((T,G_DH),              C_h(G_DH)     * x_h(T,G_DH))
                                                             + sum((T,G_CHP),             C_e(G_CHP)    * x_e(T,G_CHP))
-                                                            + sum((T,G_DH,F)$GF(G_DH,F), C_w(G_DH)     * w(T,G_DH,F))
                                                             + sum((T,S_DH),              C_s(S_DH)     * x_s(T,S_DH,'discharge'))
                                                             - sum((T,G_CHP),             pi_e(T)       * x_e(T,G_CHP))
-$ifi not "%policytype%" == 'socioeconomic'                  + sum(F,                     tariff_c(F)   * y_f_used('DHN',F))
+                                                            + TaxPayment('DHN') + TariffPayment('DHN') + QuotaPayment('DHN')
                                                             ;
 
-eq_OPX_WHS..                                OPX('WHS')  =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f(T,G_CO,F))
+eq_OPEX_WHS..                               OPEX('WHS') =e= + sum((T,G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f(T,G_CO,F))
                                                             + sum((T,G_CO),              C_c(G_CO)     * x_c(T,G_CO))
-                                                            + sum((T,G_CO,F)$GF(G_CO,F), C_w(G_CO)     * w(T,G_CO,F))
-$ifi not "%policytype%" == 'socioeconomic'                  + sum(F,                     tariff_c(F)   * y_f_used('WHS',F))
+                                                            + TaxPayment('WHS') + TariffPayment('WHS') + QuotaPayment('WHS')
                                                             ;
 
-eq_load_heat(T)..                           sum(G_DH, x_h(T,G_DH)) + sum(S_DH, x_s(T,S_DH,'discharge')) - sum(S_DH, x_s(T,S_DH,'charge')) =e= D_h(T);
-eq_load_cold(T)..                           sum(G_CO, x_c(T,G_CO)) =e= D_c(T);
+eq_taxes_DHN..                       TaxPayment('DHN')  =e= + sum((T,G_DH),              x_h(T,G_DH)   * tax_h(G_DH))
+                                                            + sum((T,G_DH),              x_e(T,G_DH)   * tax_e(G_DH))
+                                                            + sum((T,G_DH),              x_c(T,G_DH)   * tax_c(G_DH))
+                                                            + sum((T,G_DH,F)$GF(G_DH,F), x_f(T,G_DH,F) * tax_f(G_DH))
+                                                            + sum((T,G_DH,F)$GF(G_DH,F), w(T,G_DH,F)   * tax_w(G_DH))
+                                                            ;
+
+eq_taxes_WHS..                       TaxPayment('WHS')  =e= + sum((T,G_CO),              x_c(T,G_CO)   * tax_c(G_CO))
+                                                            + sum((T,G_CO,F)$GF(G_CO,F), x_f(T,G_CO,F) * tax_f(G_CO))
+                                                            + sum((T,G_CO,F)$GF(G_CO,F), w(T,G_CO,F)   * tax_w(G_CO))
+                                                            ;
+
+eq_tariffs_DHN..                   TariffPayment('DHN') =e= + sum((T,G_DH,F)$(GF(G_DH,F) AND F_EL(F)), tariff_v(T, G_DH) * x_f(T,G_DH,F))
+                                                            + sum(G_DH$G_EL(G_DH),                     tariff_c(G_DH)    * x_f_max_DHN(G_DH))
+                                                            ;
+
+eq_tariffs_WHS..                   TariffPayment('WHS') =e= + sum((T,G_CO,F)$(GF(G_CO,F) AND F_EL(F)), tariff_v(T, G_CO) * x_f(T,G_CO,F))
+                                                            +                                          tariff_c_WHS      * x_f_max_WHS
+                                                            ;
+
+eq_quotas_DHN..                     QuotaPayment('DHN') =e= + sum((T,G_DH,F)$GF(G_DH,F), w(T,G_DH,F) * pi_q(G_DH));
+eq_quotas_WHS..                     QuotaPayment('WHS') =e= + sum((T,G_CO,F)$GF(G_CO,F), w(T,G_CO,F) * pi_q(G_CO));
+
+eq_load_heat(T)..                           sum(G_DH, x_h(T,G_DH)) + sum(S_DH, x_s(T,S_DH,'discharge')) - sum(S_DH, x_s(T,S_DH,'charge')) =e= D_h(T); !! Demand on RHS for proper marginal calculation
+eq_load_cold(T)..                           sum(G_CO, x_c(T,G_CO))                                                                        =e= D_c(T); !! Demand on RHS for proper marginal calculation
 
 eq_conversion_CO(T,G)$G_CO(G)..             eta_g(T,G) * sum(F$GF(G,F), x_f(T,G,F)) =e= x_c(T,G);
 eq_conversion_HO(T,G)$G_HO(G)..             eta_g(T,G) * sum(F$GF(G,F), x_f(T,G,F)) =e=             x_h(T,G);
@@ -221,8 +267,8 @@ eq_conversion_EX_2(T,G)$G_EX(G)..                                               
 
 eq_max_DH(T,G)$G_DH(G)..                                 sum(F$GF(G,F), x_f(T,G,F)) =l= F_a(T,G)*Y_f(G);
 eq_max_CO(T,G)$G_CO(G)..                                                x_c(T,G)    =l= F_a(T,G)*Y_c(G);
-eq_max_fueluse_DHN(T,F)..                       sum(G_DH$GF(G_DH,F), x_f(T,G_DH,F)) =l= y_f_used('DHN',F);
-eq_max_fueluse_WHS(T,F)..                       sum(G_CO$GF(G_CO,F), x_f(T,G_CO,F)) =l= y_f_used('WHS',F);
+eq_max_elec_DHN(T,G,F)$(G_DH(G) AND G_EL(G) AND GF(G,F))..           x_f_max_DHN(G) =g= x_f(T,G,F);
+eq_max_elec_WHS(T)..                                                 x_f_max_WHS    =g= sum((G_CO,F)$(G_EL(G_CO) AND GF(G_CO,F)), x_f(T,G_CO,F));
 
 eq_carbon_emissions(T,G,F)$GF(G,F)..                            w_f(T,F)*x_f(T,G,F) =e= w(T,G,F);
 
@@ -252,33 +298,19 @@ solve mdl_all using mip minimizing obj;
 * ======================================================================
 * OUTPUT
 * ======================================================================
-* The following is transfered to the integrated model
+* The following parameters are transfered for use in the integrated model
 PARAMETERS
-MarginalCostDHN_Ref(T)      'Reference marginal cost of DHN (EUR/MWh)'
-MarginalCostWHS_Ref(T)      'Reference marginal cost of WHS (EUR/MWh)'
-OperationalCost_Ref(E)      'Reference operating cost of each entity (EUR/year)'
-EmissionsDHN_Ref(T)         'Reference CO2 emissions per heat production (kg/MWh)'
-HeatProd_Ref(T,G_DH)        'Reference heat production (MWh)'
-ColdProd_Ref(T,G_WH)        'Reference cold production (MWh)'
-StorageProd_Ref(T,S,SS)     'Reference storage operation (MWh)'
-StorageLevel_Ref(T,S)       'Reference storage level (MWh)'
+MarginalCostDHN_REF(T)      'Reference marginal cost of DHN (EUR/MWh)'
+MarginalCostWHS_REF(T)      'Reference marginal cost of WHS (EUR/MWh)'
 ;
 
-MarginalCostDHN_Ref(T)      = EPS + eq_load_heat.m(T);
-MarginalCostWHS_Ref(T)      = EPS + sum((G_CO,F)$GF(G_CO,F), C_f(T,G_CO,F) * x_f.L(T,G_CO,F) + C_c(G_CO) * x_c.L(T,G_CO))/D_c(T); !! Actually average cost, but doenst matter here
-OperationalCost_Ref(E)      = EPS + OPX.l(E);
-EmissionsDHN_Ref(T)         = EPS + sum((G_DH,F)$GF(G_DH,F), w.l(T,G_DH,F))/D_h(T);
-HeatProd_Ref(T,G_DH)        = EPS + x_h.l(T,G_DH);
-ColdProd_Ref(T,G_WH)        = EPS + x_c.l(T,G_WH);
-StorageProd_Ref(T,S,SS)     = EPS + x_s.l(T,S,SS);
-StorageLevel_Ref(T,S)       = EPS + z.l(T,S);
+MarginalCostDHN_REF(T)      = EPS + eq_load_heat.m(T);
+MarginalCostWHS_REF(T)      = EPS + eq_load_cold.m(T);
 
 execute_unload  './results/%scenario%/gdx/results-reference.gdx',
-obj, OPX, x_f, x_h, x_e, x_c, w, z, y_f_used, x_s
-;
-
-execute_unload  './results/%scenario%/gdx/transfer-reference.gdx',
-MarginalCostDHN_Ref, MarginalCostWHS_Ref, OperationalCost_Ref, EmissionsDHN_Ref, HeatProd_Ref, ColdProd_Ref, StorageProd_Ref, StorageLevel_Ref
+x_f, x_h, x_e, x_c, w, z, x_s
+obj, OPEX, TariffPayment, TaxPayment, QuotaPayment
+MarginalCostDHN_REF, MarginalCostWHS_REF
 ;
 
 

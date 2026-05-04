@@ -25,7 +25,7 @@ def main() -> None:
 
     # Step 2: Generate plots
     for plot_file in PLOT_SPECS:
-        generate_plot(analysis=ANALYSIS, plotspec_path=plot_file)
+        generate_plot(analysis=ANALYSIS, plotspec_path=Path(plot_file))
 
 
 if __name__ == "__main__":

@@ -199,7 +199,7 @@ BidMarginal(T)          = EPS + BidMarginal(T);
 AskFixed(G_HR)          = EPS + AskFixed(G_HR);
 BidFixed(G_HR)          = EPS + BidFixed(G_HR);
 FLH(G_HR)               = EPS + FLH(G_HR);
-
+OPEX_savings(E)         = EPS + OPEX_savings(E);
 
 * ======================================================================
 * OUTPUT
